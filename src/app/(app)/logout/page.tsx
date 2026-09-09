@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import React from 'react'
-
 import { LogoutPage } from './LogoutPage'
+
+export const dynamic = 'force-dynamic'
 
 export default async function Logout() {
   return (

@@ -1,9 +1,9 @@
 import type { Media as MediaType } from '@/payload-types'
-
 import { Media } from '@/components/Media'
 import { Label } from '@/components/Grid/Label'
 import clsx from 'clsx'
 import React from 'react'
+import Image from 'next/image'
 
 type Props = {
   active?: boolean
@@ -13,34 +13,55 @@ type Props = {
     position?: 'bottom' | 'center'
     title: string
   }
-  media: MediaType
+  media?: MediaType
+  src?: string
+  alt?: string
+  fill?: boolean
+  sizes?: string
 }
 
 export const GridTileImage: React.FC<Props> = ({
   active,
   isInteractive = true,
   label,
+  media,
+  src,
+  alt = 'LUJAIN Product',
+  fill,
+  sizes,
   ...props
 }) => {
+  const imageUrl = src || (media && typeof media === 'object' ? media.url : undefined)
+
   return (
     <div
       className={clsx(
-        'group flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-white hover:border-blue-600 dark:bg-black',
+        'group flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-white hover:border-black dark:bg-black',
         {
-          'border-2 border-blue-600': active,
+          'border-2 border-black': active,
           'border-neutral-200 dark:border-neutral-800': !active,
-          relative: label,
+          relative: label || fill,
         },
       )}
     >
-      {props.media ? (
+      {imageUrl ? (
+        <Image
+          src={imageUrl}
+          alt={alt}
+          fill={fill ?? true}
+          sizes={sizes || '(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw'}
+          className={clsx('object-cover', {
+            'transition duration-300 ease-in-out group-hover:scale-105': isInteractive,
+          })}
+        />
+      ) : media ? (
         <Media
           className={clsx('relative h-full w-full object-cover', {
             'transition duration-300 ease-in-out group-hover:scale-105': isInteractive,
           })}
           height={80}
           imgClassName="h-full w-full object-cover"
-          resource={props.media}
+          resource={media}
           width={80}
         />
       ) : null}

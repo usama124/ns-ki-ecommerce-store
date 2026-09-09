@@ -23,8 +23,7 @@ export const Label: React.FC<Props> = ({ amount, position = 'bottom', title }) =
 
         <Price
           amount={amount}
-          className="flex-none rounded-full bg-blue-600 p-2 text-white"
-          currencyCodeClassName="hidden @[275px]/label:inline"
+          className="flex-none rounded-full bg-black p-2 text-white"
         />
       </div>
     </div>

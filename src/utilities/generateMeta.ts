@@ -1,36 +1,28 @@
 import type { Metadata } from 'next'
-
 import type { Page, Product } from '../payload-types'
-
 import { mergeOpenGraph } from './mergeOpenGraph'
 
-export const generateMeta = async (args: { doc: Page | Product }): Promise<Metadata> => {
+export const generateMeta = async (args: { doc: Page | Product | null }): Promise<Metadata> => {
   const { doc } = args || {}
+  const pageDoc = doc as any
 
+  const metaImage = pageDoc?.meta?.image
   const ogImage =
-    typeof doc?.meta?.image === 'object' &&
-    doc.meta.image !== null &&
-    'url' in doc.meta.image &&
-    `${process.env.NEXT_PUBLIC_SERVER_URL}${doc.meta.image.url}`
+    typeof metaImage === 'object' && metaImage !== null && 'url' in metaImage
+      ? `${process.env.NEXT_PUBLIC_SERVER_URL}${metaImage.url}`
+      : undefined
+
+  const title = pageDoc?.meta?.title || pageDoc?.title || 'LUJAIN | Pakistani Luxury Fashion'
+  const description = pageDoc?.meta?.description || 'LUJAIN Pakistani Luxury Fashion & E-Commerce'
 
   return {
-    description: doc?.meta?.description,
+    description,
     openGraph: mergeOpenGraph({
-      ...(doc?.meta?.description
-        ? {
-            description: doc?.meta?.description,
-          }
-        : {}),
-      images: ogImage
-        ? [
-            {
-              url: ogImage,
-            },
-          ]
-        : undefined,
-      title: doc?.meta?.title || doc?.title || 'Payload Ecommerce Template',
-      url: Array.isArray(doc?.slug) ? doc?.slug.join('/') : '/',
+      description,
+      images: ogImage ? [{ url: ogImage }] : undefined,
+      title,
+      url: Array.isArray(pageDoc?.slug) ? pageDoc?.slug.join('/') : '/',
     }),
-    title: doc?.meta?.title || doc?.title || 'Payload Ecommerce Template',
+    title,
   }
 }

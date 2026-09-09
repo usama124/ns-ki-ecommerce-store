@@ -1,12 +1,13 @@
 {
   "name": "lujain",
   "version": "1.0.0",
-  "description": "Ecommerce template for Payload",
+  "description": "LUJAIN Pakistani Luxury Fashion E-Commerce",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "dev:fresh": "cross-env PAYLOAD_DROP_DATABASE=true NODE_OPTIONS=--no-deprecation next dev",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && pnpm build && pnpm start",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
@@ -14,19 +15,19 @@
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
     "lint:fix": "cross-env NODE_OPTIONS=--no-deprecation eslint . --fix",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file=.env scripts/seed-db.ts",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "stripe-webhooks": "stripe listen --forward-to localhost:3000/api/payments/stripe/webhooks",
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
     "@payloadcms/admin-bar": "3.88.0",
+    "@payloadcms/db-postgres": "3.88.0",
     "@payloadcms/email-nodemailer": "3.88.0",
     "@payloadcms/live-preview-react": "3.88.0",
     "@payloadcms/next": "3.88.0",
-    "@payloadcms/plugin-ecommerce": "3.88.0",
     "@payloadcms/plugin-form-builder": "3.88.0",
     "@payloadcms/plugin-seo": "3.88.0",
     "@payloadcms/richtext-lexical": "3.88.0",
@@ -38,8 +39,6 @@
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.2",
-    "@stripe/react-stripe-js": "^3",
-    "@stripe/stripe-js": "^4.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cross-env": "^7.0.3",
@@ -61,9 +60,7 @@
     "react-hook-form": "7.71.1",
     "sharp": "0.34.2",
     "sonner": "^1.7.2",
-    "stripe": "18.5.0",
-    "tailwind-merge": "^3.4.0",
-    "@payloadcms/db-postgres": "3.88.0"
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

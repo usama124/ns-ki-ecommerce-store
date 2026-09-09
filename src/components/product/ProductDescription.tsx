@@ -1,92 +1,49 @@
 'use client'
-import type { Product, Variant } from '@/payload-types'
 
-import { RichText } from '@/components/RichText'
-import { AddToCart } from '@/components/Cart/AddToCart'
+import React from 'react'
 import { Price } from '@/components/Price'
-import React, { Suspense } from 'react'
+import { RichText } from '@/components/RichText'
+import { SizeSelector } from './SizeSelector'
 
-import { VariantSelector } from './VariantSelector'
-import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
-import { StockIndicator } from '@/components/product/StockIndicator'
+type Props = {
+  product: any
+}
 
-export function ProductDescription({ product }: { product: Product }) {
-  const { currency } = useCurrency()
-  let amount = 0,
-    lowestAmount = 0,
-    highestAmount = 0
-  const priceField = `priceIn${currency.code}` as keyof Product
-  const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
-
-  if (hasVariants) {
-    const priceField = `priceIn${currency.code}` as keyof Variant
-    const variantsOrderedByPrice = product.variants?.docs
-      ?.filter((variant) => variant && typeof variant === 'object')
-      .sort((a, b) => {
-        if (
-          typeof a === 'object' &&
-          typeof b === 'object' &&
-          priceField in a &&
-          priceField in b &&
-          typeof a[priceField] === 'number' &&
-          typeof b[priceField] === 'number'
-        ) {
-          return a[priceField] - b[priceField]
-        }
-
-        return 0
-      }) as Variant[]
-
-    const lowestVariant = variantsOrderedByPrice[0][priceField]
-    const highestVariant = variantsOrderedByPrice[variantsOrderedByPrice.length - 1][priceField]
-    if (
-      variantsOrderedByPrice &&
-      typeof lowestVariant === 'number' &&
-      typeof highestVariant === 'number'
-    ) {
-      lowestAmount = lowestVariant
-      highestAmount = highestVariant
-    }
-  } else if (product[priceField] && typeof product[priceField] === 'number') {
-    amount = product[priceField]
-  }
-
+export function ProductDescription({ product }: Props) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-medium">{product.title}</h1>
-        <div className="uppercase font-mono">
-          {hasVariants ? (
-            <Price highestAmount={highestAmount} lowestAmount={lowestAmount} />
-          ) : (
-            <Price amount={amount} />
-          )}
+      {/* Category & Title */}
+      <div>
+        {product.mainCategory?.name && (
+          <span className="text-xs uppercase tracking-[0.25em] font-semibold text-gray-500 block mb-2">
+            {product.mainCategory.name}
+          </span>
+        )}
+        <h1 className="font-serif text-2xl sm:text-3xl font-normal tracking-[0.15em] uppercase text-black">
+          {product.title}
+        </h1>
+      </div>
+
+      {/* PKR Pricing */}
+      <div className="border-y border-gray-100 py-4 flex items-center justify-between">
+        <span className="text-xs uppercase tracking-widest text-gray-400">Price</span>
+        <Price amount={product.basePricePKR} className="text-xl font-bold text-black" />
+      </div>
+
+      {/* Dynamic Size Selector & Add To Cart */}
+      <SizeSelector product={product} />
+
+      {/* Product Description */}
+      {product.description && (
+        <div className="border-t border-gray-100 pt-6">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-black mb-3">
+            Product Details
+          </h3>
+          <div className="prose prose-sm max-w-none text-gray-600">
+            <RichText data={product.description} />
+          </div>
         </div>
-      </div>
-      {product.description ? (
-        <RichText className="" data={product.description} enableGutter={false} />
-      ) : null}
-      <hr />
-      {hasVariants && (
-        <>
-          <Suspense fallback={null}>
-            <VariantSelector product={product} />
-          </Suspense>
-
-          <hr />
-        </>
       )}
-      <div className="flex items-center justify-between">
-        <Suspense fallback={null}>
-          <StockIndicator product={product} />
-        </Suspense>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <Suspense fallback={null}>
-          <AddToCart product={product} />
-        </Suspense>
-      </div>
     </div>
   )
 }

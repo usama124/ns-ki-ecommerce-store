@@ -1,4 +1,6 @@
 import { getCachedGlobal } from '@/utilities/getGlobals'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 import './index.css'
 import { HeaderClient } from './index.client'
@@ -6,5 +8,41 @@ import { HeaderClient } from './index.client'
 export async function Header() {
   const header = await getCachedGlobal('header', 1)()
 
-  return <HeaderClient header={header} />
+  // Fetch main categories with their subcategories for the mega-menu
+  const payload = await getPayload({ config: configPromise })
+  const categoriesResult = await payload.find({
+    collection: 'categories',
+    where: { type: { equals: 'main' } },
+    sort: 'name',
+    limit: 20,
+    depth: 0,
+  })
+
+  const subcategoriesResult = await payload.find({
+    collection: 'categories',
+    where: { type: { equals: 'subcategory' } },
+    sort: 'name',
+    limit: 100,
+    depth: 1,
+  })
+
+  // Fetch site settings for announcement bar
+  let siteSettings: any = null
+  try {
+    siteSettings = await getCachedGlobal('site-settings', 1)()
+  } catch {
+    // site-settings global may not exist yet
+  }
+
+  const mainCategories = categoriesResult.docs
+  const subcategories = subcategoriesResult.docs
+
+  return (
+    <HeaderClient
+      header={header}
+      mainCategories={mainCategories as any}
+      subcategories={subcategories as any}
+      announcementBar={siteSettings?.announcementBar}
+    />
+  )
 }

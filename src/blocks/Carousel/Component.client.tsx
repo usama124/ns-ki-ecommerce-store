@@ -7,10 +7,9 @@ import Link from 'next/link'
 import React from 'react'
 import { GridTileImage } from '@/components/Grid/tile'
 
-export const CarouselClient: React.FC<{ products: Product[] }> = async ({ products }) => {
+export const CarouselClient: React.FC<{ products: Product[] }> = ({ products }) => {
   if (!products?.length) return null
 
-  // Purposefully duplicating products to make the carousel loop and not run out of products on wide screens.
   const carouselProducts = [...products, ...products, ...products]
 
   return (
@@ -27,22 +26,27 @@ export const CarouselClient: React.FC<{ products: Product[] }> = async ({ produc
       ]}
     >
       <CarouselContent>
-        {carouselProducts.map((product, i) => (
-          <CarouselItem
-            className="relative aspect-square h-[30vh] max-h-[275px] w-2/3 max-w-[475px] flex-none md:w-1/3"
-            key={`${product.slug}${i}`}
-          >
-            <Link className="relative h-full w-full" href={`/products/${product.slug}`}>
-              <GridTileImage
-                label={{
-                  amount: product.priceInUSD!,
-                  title: product.title,
-                }}
-                media={product.meta?.image as Media}
-              />
-            </Link>
-          </CarouselItem>
-        ))}
+        {carouselProducts.map((product, i) => {
+          const imageObj = product.images?.[0]?.image
+          const media = typeof imageObj === 'object' ? (imageObj as Media) : undefined
+
+          return (
+            <CarouselItem
+              className="relative aspect-square h-[30vh] max-h-[275px] w-2/3 max-w-[475px] flex-none md:w-1/3"
+              key={`${product.slug}${i}`}
+            >
+              <Link className="relative h-full w-full" href={`/products/${product.slug}`}>
+                <GridTileImage
+                  label={{
+                    amount: product.basePricePKR,
+                    title: product.title,
+                  }}
+                  media={media!}
+                />
+              </Link>
+            </CarouselItem>
+          )
+        })}
       </CarouselContent>
     </Carousel>
   )

@@ -1,16 +1,4 @@
-import { CallToAction } from '@/blocks/CallToAction/config'
-import { Content } from '@/blocks/Content/config'
-import { MediaBlock } from '@/blocks/MediaBlock/config'
-import { slugField } from 'payload'
-import { generatePreviewPath } from '@/utilities/generatePreviewPath'
-import { CollectionOverride } from '@payloadcms/plugin-ecommerce/types'
-import {
-  MetaDescriptionField,
-  MetaImageField,
-  MetaTitleField,
-  OverviewField,
-  PreviewField,
-} from '@payloadcms/plugin-seo/fields'
+import type { CollectionConfig } from 'payload'
 import {
   FixedToolbarFeature,
   HeadingFeature,
@@ -18,68 +6,150 @@ import {
   InlineToolbarFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
-import { DefaultDocumentIDType, Where } from 'payload'
+import { adminOnly } from '@/access/adminOnly'
 
-export const ProductsCollection: CollectionOverride = ({ defaultCollection }) => ({
-  ...defaultCollection,
-  admin: {
-    ...defaultCollection?.admin,
-    defaultColumns: ['title', 'enableVariants', '_status', 'variants.variants'],
-    livePreview: {
-      url: ({ data, req }) =>
-        generatePreviewPath({
-          slug: data?.slug,
-          collection: 'products',
-          req,
-        }),
-    },
-    preview: (data, { req }) =>
-      generatePreviewPath({
-        slug: data?.slug as string,
-        collection: 'products',
-        req,
-      }),
-    useAsTitle: 'title',
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'Unstitched']
+
+function generateSKU(slug: string, size: string): string {
+  const slugPart = (slug || 'PROD').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 4).padEnd(4, 'X')
+  const random = Math.random().toString(36).toUpperCase().slice(2, 5)
+  return `LUJ-${slugPart}-${size.toUpperCase().slice(0, 2)}-${random}`
+}
+
+export const Products: CollectionConfig = {
+  slug: 'products',
+  access: {
+    create: adminOnly,
+    delete: adminOnly,
+    read: () => true,
+    update: adminOnly,
   },
-  defaultPopulate: {
-    ...defaultCollection?.defaultPopulate,
-    title: true,
-    slug: true,
-    variantOptions: true,
-    variants: true,
-    enableVariants: true,
-    gallery: true,
-    priceInUSD: true,
-    inventory: true,
-    meta: true,
+  admin: {
+    useAsTitle: 'title',
+    group: 'Shop',
+    defaultColumns: ['title', 'mainCategory', 'basePricePKR', 'status'],
+  },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (data?.variants && Array.isArray(data.variants)) {
+          data.variants = data.variants.map((variant: any) => {
+            if (!variant.sku) {
+              variant.sku = generateSKU(data.slug || data.title || '', variant.size || 'OS')
+            }
+            return variant
+          })
+        }
+        return data
+      },
+    ],
   },
   fields: [
-    { name: 'title', type: 'text', required: true },
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'slug',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+      },
+      hooks: {
+        beforeValidate: [
+          ({ value, data }) => {
+            if (value) return value
+            if (data?.title) {
+              return data.title
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+            }
+            return value
+          },
+        ],
+      },
+    },
+    {
+      name: 'status',
+      type: 'select',
+      defaultValue: 'draft',
+      admin: {
+        position: 'sidebar',
+      },
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+      ],
+    },
+    {
+      name: 'isFeatured',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'mainCategory',
+      type: 'relationship',
+      relationTo: 'categories',
+      admin: {
+        position: 'sidebar',
+      },
+      filterOptions: () => ({
+        type: { equals: 'main' },
+      }),
+    },
+    {
+      name: 'subCategories',
+      type: 'relationship',
+      relationTo: 'categories',
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+      },
+      filterOptions: () => ({
+        type: { equals: 'subcategory' },
+      }),
+    },
+    {
+      name: 'basePricePKR',
+      type: 'number',
+      required: true,
+      min: 0,
+      admin: {
+        position: 'sidebar',
+        description: 'Base price in Pakistani Rupees (PKR)',
+        step: 50,
+      },
+    },
     {
       type: 'tabs',
       tabs: [
         {
+          label: 'Content',
           fields: [
             {
               name: 'description',
               type: 'richText',
               editor: lexicalEditor({
-                features: ({ rootFeatures }) => {
-                  return [
-                    ...rootFeatures,
-                    HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4'] }),
-                    FixedToolbarFeature(),
-                    InlineToolbarFeature(),
-                    HorizontalRuleFeature(),
-                  ]
-                },
+                features: ({ rootFeatures }) => [
+                  ...rootFeatures,
+                  HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
+                  FixedToolbarFeature(),
+                  InlineToolbarFeature(),
+                  HorizontalRuleFeature(),
+                ],
               }),
-              label: false,
-              required: false,
             },
             {
-              name: 'gallery',
+              name: 'images',
               type: 'array',
+              label: 'Product Images',
               minRows: 1,
               fields: [
                 {
@@ -89,124 +159,63 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                   required: true,
                 },
                 {
-                  name: 'variantOption',
-                  type: 'relationship',
-                  relationTo: 'variantOptions',
-                  admin: {
-                    condition: (data) => {
-                      return data?.enableVariants === true && data?.variantTypes?.length > 0
-                    },
-                  },
-                  filterOptions: ({ data }) => {
-                    if (data?.enableVariants && data?.variantTypes?.length) {
-                      const variantTypeIDs = data.variantTypes.map((item: any) => {
-                        if (typeof item === 'object' && item?.id) {
-                          return item.id
-                        }
-                        return item
-                      }) as DefaultDocumentIDType[]
-
-                      if (variantTypeIDs.length === 0)
-                        return {
-                          variantType: {
-                            in: [],
-                          },
-                        }
-
-                      const query: Where = {
-                        variantType: {
-                          in: variantTypeIDs,
-                        },
-                      }
-
-                      return query
-                    }
-
-                    return {
-                      variantType: {
-                        in: [],
-                      },
-                    }
-                  },
+                  name: 'alt',
+                  type: 'text',
                 },
               ],
             },
-
             {
-              name: 'layout',
-              type: 'blocks',
-              blocks: [CallToAction, Content, MediaBlock],
-            },
-          ],
-          label: 'Content',
-        },
-        {
-          fields: [
-            ...defaultCollection.fields,
-            {
-              name: 'relatedProducts',
-              type: 'relationship',
-              filterOptions: ({ id }) => {
-                if (id) {
-                  return {
-                    id: {
-                      not_in: [id],
-                    },
-                  }
-                }
-
-                // ID comes back as undefined during seeding so we need to handle that case
-                return {
-                  id: {
-                    exists: true,
-                  },
-                }
-              },
-              hasMany: true,
-              relationTo: 'products',
-            },
-          ],
-          label: 'Product Details',
-        },
-        {
-          name: 'meta',
-          label: 'SEO',
-          fields: [
-            OverviewField({
-              titlePath: 'meta.title',
-              descriptionPath: 'meta.description',
-              imagePath: 'meta.image',
-            }),
-            MetaTitleField({
-              hasGenerateFn: true,
-            }),
-            MetaImageField({
+              name: 'productVideo',
+              type: 'upload',
               relationTo: 'media',
-            }),
-
-            MetaDescriptionField({}),
-            PreviewField({
-              // if the `generateUrl` function is configured
-              hasGenerateFn: true,
-
-              // field paths to match the target field for data
-              titlePath: 'meta.title',
-              descriptionPath: 'meta.description',
-            }),
+              label: 'Product Video (9:16 vertical MP4, optional)',
+            },
+          ],
+        },
+        {
+          label: 'Variants & Stock',
+          fields: [
+            {
+              name: 'variants',
+              type: 'array',
+              label: 'Size Variants',
+              fields: [
+                {
+                  name: 'size',
+                  type: 'select',
+                  required: true,
+                  options: SIZES.map((s) => ({ label: s, value: s })),
+                },
+                {
+                  name: 'sku',
+                  type: 'text',
+                  label: 'SKU (auto-generated if blank)',
+                  admin: {
+                    description: 'Format: LUJ-XXXX-SZ-XXX. Leave blank to auto-generate.',
+                  },
+                },
+                {
+                  name: 'stock',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 10,
+                  min: 0,
+                },
+                {
+                  name: 'pricePKR',
+                  type: 'number',
+                  label: 'Price Override (PKR)',
+                  admin: {
+                    description: 'Leave blank to use the base price.',
+                  },
+                  min: 0,
+                },
+              ],
+            },
           ],
         },
       ],
     },
-    {
-      name: 'categories',
-      type: 'relationship',
-      admin: {
-        position: 'sidebar',
-        sortOptions: 'title',
-      },
-      hasMany: true,
-      relationTo: 'categories',
-    },
-    slugField(),
   ],
-})
+  timestamps: true,
+}

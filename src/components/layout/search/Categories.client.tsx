@@ -39,7 +39,7 @@ export const CategoryItem: React.FC<Props> = ({ category }) => {
         ' underline': isActive,
       })}
     >
-      {category.title}
+      {category.name}
     </button>
   )
 }

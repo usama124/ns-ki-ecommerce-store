@@ -1,79 +1,57 @@
 'use client'
 
-import type { Media as MediaType, Product } from '@/payload-types'
-
+import type { Media as MediaType } from '@/payload-types'
 import { Media } from '@/components/Media'
 import { GridTileImage } from '@/components/Grid/tile'
-import { useSearchParams } from 'next/navigation'
-import React, { useEffect } from 'react'
+import React, { useState } from 'react'
 
-import { Carousel, CarouselApi, CarouselContent, CarouselItem } from '@/components/ui/carousel'
-import { DefaultDocumentIDType } from 'payload'
-
-type Props = {
-  gallery: NonNullable<Product['gallery']>
+type GalleryItem = {
+  image: MediaType
 }
 
-export const Gallery: React.FC<Props> = ({ gallery }) => {
-  const searchParams = useSearchParams()
-  const [current, setCurrent] = React.useState(0)
-  const [api, setApi] = React.useState<CarouselApi>()
+type Props = {
+  gallery: GalleryItem[]
+}
 
-  useEffect(() => {
-    if (!api) {
-      return
-    }
-  }, [api])
+export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
+  const [current, setCurrent] = useState(0)
 
-  useEffect(() => {
-    const values = Array.from(searchParams.values())
+  if (!gallery || gallery.length === 0) return null
 
-    if (values && api) {
-      const index = gallery.findIndex((item) => {
-        if (!item.variantOption) return false
-
-        let variantID: DefaultDocumentIDType
-
-        if (typeof item.variantOption === 'object') {
-          variantID = item.variantOption.id
-        } else variantID = item.variantOption
-
-        return Boolean(values.find((value) => value === String(variantID)))
-      })
-      if (index !== -1) {
-        setCurrent(index)
-        api.scrollTo(index, true)
-      }
-    }
-  }, [searchParams, api, gallery])
+  const activeItem = gallery[current] || gallery[0]
 
   return (
-    <div>
-      <div className="relative w-full overflow-hidden mb-8">
-        <Media
-          resource={gallery[current].image}
-          className="w-full"
-          imgClassName="w-full rounded-lg"
-        />
+    <div className="flex flex-col gap-4">
+      <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-100 rounded-sm">
+        {activeItem?.image && (
+          <Media
+            resource={activeItem.image}
+            className="w-full h-full"
+            imgClassName="w-full h-full object-cover"
+          />
+        )}
       </div>
 
-      <Carousel setApi={setApi} className="w-full" opts={{ align: 'start', loop: false }}>
-        <CarouselContent>
+      {gallery.length > 1 && (
+        <div className="flex space-x-3 overflow-x-auto pb-2">
           {gallery.map((item, i) => {
-            if (typeof item.image !== 'object') return null
+            if (!item.image) return null
 
             return (
-              <CarouselItem
-                className="basis-1/5"
-                key={`${item.image.id}-${i}`}
+              <button
+                key={i}
+                type="button"
                 onClick={() => setCurrent(i)}
+                className={`relative w-20 aspect-[3/4] flex-none overflow-hidden rounded-xs border-2 transition-all ${
+                  i === current ? 'border-black opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
               >
                 <GridTileImage active={i === current} media={item.image} />
-              </CarouselItem>
+              </button>
             )
           })}
-        </CarouselContent>
-      </Carousel>
+        </div>
+      )}
     </div>
   )
 }

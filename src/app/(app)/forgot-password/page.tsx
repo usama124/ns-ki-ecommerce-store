@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import React from 'react'
-
 import { ForgotPasswordForm } from '@/components/forms/ForgotPasswordForm'
+
+export const dynamic = 'force-dynamic'
 
 export default async function ForgotPasswordPage() {
   return (

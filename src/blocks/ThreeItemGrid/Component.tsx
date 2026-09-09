@@ -1,5 +1,4 @@
 import type { Media, Product, ThreeItemGridBlock as ThreeItemGridBlockProps } from '@/payload-types'
-
 import { GridTileImage } from '@/components/Grid/tile'
 import Link from 'next/link'
 import React from 'react'
@@ -8,15 +7,9 @@ import type { DefaultDocumentIDType } from 'payload'
 type Props = { item: Product; priority?: boolean; size: 'full' | 'half' }
 
 export const ThreeItemGridItem: React.FC<Props> = ({ item, size }) => {
-  let price = item.priceInUSD
-
-  if (item.enableVariants && item.variants?.docs?.length) {
-    const variant = item.variants.docs[0]
-
-    if (variant && typeof variant === 'object' && variant.priceInUSD) {
-      price = variant.priceInUSD
-    }
-  }
+  const price = item.basePricePKR || 0
+  const imageObj = item.images?.[0]?.image
+  const media = typeof imageObj === 'object' ? (imageObj as Media) : undefined
 
   return (
     <div
@@ -25,11 +18,11 @@ export const ThreeItemGridItem: React.FC<Props> = ({ item, size }) => {
       <Link className="relative block aspect-square h-full w-full" href={`/products/${item.slug}`}>
         <GridTileImage
           label={{
-            amount: price!,
+            amount: price,
             position: size === 'full' ? 'center' : 'bottom',
             title: item.title,
           }}
-          media={item.meta?.image as Media}
+          media={media!}
         />
       </Link>
     </div>

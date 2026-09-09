@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-
 import {
   FixedToolbarFeature,
   InlineToolbarFeature,
@@ -7,19 +6,19 @@ import {
 } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { fileURLToPath } from 'url'
-
 import { adminOnly } from '@/access/adminOnly'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export const Media: CollectionConfig = {
+  slug: 'media',
   admin: {
     group: 'Content',
   },
-  slug: 'media',
   access: {
-    create: adminOnly,
+    // Allow public uploads for payment proof screenshots & product media
+    create: () => true,
     delete: adminOnly,
     read: () => true,
     update: adminOnly,
@@ -28,7 +27,6 @@ export const Media: CollectionConfig = {
     {
       name: 'alt',
       type: 'text',
-      required: true,
     },
     {
       name: 'caption',
@@ -42,5 +40,14 @@ export const Media: CollectionConfig = {
   ],
   upload: {
     staticDir: path.resolve(dirname, '../../public/media'),
+    mimeTypes: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/svg+xml',
+      'video/mp4',
+      'video/webm',
+    ],
   },
 }

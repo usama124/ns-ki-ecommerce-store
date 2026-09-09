@@ -1,111 +1,75 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import type { Product, Variant } from '@/payload-types'
+import React, { useRef, useEffect, useState } from 'react'
+import { useCart } from '@/providers/Cart'
+import { formatPKR } from '@/utilities/formatPKR'
+import Link from 'next/link'
+import { X } from 'lucide-react'
 
-import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
-import clsx from 'clsx'
-import { useSearchParams } from 'next/navigation'
-import React, { useCallback, useMemo } from 'react'
-import { toast } from 'sonner'
-type Props = {
-  product: Product
+type Variant = {
+  size: string
+  stock: number
+  pricePKR?: number | null
+  sku?: string | null
 }
 
-export function AddToCart({ product }: Props) {
-  const { addItem, cart, isLoading } = useCart()
-  const searchParams = useSearchParams()
+type Product = {
+  id: string
+  slug: string
+  title: string
+  basePricePKR: number
+  variants?: Variant[]
+  images?: Array<{ image: { url?: string | null; alt?: string } }>
+}
 
-  const variants = product.variants?.docs || []
+type Props = {
+  product: Product
+  selectedVariant?: Variant
+  className?: string
+}
 
-  const selectedVariant = useMemo<Variant | undefined>(() => {
-    if (product.enableVariants && variants.length) {
-      const variantId = searchParams.get('variant')
+export function AddToCart({ product, selectedVariant, className }: Props) {
+  const { addItem } = useCart()
+  const [added, setAdded] = useState(false)
 
-      const validVariant = variants.find((variant) => {
-        if (typeof variant === 'object') {
-          return String(variant.id) === variantId
-        }
-        return String(variant) === variantId
-      })
+  const isOutOfStock = selectedVariant ? selectedVariant.stock <= 0 : false
+  const price = selectedVariant?.pricePKR ?? product.basePricePKR
+  const imageUrl = product.images?.[0]?.image?.url ?? undefined
 
-      if (validVariant && typeof validVariant === 'object') {
-        return validVariant
-      }
-    }
-
-    return undefined
-  }, [product.enableVariants, searchParams, variants])
-
-  const addToCart = useCallback(
-    (e: React.FormEvent<HTMLButtonElement>) => {
-      e.preventDefault()
-
-      addItem({
-        product: product.id,
-        variant: selectedVariant?.id ?? undefined,
-      }).then(() => {
-        toast.success('Item added to cart.')
-      })
-    },
-    [addItem, product, selectedVariant],
-  )
-
-  const disabled = useMemo<boolean>(() => {
-    const existingItem = cart?.items?.find((item) => {
-      const productID = typeof item.product === 'object' ? item.product?.id : item.product
-      const variantID = item.variant
-        ? typeof item.variant === 'object'
-          ? item.variant?.id
-          : item.variant
-        : undefined
-
-      if (productID === product.id) {
-        if (product.enableVariants) {
-          return variantID === selectedVariant?.id
-        }
-        return true
-      }
+  const handleAddToCart = () => {
+    if (!selectedVariant) return
+    addItem({
+      productId: String(product.id),
+      slug: product.slug,
+      title: product.title,
+      imageUrl,
+      variantSize: selectedVariant.size,
+      variantSku: selectedVariant.sku ?? undefined,
+      price,
     })
-
-    if (existingItem) {
-      const existingQuantity = existingItem.quantity
-
-      if (product.enableVariants) {
-        return existingQuantity >= (selectedVariant?.inventory || 0)
-      }
-      return existingQuantity >= (product.inventory || 0)
-    }
-
-    if (product.enableVariants) {
-      if (!selectedVariant) {
-        return true
-      }
-
-      if (selectedVariant.inventory === 0) {
-        return true
-      }
-    } else {
-      if (product.inventory === 0) {
-        return true
-      }
-    }
-
-    return false
-  }, [selectedVariant, cart?.items, product])
+    setAdded(true)
+    setTimeout(() => setAdded(false), 2000)
+  }
 
   return (
-    <Button
-      aria-label="Add to cart"
-      variant={'outline'}
-      className={clsx({
-        'hover:opacity-90': true,
-      })}
-      disabled={disabled || isLoading}
-      onClick={addToCart}
-      type="submit"
+    <button
+      className={`w-full py-4 px-8 text-sm font-medium tracking-widest uppercase transition-colors ${
+        isOutOfStock || !selectedVariant
+          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          : added
+            ? 'bg-green-800 text-white'
+            : 'bg-black text-white hover:bg-gray-800'
+      } ${className ?? ''}`}
+      disabled={isOutOfStock || !selectedVariant}
+      onClick={handleAddToCart}
     >
-      Add To Cart
-    </Button>
+      {!selectedVariant
+        ? 'Select a Size'
+        : isOutOfStock
+          ? 'Out of Stock'
+          : added
+            ? '✓ Added to Bag'
+            : 'Add to Bag'}
+    </button>
   )
 }

@@ -11,11 +11,12 @@ type Props = {
 
 export const OrderItem: React.FC<Props> = ({ order }) => {
   const itemsLabel = order.items?.length === 1 ? 'Item' : 'Items'
+  const amount = order.totalAmount || order.subtotal || 0
 
   return (
     <div className="bg-card border rounded-lg px-4 py-2 md:px-6 md:py-4 flex flex-col sm:flex-row gap-12 sm:items-center sm:justify-between">
       <div className="flex flex-col gap-4">
-        <h3 className="text-sm uppercase font-mono tracking-widest text-primary/50 truncate max-w-32 sm:max-w-none">{`#${order.id}`}</h3>
+        <h3 className="text-sm uppercase font-mono tracking-widest text-primary/50 truncate max-w-32 sm:max-w-none">{order.orderNumber || `#${order.id}`}</h3>
 
         <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-6">
           <p className="text-xl">
@@ -31,10 +32,10 @@ export const OrderItem: React.FC<Props> = ({ order }) => {
           <span>
             {order.items?.length} {itemsLabel}
           </span>
-          {order.amount && (
+          {typeof amount === 'number' && (
             <>
               <span>•</span>
-              <Price as="span" amount={order.amount} currencyCode={order.currency ?? undefined} />
+              <Price as="span" amount={amount} />
             </>
           )}
         </p>

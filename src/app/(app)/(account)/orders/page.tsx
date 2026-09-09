@@ -9,18 +9,20 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Orders() {
   const headers = await getHeaders()
-  const payload = await getPayload({ config: configPromise })
-  const { user } = await payload.auth({ headers })
-
   let orders: Order[] | null = null
 
-  if (!user) {
-    redirect(`/login?warning=${encodeURIComponent('Please login to access your orders.')}`)
-  }
-
   try {
+    const payload = await getPayload({ config: configPromise })
+    const { user } = await payload.auth({ headers })
+
+    if (!user) {
+      redirect(`/login?warning=${encodeURIComponent('Please login to access your orders.')}`)
+    }
+
     const ordersResult = await payload.find({
       collection: 'orders',
       limit: 0,
@@ -28,8 +30,8 @@ export default async function Orders() {
       user,
       overrideAccess: false,
       where: {
-        customer: {
-          equals: user?.id,
+        'customer.email': {
+          equals: user?.email,
         },
       },
     })

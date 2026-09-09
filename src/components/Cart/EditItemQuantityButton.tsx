@@ -1,69 +1,44 @@
 'use client'
 
-import { CartItem } from '@/components/Cart'
-import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
+import { useCart } from '@/providers/Cart'
 import clsx from 'clsx'
 import { MinusIcon, PlusIcon } from 'lucide-react'
-import React, { useMemo } from 'react'
+import React from 'react'
 
-export function EditItemQuantityButton({ type, item }: { item: CartItem; type: 'minus' | 'plus' }) {
-  const { decrementItem, incrementItem, isLoading } = useCart()
-
-  const disabled = useMemo(() => {
-    if (!item.id) return true
-
-    const target =
-      item.variant && typeof item.variant === 'object'
-        ? item.variant
-        : item.product && typeof item.product === 'object'
-          ? item.product
-          : null
-
-    if (
-      target &&
-      typeof target === 'object' &&
-      target.inventory !== undefined &&
-      target.inventory !== null
-    ) {
-      if (type === 'plus' && item.quantity !== undefined && item.quantity !== null) {
-        return item.quantity >= target.inventory
-      }
-    }
-
-    return false
-  }, [item, type])
+export function EditItemQuantityButton({
+  productId,
+  variantSize,
+  quantity,
+  type,
+}: {
+  productId: string
+  variantSize: string
+  quantity: number
+  type: 'minus' | 'plus'
+}) {
+  const { updateQuantity } = useCart()
 
   return (
-    <form>
-      <button
-        disabled={disabled || isLoading}
-        aria-label={type === 'plus' ? 'Increase item quantity' : 'Reduce item quantity'}
-        className={clsx(
-          'ease hover:cursor-pointer flex h-full min-w-[36px] max-w-[36px] flex-none items-center justify-center rounded-full px-2 transition-all duration-200 hover:border-neutral-800 hover:opacity-80',
-          {
-            'cursor-not-allowed': disabled || isLoading,
-            'ml-auto': type === 'minus',
-          },
-        )}
-        onClick={(e: React.FormEvent<HTMLButtonElement>) => {
-          e.preventDefault()
-
-          if (item.id) {
-            if (type === 'plus') {
-              incrementItem(item.id)
-            } else {
-              decrementItem(item.id)
-            }
-          }
-        }}
-        type="button"
-      >
-        {type === 'plus' ? (
-          <PlusIcon className="h-4 w-4 dark:text-neutral-500 hover:text-blue-300" />
-        ) : (
-          <MinusIcon className="h-4 w-4 dark:text-neutral-500 hover:text-blue-300" />
-        )}
-      </button>
-    </form>
+    <button
+      aria-label={type === 'plus' ? 'Increase item quantity' : 'Reduce item quantity'}
+      className={clsx(
+        'ease flex h-full min-w-[36px] max-w-[36px] items-center justify-center rounded-full p-2 transition-all duration-200 hover:border-neutral-800 hover:opacity-80',
+        {
+          'ml-auto': type === 'minus',
+        },
+      )}
+      onClick={(e: React.FormEvent<HTMLButtonElement>) => {
+        e.preventDefault()
+        const newQty = type === 'plus' ? quantity + 1 : quantity - 1
+        updateQuantity(productId, variantSize, newQty)
+      }}
+      type="button"
+    >
+      {type === 'plus' ? (
+        <PlusIcon className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
+      ) : (
+        <MinusIcon className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
+      )}
+    </button>
   )
 }

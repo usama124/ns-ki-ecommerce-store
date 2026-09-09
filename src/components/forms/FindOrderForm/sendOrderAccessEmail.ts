@@ -1,8 +1,8 @@
 'use server'
 
+import { getServerSideURL } from '@/utilities/getURL'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
-import { getServerSideURL } from '@/utilities/getURL'
 
 type SendOrderAccessEmailArgs = {
   email: string
@@ -24,35 +24,33 @@ export async function sendOrderAccessEmail({
     const { docs: orders } = await payload.find({
       collection: 'orders',
       where: {
-        and: [{ id: { equals: orderID } }, { customerEmail: { equals: email } }],
+        and: [{ id: { equals: orderID } }, { 'customer.email': { equals: email } }],
       },
       limit: 1,
       depth: 0,
+      overrideAccess: true,
     })
 
     const order = orders[0]
 
-    if (!order || !order.accessToken) {
+    if (!order) {
       return { success: true }
     }
 
     const serverURL = getServerSideURL()
-    const orderURL = `${serverURL}/orders/${order.id}?email=${encodeURIComponent(email)}&accessToken=${order.accessToken}`
+    const orderURL = `${serverURL}/orders/${order.id}`
 
     const emailBody = `
-        <h1>View Your Order</h1>
+        <h1>View Your N's KI Order</h1>
         <p>Click the link below to view your order details:</p>
-        <p><a href="${orderURL}">View Order #${order.id}</a></p>
+        <p><a href="${orderURL}">View Order #${order.orderNumber || order.id}</a></p>
         <p>Or copy and paste this URL into your browser:</p>
         <p>${orderURL}</p>
-        <p>This link will give you access to view your order details.</p>
       `
-
-    console.log('[sendOrderAccessEmail] Email body:', emailBody)
 
     await payload.sendEmail({
       to: email,
-      subject: `Access your order #${order.id}`,
+      subject: `N's KI Order #${order.orderNumber || order.id}`,
       html: emailBody,
     })
 

@@ -1,23 +1,20 @@
 'use client'
-import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
-import React, { useMemo } from 'react'
+import { formatPKR } from '@/utilities/formatPKR'
+import React from 'react'
 
 type BaseProps = {
   className?: string
-  currencyCodeClassName?: string
   as?: 'span' | 'p'
 }
 
 type PriceFixed = {
   amount: number
-  currencyCode?: string
   highestAmount?: never
   lowestAmount?: never
 }
 
 type PriceRange = {
   amount?: never
-  currencyCode?: string
   highestAmount: number
   lowestAmount: number
 }
@@ -29,40 +26,30 @@ export const Price = ({
   className,
   highestAmount,
   lowestAmount,
-  currencyCode: currencyCodeFromProps,
   as = 'p',
 }: Props & React.ComponentProps<'p'>) => {
-  const { formatCurrency, supportedCurrencies } = useCurrency()
-
   const Element = as
-
-  const currencyToUse = useMemo(() => {
-    if (currencyCodeFromProps) {
-      return supportedCurrencies.find((currency) => currency.code === currencyCodeFromProps)
-    }
-    return undefined
-  }, [currencyCodeFromProps, supportedCurrencies])
 
   if (typeof amount === 'number') {
     return (
       <Element className={className} suppressHydrationWarning>
-        {formatCurrency(amount, { currency: currencyToUse })}
+        {formatPKR(amount)}
       </Element>
     )
   }
 
-  if (highestAmount && highestAmount !== lowestAmount) {
+  if (highestAmount !== undefined && lowestAmount !== undefined && highestAmount !== lowestAmount) {
     return (
       <Element className={className} suppressHydrationWarning>
-        {`${formatCurrency(lowestAmount, { currency: currencyToUse })} - ${formatCurrency(highestAmount, { currency: currencyToUse })}`}
+        {`${formatPKR(lowestAmount)} - ${formatPKR(highestAmount)}`}
       </Element>
     )
   }
 
-  if (lowestAmount) {
+  if (lowestAmount !== undefined) {
     return (
       <Element className={className} suppressHydrationWarning>
-        {`${formatCurrency(lowestAmount, { currency: currencyToUse })}`}
+        {formatPKR(lowestAmount)}
       </Element>
     )
   }
