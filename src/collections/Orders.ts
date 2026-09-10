@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { adminOnly } from '@/access/adminOnly'
+import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -16,6 +17,40 @@ export const Orders: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
+  hooks: {
+    beforeChange: [
+      async ({ data, req, operation, originalDoc }) => {
+        if (req.context?.skipStockHook) return data
+
+        if (operation === 'create') {
+          if (data?.items && Array.isArray(data.items)) {
+            await validateAndDeductStock({ items: data.items, req })
+          }
+        } else if (operation === 'update') {
+          const oldStatus = originalDoc?.status
+          const newStatus = data?.status
+
+          // Status changed from active -> cancelled: restore stock
+          if (oldStatus && oldStatus !== 'cancelled' && newStatus === 'cancelled') {
+            const items = data?.items || originalDoc?.items
+            if (items && Array.isArray(items)) {
+              await restoreOrderStock({ items, req })
+            }
+          }
+
+          // Status changed from cancelled -> active: re-deduct stock
+          if (oldStatus === 'cancelled' && newStatus && newStatus !== 'cancelled') {
+            const items = data?.items || originalDoc?.items
+            if (items && Array.isArray(items)) {
+              await validateAndDeductStock({ items, req })
+            }
+          }
+        }
+
+        return data
+      },
+    ],
+  },
   fields: [
     {
       name: 'orderNumber',
@@ -30,7 +65,7 @@ export const Orders: CollectionConfig = {
         beforeValidate: [
           ({ value }) => {
             if (value) return value
-            const num = Math.floor(1001 + Math.random() * 8999)
+            const num = Math.floor(100000 + Math.random() * 899999)
             return `#LUJ-${num}`
           },
         ],
@@ -128,6 +163,40 @@ export const Orders: CollectionConfig = {
       ],
     },
     {
+      name: 'fulfillment',
+      type: 'group',
+      label: 'Fulfillment & Courier Tracking',
+      admin: {
+        condition: (data) => data?.status === 'shipped' || data?.status === 'delivered',
+      },
+      fields: [
+        {
+          name: 'courierName',
+          type: 'select',
+          label: 'Courier Service',
+          options: [
+            { label: 'TCS Express', value: 'TCS' },
+            { label: 'Leopard Courier', value: 'Leopard' },
+            { label: 'CallCourier', value: 'CallCourier' },
+            { label: 'Trax Logistics', value: 'Trax' },
+            { label: 'M&P Courier', value: 'M&P' },
+            { label: 'PostEx', value: 'PostEx' },
+            { label: 'Other / Rider Delivery', value: 'Other' },
+          ],
+        },
+        {
+          name: 'trackingNumber',
+          type: 'text',
+          label: 'Courier Tracking / Consignment Number',
+        },
+        {
+          name: 'trackingUrl',
+          type: 'text',
+          label: 'Direct Courier Tracking URL (Optional)',
+        },
+      ],
+    },
+    {
       name: 'items',
       type: 'array',
       required: true,
@@ -144,6 +213,11 @@ export const Orders: CollectionConfig = {
           type: 'text',
           required: true,
           label: 'Size',
+        },
+        {
+          name: 'variantColor',
+          type: 'text',
+          label: 'Color',
         },
         {
           name: 'variantSku',

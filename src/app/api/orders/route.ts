@@ -70,9 +70,11 @@ export async function POST(req: Request) {
     })
   } catch (error: any) {
     console.error('Error submitting order to Payload:', error)
+    const message = error?.message || 'An error occurred while placing order.'
+    const isStockError = message.toLowerCase().includes('stock')
     return NextResponse.json(
-      { error: error?.message || 'An error occurred while placing order.' },
-      { status: 500 }
+      { error: message },
+      { status: isStockError ? 400 : 500 }
     )
   }
 }

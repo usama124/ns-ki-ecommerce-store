@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useCart } from '@/providers/Cart'
-import { formatPKR } from '@/utilities/formatPKR'
-import Link from 'next/link'
-import { X } from 'lucide-react'
 
 type Variant = {
   size: string
+  color?: string | null
+  colorHex?: string | null
   stock: number
+  allowBackorder?: boolean | null
   pricePKR?: number | null
   sku?: string | null
 }
@@ -32,18 +32,25 @@ export function AddToCart({ product, selectedVariant, className }: Props) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
-  const isOutOfStock = selectedVariant ? selectedVariant.stock <= 0 : false
+  const isOutOfStock = selectedVariant
+    ? selectedVariant.stock <= 0 && !selectedVariant.allowBackorder
+    : false
+  const isBackorder = selectedVariant
+    ? selectedVariant.stock <= 0 && Boolean(selectedVariant.allowBackorder)
+    : false
+
   const price = selectedVariant?.pricePKR ?? product.basePricePKR
   const imageUrl = product.images?.[0]?.image?.url ?? undefined
 
   const handleAddToCart = () => {
-    if (!selectedVariant) return
+    if (!selectedVariant || isOutOfStock) return
     addItem({
       productId: String(product.id),
       slug: product.slug,
       title: product.title,
       imageUrl,
       variantSize: selectedVariant.size,
+      variantColor: selectedVariant.color ?? undefined,
       variantSku: selectedVariant.sku ?? undefined,
       price,
     })
@@ -58,7 +65,9 @@ export function AddToCart({ product, selectedVariant, className }: Props) {
           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
           : added
             ? 'bg-green-800 text-white'
-            : 'bg-black text-white hover:bg-gray-800'
+            : isBackorder
+              ? 'bg-amber-900 text-white hover:bg-amber-800'
+              : 'bg-black text-white hover:bg-gray-800'
       } ${className ?? ''}`}
       disabled={isOutOfStock || !selectedVariant}
       onClick={handleAddToCart}
@@ -69,7 +78,9 @@ export function AddToCart({ product, selectedVariant, className }: Props) {
           ? 'Out of Stock'
           : added
             ? '✓ Added to Bag'
-            : 'Add to Bag'}
+            : isBackorder
+              ? 'Add to Bag (Backorder)'
+              : 'Add to Bag'}
     </button>
   )
 }

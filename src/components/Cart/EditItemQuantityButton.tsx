@@ -8,11 +8,13 @@ import React from 'react'
 export function EditItemQuantityButton({
   productId,
   variantSize,
+  variantColor,
   quantity,
   type,
 }: {
   productId: string
   variantSize: string
+  variantColor?: string
   quantity: number
   type: 'minus' | 'plus'
 }) {
@@ -30,7 +32,7 @@ export function EditItemQuantityButton({
       onClick={(e: React.FormEvent<HTMLButtonElement>) => {
         e.preventDefault()
         const newQty = type === 'plus' ? quantity + 1 : quantity - 1
-        updateQuantity(productId, variantSize, newQty)
+        updateQuantity(productId, variantSize, variantColor, newQty)
       }}
       type="button"
     >

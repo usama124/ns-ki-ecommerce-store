@@ -6,14 +6,15 @@ import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: "Find & Track Order | N's KI Luxury Fashion",
-  description: 'Find and track your order using your email/phone and order ID.',
+  title: "Track Order | N's KI Pakistani Luxury Fashion",
+  description:
+    'Track your N\'s KI luxury fashion order status, payment verification, and courier dispatch in real time.',
   openGraph: mergeOpenGraph({
-    title: 'Find & Track Order',
-    url: '/find-order',
+    title: 'Track Order',
+    url: '/track-order',
   }),
 }
 
-export default function FindOrderPage() {
+export default function TrackOrderPage() {
   return <OrderTrackingView />
 }

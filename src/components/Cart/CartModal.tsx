@@ -87,7 +87,7 @@ export function Cart() {
           ) : (
             <div className="flex flex-col gap-6">
               {items.map((item, index) => (
-                <div key={`${item.productId}-${item.variantSize}-${index}`} className="flex gap-4">
+                <div key={`${item.productId}-${item.variantSize}-${item.variantColor}-${index}`} className="flex gap-4">
                   {/* Image */}
                   <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden bg-gray-50">
                     {item.imageUrl ? (
@@ -114,7 +114,7 @@ export function Cart() {
                         {item.title}
                       </Link>
                       <button
-                        onClick={() => removeItem(item.productId, item.variantSize)}
+                        onClick={() => removeItem(item.productId, item.variantSize, item.variantColor)}
                         className="ml-2 p-0.5 text-gray-400 hover:text-black transition-colors flex-shrink-0"
                         aria-label="Remove item"
                       >
@@ -124,6 +124,9 @@ export function Cart() {
 
                     <p className="text-xs text-gray-500 uppercase tracking-wider">
                       Size: {item.variantSize}
+                      {item.variantColor && (
+                        <span className="ml-2 text-gray-400">· {item.variantColor}</span>
+                      )}
                     </p>
 
                     {item.variantSku && (
@@ -135,7 +138,7 @@ export function Cart() {
                       <div className="flex items-center gap-2 border border-gray-200">
                         <button
                           onClick={() =>
-                            updateQuantity(item.productId, item.variantSize, item.quantity - 1)
+                            updateQuantity(item.productId, item.variantSize, item.variantColor, item.quantity - 1)
                           }
                           className="p-1 hover:bg-gray-100 transition-colors"
                           aria-label="Decrease quantity"
@@ -145,7 +148,7 @@ export function Cart() {
                         <span className="text-xs w-6 text-center font-medium">{item.quantity}</span>
                         <button
                           onClick={() =>
-                            updateQuantity(item.productId, item.variantSize, item.quantity + 1)
+                            updateQuantity(item.productId, item.variantSize, item.variantColor, item.quantity + 1)
                           }
                           className="p-1 hover:bg-gray-100 transition-colors"
                           aria-label="Increase quantity"

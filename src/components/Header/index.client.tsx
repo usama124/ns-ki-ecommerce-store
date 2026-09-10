@@ -168,6 +168,15 @@ export function HeaderClient({
             >
               All Products
             </Link>
+
+            <Link
+              href="/track-order"
+              className={`text-xs font-medium uppercase tracking-[0.15em] hover:text-gray-600 transition-colors ${
+                pathname === '/track-order' ? 'border-b-2 border-black font-semibold' : 'text-gray-900'
+              }`}
+            >
+              Track Order
+            </Link>
           </nav>
 
           {/* Right Action Icons (Cart) */}
@@ -224,6 +233,14 @@ export function HeaderClient({
               className="text-sm font-semibold uppercase tracking-widest text-gray-900"
             >
               All Products
+            </Link>
+
+            <Link
+              href="/track-order"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm font-semibold uppercase tracking-widest text-gray-900"
+            >
+              Track Order
             </Link>
           </nav>
         </div>

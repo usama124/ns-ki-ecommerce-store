@@ -3,7 +3,7 @@ import { ProductDescription } from '@/components/product/ProductDescription'
 import { Button } from '@/components/ui/button'
 import type { Media } from '@/payload-types'
 import configPromise from '@payload-config'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Play } from 'lucide-react'
 import { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
@@ -27,8 +27,8 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const imageUrl = typeof firstImage === 'object' ? firstImage?.url : undefined
 
   return {
-    title: `${product.title} | N's KI`,
-    description: product.title,
+    title: `${product.title} | N's KI Pakistani Luxury Fashion`,
+    description: `Shop ${product.title} from N's KI luxury collection. Authentic Pakistani luxury fashion with express nationwide delivery.`,
     openGraph: imageUrl
       ? {
           images: [{ url: imageUrl }],
@@ -52,34 +52,65 @@ export default async function ProductPage({ params }: Args) {
 
   const videoUrl = typeof product.productVideo === 'object' ? product.productVideo?.url : undefined
 
-  return (
-    <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button
-          asChild
-          variant="ghost"
-          className="mb-6 hover:bg-gray-50 text-xs uppercase tracking-widest"
-        >
-          <Link href="/shop">
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back to Collection
-          </Link>
-        </Button>
+  const mainCategoryName =
+    typeof product.mainCategory === 'object' ? product.mainCategory?.name : undefined
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          <div className="lg:col-span-7 flex flex-col gap-6">
+  return (
+    <div className="bg-[#FAF8F5] min-h-screen pb-20">
+      {/* Top Breadcrumb Navigation */}
+      <div className="bg-white border-b border-stone-200/60 shadow-xs mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-stone-500 font-medium">
+            <Link href="/" className="hover:text-black transition-colors">
+              Home
+            </Link>
+            <span>/</span>
+            <Link href="/shop" className="hover:text-black transition-colors">
+              Shop
+            </Link>
+            {mainCategoryName && (
+              <>
+                <span>/</span>
+                <span className="text-amber-800 font-semibold">{mainCategoryName}</span>
+              </>
+            )}
+          </div>
+
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-xs uppercase tracking-widest text-stone-700 hover:text-black hover:bg-stone-100"
+          >
+            <Link href="/shop">
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to Collection
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          {/* Left Column: Gallery & Video */}
+          <div className="lg:col-span-7 flex flex-col gap-8">
             <Suspense
-              fallback={<div className="relative aspect-[3/4] w-full bg-gray-100 animate-pulse" />}
+              fallback={
+                <div className="relative aspect-[3/4] w-full bg-stone-200 animate-pulse rounded-lg" />
+              }
             >
               {Boolean(gallery?.length) && <Gallery gallery={gallery} />}
             </Suspense>
 
             {videoUrl && (
-              <div className="mt-8">
-                <h3 className="text-xs uppercase tracking-widest font-semibold text-gray-500 mb-3">
-                  Product Reel Video
-                </h3>
-                <div className="relative max-w-sm aspect-[9/16] bg-black rounded-lg overflow-hidden shadow-lg">
+              <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Play className="w-4 h-4 text-amber-800" />
+                  <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-stone-900">
+                    Product Reel & Fabric Movement
+                  </h3>
+                </div>
+                <div className="relative max-w-xs sm:max-w-sm aspect-[9/16] bg-black rounded-lg overflow-hidden shadow-lg mx-auto">
                   <video
                     src={videoUrl}
                     controls
@@ -92,7 +123,8 @@ export default async function ProductPage({ params }: Args) {
             )}
           </div>
 
-          <div className="lg:col-span-5 sticky top-28">
+          {/* Right Column: Sticky Product Description & Size Selector */}
+          <div className="lg:col-span-5 lg:sticky lg:top-24">
             <ProductDescription product={product} />
           </div>
         </div>

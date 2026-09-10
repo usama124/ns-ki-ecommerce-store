@@ -58,10 +58,6 @@ export default async function Homepage() {
     <div className="min-h-screen bg-white">
       <HomepageHero heroSlider={homepageData?.heroSlider || []} />
 
-      {homepageData?.shoppableVideos && homepageData.shoppableVideos.length > 0 && (
-        <ShoppableVideos reels={homepageData.shoppableVideos} />
-      )}
-
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-gray-100 pb-4">
           <div>
@@ -141,6 +137,10 @@ export default async function Homepage() {
           </div>
         )}
       </section>
+
+      {homepageData?.shoppableVideos && homepageData.shoppableVideos.length > 0 && (
+        <ShoppableVideos reels={homepageData.shoppableVideos} />
+      )}
     </div>
   )
 }

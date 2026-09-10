@@ -1,8 +1,7 @@
 'use client'
 
-import React from 'react'
-import { ShoppingBag } from 'lucide-react'
 import { useCart } from '@/providers/Cart'
+import { ShoppingBag } from 'lucide-react'
 
 export function OpenCartButton() {
   return (
@@ -18,7 +17,7 @@ export function OpenCart({ onClick }: { onClick?: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="relative flex items-center gap-1 p-2 text-sm uppercase tracking-widest hover:opacity-70 transition-opacity"
+      className="relative flex items-center gap-1 p-2 text-sm uppercase tracking-widest text-black hover:opacity-70 transition-opacity"
       aria-label={`Open cart (${itemCount} items)`}
     >
       <ShoppingBag className="h-5 w-5" />

@@ -72,13 +72,19 @@ export function HeroSlider({ slides = [] }: Props) {
                 ? slide.mobileMedia?.url
                 : slide.mobileMedia || desktopUrl
 
+            const isVideo =
+              slide.mediaType === 'video' ||
+              (typeof slide.desktopMedia === 'object' &&
+                slide.desktopMedia?.mimeType?.includes('video')) ||
+              (typeof desktopUrl === 'string' && /\.(mp4|webm|ogv|mov)$/i.test(desktopUrl))
+
             return (
               <div
                 key={index}
                 className="relative flex-[0_0_100%] min-w-0 h-[75vh] min-h-[550px] max-h-[850px] overflow-hidden"
               >
                 {/* Media rendering */}
-                {slide.mediaType === 'video' ? (
+                {isVideo ? (
                   <video
                     autoPlay
                     loop

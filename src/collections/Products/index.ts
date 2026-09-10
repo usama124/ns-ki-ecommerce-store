@@ -178,13 +178,34 @@ export const Products: CollectionConfig = {
             {
               name: 'variants',
               type: 'array',
-              label: 'Size Variants',
+              label: 'Variants (Size × Color)',
+              admin: {
+                description: 'Each row is a unique size + color combination. Add one row per combination (e.g. M / Navy Blue, M / Ivory, L / Ivory).',
+              },
               fields: [
                 {
                   name: 'size',
                   type: 'select',
                   required: true,
                   options: SIZES.map((s) => ({ label: s, value: s })),
+                },
+                {
+                  name: 'color',
+                  type: 'text',
+                  label: 'Color Name',
+                  admin: {
+                    description: 'e.g. Ivory, Navy Blue, Emerald Green, Dusty Rose',
+                    placeholder: 'e.g. Ivory',
+                  },
+                },
+                {
+                  name: 'colorHex',
+                  type: 'text',
+                  label: 'Color Hex (for swatch display)',
+                  admin: {
+                    description: 'e.g. #FFFFF0 — leave blank to auto-generate a swatch.',
+                    placeholder: '#FFFFF0',
+                  },
                 },
                 {
                   name: 'sku',
@@ -200,6 +221,12 @@ export const Products: CollectionConfig = {
                   required: true,
                   defaultValue: 10,
                   min: 0,
+                },
+                {
+                  name: 'allowBackorder',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  label: 'Allow Backorder (Purchase even if out of stock)',
                 },
                 {
                   name: 'pricePKR',

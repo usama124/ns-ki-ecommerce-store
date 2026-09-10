@@ -36,6 +36,7 @@ export default buildConfig({
       beforeDashboard: ['@/components/BeforeDashboard#BeforeDashboard'],
     },
     user: Users.slug,
+    suppressHydrationWarning: true,
   },
   collections: [Users, Pages, Categories, Products, Media, Orders],
   db: postgresAdapter({

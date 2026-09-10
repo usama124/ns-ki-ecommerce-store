@@ -468,14 +468,26 @@ export interface Product {
       }[]
     | null;
   productVideo?: (number | null) | Media;
+  /**
+   * Each row is a unique size + color combination. Add one row per combination (e.g. M / Navy Blue, M / Ivory, L / Ivory).
+   */
   variants?:
     | {
         size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'Unstitched';
+        /**
+         * e.g. Ivory, Navy Blue, Emerald Green, Dusty Rose
+         */
+        color?: string | null;
+        /**
+         * e.g. #FFFFF0 — leave blank to auto-generate a swatch.
+         */
+        colorHex?: string | null;
         /**
          * Format: LUJ-XXXX-SZ-XXX. Leave blank to auto-generate.
          */
         sku?: string | null;
         stock: number;
+        allowBackorder?: boolean | null;
         /**
          * Leave blank to use the base price.
          */
@@ -765,9 +777,15 @@ export interface Order {
     transactionId?: string | null;
     screenshot?: (number | null) | Media;
   };
+  fulfillment?: {
+    courierName?: ('TCS' | 'Leopard' | 'CallCourier' | 'Trax' | 'M&P' | 'PostEx' | 'Other') | null;
+    trackingNumber?: string | null;
+    trackingUrl?: string | null;
+  };
   items: {
     product: number | Product;
     variantSize: string;
+    variantColor?: string | null;
     variantSku?: string | null;
     quantity: number;
     unitPrice: number;
@@ -1130,8 +1148,11 @@ export interface ProductsSelect<T extends boolean = true> {
     | T
     | {
         size?: T;
+        color?: T;
+        colorHex?: T;
         sku?: T;
         stock?: T;
+        allowBackorder?: T;
         pricePKR?: T;
         id?: T;
       };
@@ -1181,11 +1202,19 @@ export interface OrdersSelect<T extends boolean = true> {
         transactionId?: T;
         screenshot?: T;
       };
+  fulfillment?:
+    | T
+    | {
+        courierName?: T;
+        trackingNumber?: T;
+        trackingUrl?: T;
+      };
   items?:
     | T
     | {
         product?: T;
         variantSize?: T;
+        variantColor?: T;
         variantSku?: T;
         quantity?: T;
         unitPrice?: T;

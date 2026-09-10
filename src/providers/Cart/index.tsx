@@ -8,6 +8,7 @@ export type CartItem = {
   title: string
   imageUrl?: string
   variantSize: string
+  variantColor?: string   // new
   variantSku?: string
   price: number
   quantity: number
@@ -16,8 +17,8 @@ export type CartItem = {
 type CartContextType = {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
-  removeItem: (productId: string, variantSize: string) => void
-  updateQuantity: (productId: string, variantSize: string, quantity: number) => void
+  removeItem: (productId: string, variantSize: string, variantColor?: string) => void
+  updateQuantity: (productId: string, variantSize: string, variantColor: string | undefined, quantity: number) => void
   clearCart: () => void
   itemCount: number
   subtotal: number
@@ -46,6 +47,15 @@ function saveCart(items: CartItem[]): void {
   }
 }
 
+/** Two cart items are the same variant if productId + size + color all match */
+function isSameVariant(a: CartItem, b: { productId: string; variantSize: string; variantColor?: string }): boolean {
+  return (
+    a.productId === b.productId &&
+    a.variantSize === b.variantSize &&
+    (a.variantColor || '') === (b.variantColor || '')
+  )
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [mounted, setMounted] = useState(false)
@@ -63,9 +73,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
       setItems((prev) => {
         const qty = newItem.quantity ?? 1
-        const existingIndex = prev.findIndex(
-          (i) => i.productId === newItem.productId && i.variantSize === newItem.variantSize
-        )
+        const existingIndex = prev.findIndex((i) => isSameVariant(i, newItem))
         if (existingIndex >= 0) {
           const updated = [...prev]
           updated[existingIndex] = {
@@ -80,23 +88,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     []
   )
 
-  const removeItem = useCallback((productId: string, variantSize: string) => {
-    setItems((prev) =>
-      prev.filter((i) => !(i.productId === productId && i.variantSize === variantSize))
-    )
+  const removeItem = useCallback((productId: string, variantSize: string, variantColor?: string) => {
+    setItems((prev) => prev.filter((i) => !isSameVariant(i, { productId, variantSize, variantColor })))
   }, [])
 
   const updateQuantity = useCallback(
-    (productId: string, variantSize: string, quantity: number) => {
+    (productId: string, variantSize: string, variantColor: string | undefined, quantity: number) => {
       if (quantity < 1) {
-        setItems((prev) =>
-          prev.filter((i) => !(i.productId === productId && i.variantSize === variantSize))
-        )
+        setItems((prev) => prev.filter((i) => !isSameVariant(i, { productId, variantSize, variantColor })))
         return
       }
       setItems((prev) =>
         prev.map((i) =>
-          i.productId === productId && i.variantSize === variantSize ? { ...i, quantity } : i
+          isSameVariant(i, { productId, variantSize, variantColor }) ? { ...i, quantity } : i
         )
       )
     },

@@ -5,18 +5,26 @@ import clsx from 'clsx'
 import { XIcon } from 'lucide-react'
 import React from 'react'
 
-export function DeleteItemButton({ productId, variantSize }: { productId: string; variantSize: string }) {
+export function DeleteItemButton({
+  productId,
+  variantSize,
+  variantColor,
+}: {
+  productId: string
+  variantSize: string
+  variantColor?: string
+}) {
   const { removeItem } = useCart()
 
   return (
     <button
       aria-label="Remove cart item"
       className={clsx(
-        'ease hover:cursor-pointer flex h-[17px] w-[17px] items-center justify-center rounded-full bg-neutral-500 transition-all duration-200'
+        'ease hover:cursor-pointer flex h-[17px] w-[17px] items-center justify-center rounded-full bg-neutral-500 transition-all duration-200',
       )}
       onClick={(e: React.FormEvent<HTMLButtonElement>) => {
         e.preventDefault()
-        removeItem(productId, variantSize)
+        removeItem(productId, variantSize, variantColor)
       }}
       type="button"
     >
