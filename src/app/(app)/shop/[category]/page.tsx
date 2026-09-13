@@ -83,18 +83,11 @@ export default async function CategoryPage({ params, searchParams }: Args) {
           and: [
             { status: { equals: 'published' } },
             {
-              or: [
-                { mainCategory: { equals: targetCategory.id } },
-                { subCategories: { equals: targetCategory.id } },
-              ],
+              categories: {
+                in: [targetCategory.id],
+              },
             },
           ],
-          categories: {
-            in: [targetCategory.id],
-          },
-          status: {
-            equals: 'published',
-          },
         },
         sort: payloadSort,
         limit: 50,

@@ -120,8 +120,9 @@ export default async function Homepage() {
                   <div className="flex flex-col flex-1 justify-between">
                     <div>
                       <span className="text-[10px] uppercase tracking-widest text-gray-400 font-medium block mb-1">
-                        {product.mainCategory?.name || 'Luxury Pret'}
-                        {product.primaryCategory?.name || product.categories?.[0]?.name || 'Luxury Pret'}
+                        {product.primaryCategory?.name ||
+                          product.categories?.[0]?.name ||
+                          'Luxury Pret'}
                       </span>
                       <h3 className="font-serif text-sm font-medium text-black uppercase tracking-wider group-hover:text-gray-600 transition-colors mb-2">
                         <Link href={`/products/${product.slug}`}>{product.title}</Link>

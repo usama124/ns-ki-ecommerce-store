@@ -134,8 +134,12 @@ export default async function ShopPage({ searchParams }: Args) {
               const imageObj = product.images?.[0]?.image
               const imageUrl = typeof imageObj === 'object' ? imageObj?.url : imageObj
               const categoryName =
-                (typeof product.primaryCategory === 'object' ? product.primaryCategory?.name : null) ||
-                (typeof product.categories?.[0] === 'object' ? product.categories[0]?.name : null) ||
+                (typeof product.primaryCategory === 'object'
+                  ? product.primaryCategory?.name
+                  : null) ||
+                (typeof product.categories?.[0] === 'object'
+                  ? product.categories[0]?.name
+                  : null) ||
                 'Luxury Fashion'
 
               return (
@@ -164,7 +168,6 @@ export default async function ShopPage({ searchParams }: Args) {
                   <div className="flex flex-col flex-1 justify-between p-5">
                     <div>
                       <span className="text-[10px] uppercase tracking-[0.2em] text-amber-800 font-semibold block mb-1">
-                        {product.mainCategory?.name || 'Luxury Fashion'}
                         {categoryName}
                       </span>
                       <h2 className="font-serif text-base font-medium text-stone-900 uppercase tracking-wider group-hover:text-amber-900 transition-colors mb-3 leading-snug">
