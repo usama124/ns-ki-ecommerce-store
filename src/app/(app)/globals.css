@@ -228,3 +228,29 @@ input,
 button {
   @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-900;
 }
+
+/*
+ * Force readable text colors on all native form controls in the storefront.
+ * Without explicit color, browsers or dark-mode CSS vars can render invisible
+ * text (e.g. white text on white bg, or very dark text on dark bg).
+ */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+select,
+textarea {
+  color: #1c1c1c;
+  background-color: #ffffff;
+  -webkit-text-fill-color: #1c1c1c; /* Safari override */
+}
+
+select option {
+  color: #1c1c1c;
+  background-color: #ffffff;
+}
+
+/* Placeholder text — always visible muted grey */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+  -webkit-text-fill-color: #9ca3af;
+  opacity: 1;
+}

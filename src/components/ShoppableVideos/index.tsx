@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useRef, useEffect, useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { ShoppingBag, X, Volume2, VolumeX, Play } from 'lucide-react'
 import { useCart } from '@/providers/Cart'
 import { formatPKR } from '@/utilities/formatPKR'
+import { ShoppingBag, Volume2, VolumeX, X } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import React, { useEffect, useRef, useState } from 'react'
 
 type Reel = {
   id?: string
@@ -17,6 +17,19 @@ type Reel = {
 
 type Props = {
   reels: Reel[]
+}
+
+/** Resolve size/color from a relationship object { id, name } or a legacy string */
+function resolveSizeName(size: any): string {
+  if (!size) return ''
+  if (typeof size === 'object') return size.name || ''
+  return String(size)
+}
+
+function resolveColorName(color: any): string {
+  if (!color) return ''
+  if (typeof color === 'object') return color.name || ''
+  return String(color)
 }
 
 export function ShoppableVideos({ reels = [] }: Props) {
@@ -50,7 +63,8 @@ export function ShoppableVideos({ reels = [] }: Props) {
                 setSelectedProduct(product)
                 if (product?.variants?.length > 0) {
                   const firstInStock = product.variants.find((v: any) => v.stock > 0)
-                  setSelectedSize(firstInStock ? firstInStock.size : product.variants[0].size)
+                  const firstVariant = firstInStock || product.variants[0]
+                  setSelectedSize(resolveSizeName(firstVariant?.size))
                 }
               }}
             />
@@ -69,108 +83,139 @@ export function ShoppableVideos({ reels = [] }: Props) {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="flex gap-4 mb-6">
-              {/* Product Thumbnail */}
-              {selectedProduct.images?.[0]?.image && (
-                <div className="relative w-24 h-32 bg-gray-100 flex-shrink-0">
-                  <Image
-                    src={
-                      typeof selectedProduct.images[0].image === 'object'
-                        ? selectedProduct.images[0].image.url
-                        : selectedProduct.images[0].image
-                    }
-                    alt={selectedProduct.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
+            {(() => {
+              const selectedVariant = selectedProduct.variants?.find(
+                (v: any) => resolveSizeName(v.size) === selectedSize,
+              )
+              const activePrice = selectedVariant?.pricePKR ?? selectedProduct.basePricePKR
 
-              <div>
-                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold block mb-1">
-                  Quick Add
-                </span>
-                <h3 className="font-serif text-lg font-medium text-black uppercase tracking-wider mb-2">
-                  {selectedProduct.title}
-                </h3>
-                <p className="text-sm font-semibold text-black mb-1">
-                  {formatPKR(selectedProduct.basePricePKR)}
-                </p>
-                <span className="inline-block text-[11px] uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 font-medium">
-                  In Stock
-                </span>
-              </div>
-            </div>
+              return (
+                <>
+                  <div className="flex gap-4 mb-6">
+                    {/* Product Thumbnail */}
+                    {selectedProduct.images?.[0]?.image && (
+                      <div className="relative w-24 h-32 bg-gray-100 flex-shrink-0 rounded overflow-hidden">
+                        <Image
+                          src={
+                            typeof selectedProduct.images[0].image === 'object'
+                              ? selectedProduct.images[0].image.url
+                              : selectedProduct.images[0].image
+                          }
+                          alt={selectedProduct.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
 
-            {/* Size Selector */}
-            {selectedProduct.variants && selectedProduct.variants.length > 0 ? (
-              <div className="mb-6">
-                <label className="block text-xs uppercase tracking-widest font-semibold text-gray-700 mb-3">
-                  Select Size
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {selectedProduct.variants.map((variant: any, idx: number) => {
-                    const outOfStock = variant.stock <= 0
-                    const isSelected = selectedSize === variant.size
+                    <div className="flex flex-col justify-center">
+                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-semibold block mb-1">
+                        Quick Add
+                      </span>
+                      <h3 className="font-serif text-lg font-medium text-stone-900 uppercase tracking-wider mb-2">
+                        {selectedProduct.title}
+                      </h3>
+                      <p className="text-base font-serif font-bold text-stone-900 mb-1.5 flex items-center gap-2 flex-wrap">
+                        {formatPKR(activePrice)}
+                        {selectedVariant?.pricePKR && (
+                          <span className="text-[10px] uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 font-sans font-medium rounded border border-amber-200">
+                            Special Price
+                          </span>
+                        )}
+                      </p>
+                      <div>
+                        {selectedVariant &&
+                        selectedVariant.stock <= 0 &&
+                        !selectedVariant.allowBackorder ? (
+                          <span className="inline-block text-[11px] uppercase tracking-wider text-red-700 bg-red-50 px-2 py-0.5 font-medium rounded border border-red-200">
+                            Out of Stock
+                          </span>
+                        ) : selectedVariant &&
+                          selectedVariant.stock <= 0 &&
+                          selectedVariant.allowBackorder ? (
+                          <span className="inline-block text-[11px] uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 font-medium rounded border border-amber-200">
+                            Available on Backorder
+                          </span>
+                        ) : (
+                          <span className="inline-block text-[11px] uppercase tracking-wider text-green-800 bg-green-50 px-2 py-0.5 font-medium rounded border border-green-200">
+                            In Stock
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                    return (
-                      <button
-                        key={idx}
-                        disabled={outOfStock}
-                        onClick={() => setSelectedSize(variant.size)}
-                        className={`py-2 text-xs uppercase tracking-wider border font-medium transition-all ${
-                          isSelected
-                            ? 'border-black bg-black text-white'
-                            : outOfStock
-                            ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed bg-gray-50'
-                            : 'border-gray-300 text-gray-700 hover:border-black'
-                        }`}
-                      >
-                        {variant.size}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
+                  {/* Size Selector */}
+                  {selectedProduct.variants && selectedProduct.variants.length > 0 ? (
+                    <div className="mb-6">
+                      <label className="block text-xs uppercase tracking-widest font-semibold text-stone-900 mb-3">
+                        Select Size
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {selectedProduct.variants.map((variant: any, idx: number) => {
+                          const sizeName = resolveSizeName(variant.size)
+                          const outOfStock = variant.stock <= 0
+                          const isSelected = selectedSize === sizeName
 
-            {/* Actions */}
-            <div className="flex flex-col gap-2">
-              <button
-                disabled={!selectedSize}
-                onClick={() => {
-                  const variant = selectedProduct.variants?.find((v: any) => v.size === selectedSize)
-                  const price = variant?.pricePKR || selectedProduct.basePricePKR
-                  const imageUrl =
-                    typeof selectedProduct.images?.[0]?.image === 'object'
-                      ? selectedProduct.images[0].image.url
-                      : undefined
+                          return (
+                            <button
+                              key={idx}
+                              disabled={outOfStock && !variant.allowBackorder}
+                              onClick={() => setSelectedSize(sizeName)}
+                              className={`py-2 text-xs uppercase tracking-wider border font-medium transition-all ${
+                                isSelected
+                                  ? 'border-stone-900 bg-stone-900 text-white shadow-xs'
+                                  : outOfStock && !variant.allowBackorder
+                                    ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed bg-gray-50'
+                                    : 'border-stone-300 text-stone-800 hover:border-stone-900'
+                              }`}
+                            >
+                              {sizeName}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
 
-                  addItem({
-                    productId: selectedProduct.id,
-                    slug: selectedProduct.slug,
-                    title: selectedProduct.title,
-                    imageUrl,
-                    variantSize: selectedSize || 'Unstitched',
-                    variantSku: variant?.sku,
-                    price,
-                  })
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      disabled={!selectedSize}
+                      onClick={() => {
+                        const imageUrl =
+                          typeof selectedProduct.images?.[0]?.image === 'object'
+                            ? selectedProduct.images[0].image.url
+                            : undefined
 
-                  setSelectedProduct(null)
-                }}
-                className="w-full bg-black text-white py-3.5 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors disabled:bg-gray-300"
-              >
-                Add To Bag
-              </button>
+                        addItem({
+                          productId: selectedProduct.id,
+                          slug: selectedProduct.slug,
+                          title: selectedProduct.title,
+                          imageUrl,
+                          variantSize: selectedSize || 'Unstitched',
+                          variantSku: selectedVariant?.sku,
+                          price: activePrice,
+                        })
 
-              <Link
-                href={`/products/${selectedProduct.slug}`}
-                onClick={() => setSelectedProduct(null)}
-                className="w-full text-center text-xs uppercase tracking-widest text-gray-500 hover:text-black py-2"
-              >
-                View Full Details
-              </Link>
-            </div>
+                        setSelectedProduct(null)
+                      }}
+                      className="w-full bg-stone-900 text-white py-3.5 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-stone-800 transition-colors disabled:bg-stone-300 shadow-sm"
+                    >
+                      Add To Bag
+                    </button>
+
+                    <Link
+                      href={`/products/${selectedProduct.slug}`}
+                      onClick={() => setSelectedProduct(null)}
+                      className="w-full text-center text-xs uppercase tracking-widest text-stone-500 hover:text-stone-900 py-2 font-medium"
+                    >
+                      View Full Details
+                    </Link>
+                  </div>
+                </>
+              )
+            })()}
           </div>
         </div>
       )}
@@ -178,7 +223,15 @@ export function ShoppableVideos({ reels = [] }: Props) {
   )
 }
 
-function VideoCard({ reel, index, onQuickShop }: { reel: Reel; index: number; onQuickShop: (p: any) => void }) {
+function VideoCard({
+  reel,
+  index,
+  onQuickShop,
+}: {
+  reel: Reel
+  index: number
+  onQuickShop: (p: any) => void
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -195,13 +248,16 @@ function VideoCard({ reel, index, onQuickShop }: { reel: Reel; index: number; on
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          video.play().then(() => setIsPlaying(true)).catch(() => {})
+          video
+            .play()
+            .then(() => setIsPlaying(true))
+            .catch(() => {})
         } else {
           video.pause()
           setIsPlaying(false)
         }
       },
-      { threshold: 0.6 }
+      { threshold: 0.6 },
     )
 
     observer.observe(video)

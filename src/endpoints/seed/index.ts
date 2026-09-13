@@ -1,6 +1,13 @@
 import type { CollectionSlug, GlobalSlug, Payload, PayloadRequest } from 'payload'
 
-const collections: CollectionSlug[] = ['categories', 'media', 'pages', 'products', 'orders']
+const collections: CollectionSlug[] = [
+  'categories',
+  'media',
+  'pages',
+  'products',
+  'orders',
+  'sizes',
+]
 
 const globals: GlobalSlug[] = ['header', 'footer', 'homepage', 'site-settings']
 
@@ -57,7 +64,7 @@ export const seed = async ({
   const unstitchedCat = createdMain[0]
 
   // Create Subcategory
-  await payload.create({
+  const subCat = await payload.create({
     collection: 'categories',
     data: {
       name: "Luxury Lawn '25",
@@ -67,7 +74,16 @@ export const seed = async ({
     },
   })
 
-  // Create Sample Product
+  // Create Default Sizes
+  const sizeNames = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Unstitched', 'Free Size']
+  const createdSizes = await Promise.all(
+    sizeNames.map((name, i) =>
+      payload.create({ collection: 'sizes', data: { name, sortOrder: (i + 1) * 10 } }),
+    ),
+  )
+  const sizeMap = Object.fromEntries(createdSizes.map((s) => [s.name, s.id]))
+
+  // Create Sample Product (sizes reference IDs from the sizes collection)
   await payload.create({
     collection: 'products',
     data: {
@@ -75,15 +91,17 @@ export const seed = async ({
       slug: 'zarah-embroidered-chiffon-3-piece',
       status: 'published',
       isFeatured: true,
-      mainCategory: unstitchedCat.id,
+      primaryCategory: unstitchedCat.id,
+      categories: [unstitchedCat.id, subCat.id],
       basePricePKR: 18500,
+      color: 'Emerald Green',
       variants: [
-        { size: 'XS', stock: 10, sku: 'LUJ-ZARA-XS-101' },
-        { size: 'S', stock: 8, sku: 'LUJ-ZARA-SM-102' },
-        { size: 'M', stock: 15, sku: 'LUJ-ZARA-MD-103' },
-        { size: 'L', stock: 5, sku: 'LUJ-ZARA-LG-104' },
-        { size: 'XL', stock: 0, sku: 'LUJ-ZARA-XL-105' },
-        { size: 'Unstitched', stock: 20, sku: 'LUJ-ZARA-UN-106' },
+        { size: sizeMap['XS'], stock: 10, sku: 'LUJ-ZARA-XS-101' },
+        { size: sizeMap['S'], stock: 8, sku: 'LUJ-ZARA-SM-102' },
+        { size: sizeMap['M'], stock: 15, sku: 'LUJ-ZARA-MD-103' },
+        { size: sizeMap['L'], stock: 5, sku: 'LUJ-ZARA-LG-104' },
+        { size: sizeMap['XL'], stock: 0, sku: 'LUJ-ZARA-XL-105' },
+        { size: sizeMap['Unstitched'], stock: 20, sku: 'LUJ-ZARA-UN-106' },
       ],
     },
   })

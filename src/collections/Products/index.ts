@@ -1,17 +1,22 @@
-import type { CollectionConfig } from 'payload'
-import {
-  FixedToolbarFeature,
-  HeadingFeature,
-  HorizontalRuleFeature,
-  InlineToolbarFeature,
-  lexicalEditor,
-} from '@payloadcms/richtext-lexical'
 import { adminOnly } from '@/access/adminOnly'
+import {
+    FixedToolbarFeature,
+    HeadingFeature,
+    HorizontalRuleFeature,
+    InlineToolbarFeature,
+    lexicalEditor,
+} from '@payloadcms/richtext-lexical'
+import type { CollectionConfig } from 'payload'
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'Unstitched']
+// Sizes and Colors are now managed via the Sizes & Colors admin collections.
+// Product variants reference those collections via relationship fields.
 
 function generateSKU(slug: string, size: string): string {
-  const slugPart = (slug || 'PROD').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 4).padEnd(4, 'X')
+  const slugPart = (slug || 'PROD')
+    .replace(/[^a-z0-9]/gi, '')
+    .toUpperCase()
+    .slice(0, 4)
+    .padEnd(4, 'X')
   const random = Math.random().toString(36).toUpperCase().slice(2, 5)
   return `LUJ-${slugPart}-${size.toUpperCase().slice(0, 2)}-${random}`
 }
@@ -27,15 +32,19 @@ export const Products: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     group: 'Shop',
-    defaultColumns: ['title', 'mainCategory', 'basePricePKR', 'status'],
+    defaultColumns: ['title', 'primaryCategory', 'basePricePKR', 'status'],
   },
   hooks: {
     beforeChange: [
       ({ data }) => {
         if (data?.variants && Array.isArray(data.variants)) {
           data.variants = data.variants.map((variant: any) => {
+            // size is now a relationship — could be populated object { id, name } or just an ID number
+            const sizeVal = variant.size
+            const sizeName =
+              typeof sizeVal === 'object' && sizeVal !== null ? (sizeVal.name ?? 'OS') : 'OS'
             if (!variant.sku) {
-              variant.sku = generateSKU(data.slug || data.title || '', variant.size || 'OS')
+              variant.sku = generateSKU(data.slug || data.title || '', sizeName)
             }
             return variant
           })
@@ -94,27 +103,33 @@ export const Products: CollectionConfig = {
       },
     },
     {
-      name: 'mainCategory',
+      name: 'primaryCategory',
       type: 'relationship',
       relationTo: 'categories',
+      required: true,
+      hasMany: false,
+      label: 'Primary Category',
       admin: {
         position: 'sidebar',
+        description:
+          'Primary category used for canonical URLs, main breadcrumb hierarchy, and primary grouping.',
       },
       filterOptions: () => ({
         type: { equals: 'main' },
       }),
     },
     {
-      name: 'subCategories',
+      name: 'categories',
       type: 'relationship',
       relationTo: 'categories',
+      required: true,
       hasMany: true,
+      label: 'Assigned Categories & Collections',
       admin: {
         position: 'sidebar',
+        description:
+          'Select all main categories, subcategories, or seasonal collections (e.g. Unstitched, Luxury Lawn \'25, Sale) where this product should appear.',
       },
-      filterOptions: () => ({
-        type: { equals: 'subcategory' },
-      }),
     },
     {
       name: 'basePricePKR',
@@ -125,6 +140,16 @@ export const Products: CollectionConfig = {
         position: 'sidebar',
         description: 'Base price in Pakistani Rupees (PKR)',
         step: 50,
+      },
+    },
+    {
+      name: 'color',
+      type: 'text',
+      label: 'Garment Color',
+      admin: {
+        position: 'sidebar',
+        description: 'Fixed color of this garment (e.g. Emerald Green, Ivory Gold)',
+        placeholder: 'e.g. Emerald Green',
       },
     },
     {
@@ -173,38 +198,25 @@ export const Products: CollectionConfig = {
           ],
         },
         {
-          label: 'Variants & Stock',
+          label: 'Size Variants & Stock',
           fields: [
             {
               name: 'variants',
               type: 'array',
-              label: 'Variants (Size × Color)',
+              label: 'Product Size Variants',
               admin: {
-                description: 'Each row is a unique size + color combination. Add one row per combination (e.g. M / Navy Blue, M / Ivory, L / Ivory).',
+                description:
+                  'Add sizes for this product here. Click "Add Variant" to create a unique size variant with stock count and price overrides.',
               },
               fields: [
                 {
                   name: 'size',
-                  type: 'select',
+                  type: 'relationship',
+                  relationTo: 'sizes',
                   required: true,
-                  options: SIZES.map((s) => ({ label: s, value: s })),
-                },
-                {
-                  name: 'color',
-                  type: 'text',
-                  label: 'Color Name',
+                  label: 'Size',
                   admin: {
-                    description: 'e.g. Ivory, Navy Blue, Emerald Green, Dusty Rose',
-                    placeholder: 'e.g. Ivory',
-                  },
-                },
-                {
-                  name: 'colorHex',
-                  type: 'text',
-                  label: 'Color Hex (for swatch display)',
-                  admin: {
-                    description: 'e.g. #FFFFF0 — leave blank to auto-generate a swatch.',
-                    placeholder: '#FFFFF0',
+                    description: 'Select a size. Go to Shop → Sizes to add new sizes.',
                   },
                 },
                 {
@@ -221,6 +233,7 @@ export const Products: CollectionConfig = {
                   required: true,
                   defaultValue: 10,
                   min: 0,
+                  label: 'Stock Quantity',
                 },
                 {
                   name: 'allowBackorder',
@@ -233,7 +246,7 @@ export const Products: CollectionConfig = {
                   type: 'number',
                   label: 'Price Override (PKR)',
                   admin: {
-                    description: 'Leave blank to use the base price.',
+                    description: 'Leave blank to use the product base price.',
                   },
                   min: 0,
                 },

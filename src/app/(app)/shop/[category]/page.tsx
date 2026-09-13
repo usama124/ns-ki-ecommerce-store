@@ -13,16 +13,27 @@ type Args = {
   params: Promise<{
     category: string
   }>
+  searchParams: Promise<{
+    category?: string
+    sort?: string
+    q?: string
+  }>
 }
 
-export async function generateMetadata({ params }: Args): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Args): Promise<Metadata> {
   const { category: categorySlug } = await params
+  const { category: queryCategory } = (await searchParams) || {}
+  const activeCategoryIdentifier = queryCategory || categorySlug
+  const isNumeric = /^\d+$/.test(activeCategoryIdentifier)
+
   try {
     const payload = await getPayload({ config: configPromise })
 
     const categoryResult = await payload.find({
       collection: 'categories',
-      where: { slug: { equals: categorySlug } },
+      where: isNumeric
+        ? { id: { equals: Number(activeCategoryIdentifier) } }
+        : { slug: { equals: activeCategoryIdentifier } },
       limit: 1,
     })
 
@@ -38,8 +49,12 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   }
 }
 
-export default async function CategoryPage({ params }: Args) {
+export default async function CategoryPage({ params, searchParams }: Args) {
   const { category: categorySlug } = await params
+  const { category: queryCategory, sort: sortQuery } = (await searchParams) || {}
+  const activeCategoryIdentifier = queryCategory || categorySlug
+  const isNumeric = /^\d+$/.test(activeCategoryIdentifier)
+
   let targetCategory: any = null
   let products: any[] = []
 
@@ -48,11 +63,18 @@ export default async function CategoryPage({ params }: Args) {
 
     const categoryResult = await payload.find({
       collection: 'categories',
-      where: { slug: { equals: categorySlug } },
+      where: isNumeric
+        ? { id: { equals: Number(activeCategoryIdentifier) } }
+        : { slug: { equals: activeCategoryIdentifier } },
       limit: 1,
     })
 
     targetCategory = categoryResult.docs?.[0]
+
+    let payloadSort = 'title'
+    if (sortQuery === '-createdAt') payloadSort = '-createdAt'
+    else if (sortQuery === 'priceInUSD') payloadSort = 'basePricePKR'
+    else if (sortQuery === '-priceInUSD') payloadSort = '-basePricePKR'
 
     if (targetCategory) {
       const productsResult = await payload.find({
@@ -67,7 +89,14 @@ export default async function CategoryPage({ params }: Args) {
               ],
             },
           ],
+          categories: {
+            in: [targetCategory.id],
+          },
+          status: {
+            equals: 'published',
+          },
         },
+        sort: payloadSort,
         limit: 50,
         depth: 1,
       })

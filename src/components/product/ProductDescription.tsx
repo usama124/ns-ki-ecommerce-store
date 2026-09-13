@@ -3,27 +3,56 @@
 import { Price } from '@/components/Price'
 import { RichText } from '@/components/RichText'
 import { RotateCcw, ShieldCheck, Sparkles, Truck } from 'lucide-react'
-import { SizeSelector } from './SizeSelector'
+import Link from 'next/link'
+import { useState } from 'react'
+import { SizeSelector, type Variant } from './SizeSelector'
 
 type Props = {
   product: any
 }
 
 export function ProductDescription({ product }: Props) {
-  const categoryName = typeof product.mainCategory === 'object' ? product.mainCategory?.name : null
+  const [selectedVariant, setSelectedVariant] = useState<Variant | undefined>()
+  const primaryCategory = typeof product.primaryCategory === 'object' ? product.primaryCategory : null
+  const categoryName = primaryCategory?.name
+  const categoriesList = Array.isArray(product.categories)
+    ? product.categories.filter((cat: any) => typeof cat === 'object')
+    : []
+  const activePrice = selectedVariant?.pricePKR ?? product.basePricePKR
 
   return (
     <div className="flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-xl border border-stone-200/80 shadow-sm">
       {/* Category & Title */}
       <div>
         {categoryName && (
-          <span className="text-xs uppercase tracking-[0.3em] font-semibold text-amber-800 block mb-2">
+          <Link
+            href={`/shop/${primaryCategory?.slug || ''}`}
+            className="text-xs uppercase tracking-[0.3em] font-semibold text-amber-800 hover:underline block mb-2"
+          >
             {categoryName}
-          </span>
+          </Link>
         )}
         <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-[0.1em] uppercase text-stone-900 leading-tight">
           {product.title}
         </h1>
+        {categoriesList.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {categoriesList.map((cat: any) => (
+              <Link
+                key={cat.id}
+                href={`/shop/${cat.slug}`}
+                className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200/60 hover:bg-amber-100 transition-colors font-medium"
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        )}
+        {product.color && (
+          <p className="text-xs uppercase tracking-widest text-stone-500 font-medium mt-3">
+            Color: <span className="text-stone-900 font-semibold">{product.color}</span>
+          </p>
+        )}
       </div>
 
       {/* PKR Pricing */}
@@ -32,16 +61,15 @@ export function ProductDescription({ product }: Props) {
           <span className="text-[10px] uppercase tracking-[0.25em] text-stone-500 font-semibold">
             Price (PKR)
           </span>
-          <span className="text-[11px] text-stone-400">Inclusive of all taxes</span>
+          <span className="text-[11px] text-stone-400">
+            {selectedVariant?.pricePKR ? 'Special variant price' : 'Inclusive of all taxes'}
+          </span>
         </div>
-        <Price
-          amount={product.basePricePKR}
-          className="text-2xl font-bold text-stone-900 font-serif"
-        />
+        <Price amount={activePrice} className="text-2xl font-bold text-stone-900 font-serif" />
       </div>
 
       {/* Dynamic Size & Color Selector & Add To Cart */}
-      <SizeSelector product={product} />
+      <SizeSelector product={product} onVariantChange={setSelectedVariant} />
 
       {/* Product Description */}
       {product.description && (

@@ -22,6 +22,10 @@ const serverFunction: ServerFunctionClient = async function (args) {
   })
 }
 
+// NOTE: Payload's RootLayout does not expose a bodyProps prop in this version.
+// The hydration warning on <body> (cz-shortcut-listen="true") is injected by browser
+// extensions like Grammarly and cannot be suppressed here. suppressHydrationWarning
+// on <html> via htmlProps is the best available fix for the current Payload CMS version.
 const Layout = ({ children }: Args) => (
   <RootLayout
     config={config}

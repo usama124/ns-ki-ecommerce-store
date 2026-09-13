@@ -52,8 +52,9 @@ export default async function ProductPage({ params }: Args) {
 
   const videoUrl = typeof product.productVideo === 'object' ? product.productVideo?.url : undefined
 
-  const mainCategoryName =
-    typeof product.mainCategory === 'object' ? product.mainCategory?.name : undefined
+  const primaryCategory =
+    typeof product.primaryCategory === 'object' ? product.primaryCategory : null
+  const primaryCategoryName = primaryCategory?.name
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen pb-20">
@@ -68,10 +69,15 @@ export default async function ProductPage({ params }: Args) {
             <Link href="/shop" className="hover:text-black transition-colors">
               Shop
             </Link>
-            {mainCategoryName && (
+            {primaryCategoryName && (
               <>
                 <span>/</span>
-                <span className="text-amber-800 font-semibold">{mainCategoryName}</span>
+                <Link
+                  href={`/shop/${primaryCategory?.slug || ''}`}
+                  className="text-amber-800 font-semibold hover:underline transition-colors"
+                >
+                  {primaryCategoryName}
+                </Link>
               </>
             )}
           </div>

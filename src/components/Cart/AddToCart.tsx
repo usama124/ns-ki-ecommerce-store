@@ -1,12 +1,25 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useCart } from '@/providers/Cart'
+import { useCart } from '@/providers/Cart';
+import { useState } from 'react';
+
+// size/color can be a relationship object { id, name } or a plain string
+type RelOrString =
+  { id?: number | string; name?: string; hexCode?: string } | string | null | undefined
 
 type Variant = {
+  size: RelOrString
+  color?: RelOrString
+  stock: number
+  allowBackorder?: boolean | null
+  pricePKR?: number | null
+  sku?: string | null
+}
+
+// selectedVariant always has resolved string values after SizeSelector processes them
+type ResolvedVariant = {
   size: string
   color?: string | null
-  colorHex?: string | null
   stock: number
   allowBackorder?: boolean | null
   pricePKR?: number | null
@@ -24,7 +37,7 @@ type Product = {
 
 type Props = {
   product: Product
-  selectedVariant?: Variant
+  selectedVariant?: ResolvedVariant
   className?: string
 }
 

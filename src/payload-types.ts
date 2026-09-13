@@ -73,6 +73,7 @@ export interface Config {
     products: Product;
     media: Media;
     orders: Order;
+    sizes: Size;
     forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
@@ -88,6 +89,7 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    sizes: SizesSelect<false> | SizesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -439,12 +441,22 @@ export interface Product {
   slug?: string | null;
   status?: ('draft' | 'published') | null;
   isFeatured?: boolean | null;
-  mainCategory?: (number | null) | Category;
-  subCategories?: (number | Category)[] | null;
+  /**
+   * Primary category used for canonical URLs, main breadcrumb hierarchy, and primary grouping.
+   */
+  primaryCategory: number | Category;
+  /**
+   * Select all main categories, subcategories, or seasonal collections (e.g. Unstitched, Luxury Lawn '25, Sale) where this product should appear.
+   */
+  categories: (number | Category)[];
   /**
    * Base price in Pakistani Rupees (PKR)
    */
   basePricePKR: number;
+  /**
+   * Fixed color of this garment (e.g. Emerald Green, Ivory Gold)
+   */
+  color?: string | null;
   description?: {
     root: {
       type: string;
@@ -469,19 +481,14 @@ export interface Product {
     | null;
   productVideo?: (number | null) | Media;
   /**
-   * Each row is a unique size + color combination. Add one row per combination (e.g. M / Navy Blue, M / Ivory, L / Ivory).
+   * Add sizes for this product here. Click "Add Variant" to create a unique size variant with stock count and price overrides.
    */
   variants?:
     | {
-        size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'Unstitched';
         /**
-         * e.g. Ivory, Navy Blue, Emerald Green, Dusty Rose
+         * Select a size. Go to Shop → Sizes to add new sizes.
          */
-        color?: string | null;
-        /**
-         * e.g. #FFFFF0 — leave blank to auto-generate a swatch.
-         */
-        colorHex?: string | null;
+        size: number | Size;
         /**
          * Format: LUJ-XXXX-SZ-XXX. Leave blank to auto-generate.
          */
@@ -489,12 +496,31 @@ export interface Product {
         stock: number;
         allowBackorder?: boolean | null;
         /**
-         * Leave blank to use the base price.
+         * Leave blank to use the product base price.
          */
         pricePKR?: number | null;
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Manage available sizes for product variants. Add new sizes here to make them available in product listings.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sizes".
+ */
+export interface Size {
+  id: number;
+  /**
+   * e.g. XS, S, M, L, XL, XXL, Unstitched, Free Size
+   */
+  name: string;
+  /**
+   * Lower numbers appear first in dropdowns (0 = first).
+   */
+  sortOrder?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -864,6 +890,10 @@ export interface PayloadLockedDocument {
         value: number | Order;
       } | null)
     | ({
+        relationTo: 'sizes';
+        value: number | Size;
+      } | null)
+    | ({
         relationTo: 'forms';
         value: number | Form;
       } | null)
@@ -1132,9 +1162,10 @@ export interface ProductsSelect<T extends boolean = true> {
   slug?: T;
   status?: T;
   isFeatured?: T;
-  mainCategory?: T;
-  subCategories?: T;
+  primaryCategory?: T;
+  categories?: T;
   basePricePKR?: T;
+  color?: T;
   description?: T;
   images?:
     | T
@@ -1148,8 +1179,6 @@ export interface ProductsSelect<T extends boolean = true> {
     | T
     | {
         size?: T;
-        color?: T;
-        colorHex?: T;
         sku?: T;
         stock?: T;
         allowBackorder?: T;
@@ -1224,6 +1253,16 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingFee?: T;
   totalAmount?: T;
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sizes_select".
+ */
+export interface SizesSelect<T extends boolean = true> {
+  name?: T;
+  sortOrder?: T;
   updatedAt?: T;
   createdAt?: T;
 }

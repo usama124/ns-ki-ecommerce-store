@@ -2,8 +2,8 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { Category } from '@/payload-types'
-import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import clsx from 'clsx'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 type Props = {
   category: Category
@@ -15,29 +15,37 @@ export const CategoryItem: React.FC<Props> = ({ category }) => {
   const searchParams = useSearchParams()
 
   const isActive = useMemo(() => {
-    return searchParams.get('category') === String(category.id)
-  }, [category.id, searchParams])
+    const paramCat = searchParams.get('category')
+    return (
+      pathname === `/shop/${category.slug}` ||
+      paramCat === String(category.id) ||
+      paramCat === category.slug
+    )
+  }, [category.id, category.slug, pathname, searchParams])
 
   const setQuery = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
+    params.delete('category')
+    const queryString = params.toString() ? `?${params.toString()}` : ''
 
     if (isActive) {
-      params.delete('category')
+      router.push(`/shop${queryString}`)
     } else {
-      params.set('category', String(category.id))
+      router.push(`/shop/${category.slug}${queryString}`)
     }
-
-    const newParams = params.toString()
-
-    router.push(pathname + '?' + newParams)
-  }, [category.id, isActive, pathname, router, searchParams])
+  }, [category.id, category.slug, isActive, router, searchParams])
 
   return (
     <button
       onClick={() => setQuery()}
-      className={clsx('hover:cursor-pointer', {
-        ' underline': isActive,
-      })}
+      className={clsx(
+        'hover:cursor-pointer block text-xs uppercase tracking-wider py-1 transition-colors',
+        {
+          'font-bold text-amber-800 underline underline-offset-4': isActive,
+          'text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white':
+            !isActive,
+        },
+      )}
     >
       {category.name}
     </button>

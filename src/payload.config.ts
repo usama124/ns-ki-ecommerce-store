@@ -19,6 +19,7 @@ import { Media } from '@/collections/Media'
 import { Orders } from '@/collections/Orders'
 import { Pages } from '@/collections/Pages'
 import { Products } from '@/collections/Products'
+import { Sizes } from '@/collections/Sizes'
 import { Users } from '@/collections/Users'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
@@ -38,7 +39,7 @@ export default buildConfig({
     user: Users.slug,
     suppressHydrationWarning: true,
   },
-  collections: [Users, Pages, Categories, Products, Media, Orders],
+  collections: [Users, Pages, Categories, Products, Media, Orders, Sizes],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',

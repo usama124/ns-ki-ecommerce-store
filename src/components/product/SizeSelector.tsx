@@ -1,12 +1,17 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
 import { AddToCart } from '@/components/Cart/AddToCart'
+import { useEffect, useMemo, useState } from 'react'
 
-type Variant = {
-  size: string
-  color?: string | null
-  colorHex?: string | null
+// Size can be a relationship object { id, name } or a plain string (legacy)
+type RelOrString =
+  | { id?: number | string; name?: string }
+  | string
+  | null
+  | undefined
+
+export type Variant = {
+  size: RelOrString
   stock: number
   allowBackorder?: boolean | null
   pricePKR?: number | null
@@ -19,138 +24,56 @@ type Props = {
     slug: string
     title: string
     basePricePKR: number
+    color?: string | null
     variants?: Variant[]
     images?: Array<{ image: { url?: string | null; alt?: string } }>
   }
+  onVariantChange?: (variant: Variant | undefined) => void
 }
 
-/** Generate a soft pastel hex from a color name string */
-function colorToFallbackHex(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  const h = Math.abs(hash) % 360
-  return `hsl(${h}, 40%, 70%)`
+/** Resolve effective size string from relationship object or legacy string */
+export function getEffectiveSize(v: Variant): string {
+  const s = v.size
+  if (!s) return ''
+  if (typeof s === 'object' && s !== null) return s.name?.trim() || ''
+  return String(s).trim()
 }
 
-export function SizeSelector({ product }: Props) {
-  const variants = product.variants || []
+export function SizeSelector({ product, onVariantChange }: Props) {
+  const rawVariants = product.variants || []
 
-  // ── Derive unique colors ───────────────────────────────────────────────────
-  const colors = useMemo(() => {
-    const seen = new Set<string>()
-    const list: { name: string; hex: string | null }[] = []
-    for (const v of variants) {
-      const name = v.color?.trim() || ''
-      if (name && !seen.has(name)) {
-        seen.add(name)
-        list.push({ name, hex: v.colorHex?.trim() || null })
-      }
-    }
-    return list // empty = no colors configured, fall back to size-only mode
-  }, [variants])
+  const variants = useMemo(() => {
+    return rawVariants.map((v) => ({
+      ...v,
+      effectiveSize: getEffectiveSize(v),
+    }))
+  }, [rawVariants])
 
-  const hasColors = colors.length > 0
+  // Default selections: first in stock or first variant
+  const firstAvailableVariant = variants.find((v) => v.stock > 0 || v.allowBackorder)
 
-  // ── Default selections ─────────────────────────────────────────────────────
-  const firstAvailableVariant = variants.find(
-    (v) => v.stock > 0 || v.allowBackorder
-  )
-
-  const [selectedColor, setSelectedColor] = useState<string>(
-    hasColors
-      ? (firstAvailableVariant?.color?.trim() || colors[0]?.name || '')
-      : ''
-  )
   const [selectedSize, setSelectedSize] = useState<string>(
-    firstAvailableVariant?.size || variants[0]?.size || ''
+    firstAvailableVariant?.effectiveSize || variants[0]?.effectiveSize || '',
   )
 
-  // ── Filtered sizes for selected color ──────────────────────────────────────
-  const sizesForColor = useMemo(() => {
-    if (!hasColors) return variants
-    return variants.filter(
-      (v) => (v.color?.trim() || '') === selectedColor
-    )
-  }, [variants, selectedColor, hasColors])
-
-  // ── When color changes, reset size to first available for that color ───────
-  const handleColorSelect = (colorName: string) => {
-    setSelectedColor(colorName)
-    const firstForColor = variants.find(
-      (v) =>
-        (v.color?.trim() || '') === colorName &&
-        (v.stock > 0 || v.allowBackorder)
-    )
-    setSelectedSize(
-      firstForColor?.size ||
-      variants.find((v) => (v.color?.trim() || '') === colorName)?.size ||
-      ''
-    )
-  }
-
-  // ── Find exact selected variant ────────────────────────────────────────────
   const selectedVariant = useMemo(() => {
-    if (hasColors) {
-      return variants.find(
-        (v) =>
-          v.size === selectedSize &&
-          (v.color?.trim() || '') === selectedColor
-      )
+    return variants.find((v) => v.effectiveSize === selectedSize)
+  }, [variants, selectedSize])
+
+  useEffect(() => {
+    if (onVariantChange) {
+      onVariantChange(selectedVariant)
     }
-    return variants.find((v) => v.size === selectedSize)
-  }, [variants, selectedSize, selectedColor, hasColors])
+  }, [selectedVariant, onVariantChange])
 
   return (
     <div className="flex flex-col gap-6 my-6">
-      {/* ── Color Selector ─────────────────────────────────────────────────── */}
-      {hasColors && (
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <label className="text-xs uppercase tracking-widest font-semibold text-gray-900">
-              Color
-            </label>
-            <span className="text-xs text-gray-500 font-medium">
-              {selectedColor || 'Select a colour'}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {colors.map(({ name, hex }) => {
-              const isSelected = selectedColor === name
-              const bgColor = hex || colorToFallbackHex(name)
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => handleColorSelect(name)}
-                  title={name}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-xs uppercase tracking-wider font-semibold border transition-all ${
-                    isSelected
-                      ? 'border-black bg-black text-white'
-                      : 'border-gray-300 text-gray-700 hover:border-black'
-                  }`}
-                >
-                  {/* Colour swatch dot */}
-                  <span
-                    className="inline-block w-3.5 h-3.5 rounded-full border border-black/20 flex-shrink-0"
-                    style={{ background: bgColor }}
-                  />
-                  {name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Size Selector ─────────────────────────────────────────────────── */}
+      {/* Size Selector */}
       {variants.length > 0 ? (
         <div>
           <div className="flex justify-between items-center mb-3">
             <label className="text-xs uppercase tracking-widest font-semibold text-gray-900">
-              {hasColors ? 'Size' : 'Select Size'}
+              Select Size
             </label>
             {selectedVariant && (
               <span className="text-xs text-gray-500 font-mono">
@@ -159,30 +82,30 @@ export function SizeSelector({ product }: Props) {
             )}
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {sizesForColor.map((variant) => {
+          <div className="flex flex-wrap gap-2.5">
+            {variants.map((variant, idx) => {
               const outOfStock = variant.stock <= 0
               const backorderAllowed = Boolean(variant.allowBackorder)
               const isDisabled = outOfStock && !backorderAllowed
-              const isSelected = selectedSize === variant.size
+              const isSelected = selectedSize === variant.effectiveSize
 
               return (
                 <button
-                  key={`${variant.size}-${variant.color}`}
+                  key={idx}
                   type="button"
                   disabled={isDisabled}
-                  onClick={() => setSelectedSize(variant.size)}
-                  className={`py-3 text-xs uppercase tracking-wider font-semibold border transition-all ${
+                  onClick={() => setSelectedSize(variant.effectiveSize)}
+                  className={`px-4 py-2.5 min-w-[3.5rem] text-xs uppercase tracking-wider font-semibold border rounded-md whitespace-nowrap transition-all ${
                     isSelected
-                      ? 'border-black bg-black text-white'
+                      ? 'border-black bg-black text-white shadow-xs'
                       : isDisabled
-                      ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed bg-gray-50'
-                      : outOfStock && backorderAllowed
-                      ? 'border-amber-400 text-amber-900 bg-amber-50 hover:border-amber-600'
-                      : 'border-gray-300 text-gray-800 hover:border-black'
+                        ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed bg-gray-50'
+                        : outOfStock && backorderAllowed
+                          ? 'border-amber-400 text-amber-900 bg-amber-50 hover:border-amber-600'
+                          : 'border-gray-300 text-gray-800 hover:border-black'
                   }`}
                 >
-                  {variant.size}
+                  {variant.effectiveSize}
                 </button>
               )
             })}
@@ -190,11 +113,13 @@ export function SizeSelector({ product }: Props) {
 
           {/* Stock indicator */}
           {selectedVariant && (
-            <div className="mt-2 text-[11px] uppercase tracking-wider font-medium">
+            <div className="mt-3 text-[11px] uppercase tracking-wider font-medium">
               {selectedVariant.stock <= 0 && !selectedVariant.allowBackorder ? (
                 <span className="text-red-600 font-bold">Out of Stock</span>
               ) : selectedVariant.stock <= 0 && selectedVariant.allowBackorder ? (
-                <span className="text-amber-700 font-bold">✓ Available on Backorder (Pre-order)</span>
+                <span className="text-amber-700 font-bold">
+                  ✓ Available on Backorder (Pre-order)
+                </span>
               ) : selectedVariant.stock <= 3 ? (
                 <span className="text-amber-600">Only {selectedVariant.stock} left in stock</span>
               ) : (
@@ -204,11 +129,23 @@ export function SizeSelector({ product }: Props) {
           )}
         </div>
       ) : (
-        <div className="text-xs text-gray-500 italic">No size options available for this product.</div>
+        <div className="text-xs text-gray-500 italic">
+          No size options available for this product.
+        </div>
       )}
 
-      {/* ── Add To Bag ────────────────────────────────────────────────────── */}
-      <AddToCart product={product} selectedVariant={selectedVariant} />
+      {/* Add To Bag */}
+      <AddToCart
+        product={product}
+        selectedVariant={
+          selectedVariant
+            ? {
+                ...selectedVariant,
+                size: selectedVariant.effectiveSize,
+              }
+            : undefined
+        }
+      />
     </div>
   )
 }

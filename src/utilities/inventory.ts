@@ -1,4 +1,4 @@
-import type { PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload';
 
 type OrderItemInput = {
   product: string | { id: string; title?: string }
@@ -43,7 +43,7 @@ export async function validateAndDeductStock({
 
       if (!allowBackorder && currentStock < item.quantity) {
         throw new Error(
-          `Insufficient stock for ${label}. Available: ${currentStock}, Requested: ${item.quantity}.`
+          `Insufficient stock for ${label}. Available: ${currentStock}, Requested: ${item.quantity}.`,
         )
       }
 
@@ -116,16 +116,15 @@ export async function restoreOrderStock({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function variantMatches(variant: any, size: string, color?: string): boolean {
-  const sizeMatch = variant.size === size
-  if (!color) return sizeMatch
-  const variantColor = (variant.color || '').trim().toLowerCase()
-  const targetColor = color.trim().toLowerCase()
-  return sizeMatch && variantColor === targetColor
+function variantMatches(variant: any, size: string, _color?: string): boolean {
+  const rawSize = variant.size
+  const effectiveSize = (
+    rawSize && typeof rawSize === 'object' ? (rawSize.name ?? '') : (rawSize ?? '')
+  ).trim()
+
+  return effectiveSize.toLowerCase() === size.trim().toLowerCase()
 }
 
-function buildVariantLabel(title: string, size: string, color?: string): string {
-  const parts = [`"${title}"`, `Size: ${size}`]
-  if (color) parts.push(`Color: ${color}`)
-  return parts.join(' / ')
+function buildVariantLabel(title: string, size: string, _color?: string): string {
+  return `"${title}" / Size: ${size}`
 }

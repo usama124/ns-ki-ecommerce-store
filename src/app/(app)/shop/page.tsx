@@ -14,31 +14,72 @@ export const metadata: Metadata = {
     'Browse all luxury Pakistani unstitched and pret collections with express nationwide delivery.',
 }
 
-export default async function ShopPage() {
+type Args = {
+  searchParams: Promise<{
+    category?: string
+    sort?: string
+    q?: string
+  }>
+}
+
+export default async function ShopPage({ searchParams }: Args) {
+  const { category: queryCategory, sort: sortQuery } = (await searchParams) || {}
   let products: any[] = []
   let mainCategories: any[] = []
+  let selectedCategory: any = null
 
   try {
     const payload = await getPayload({ config: configPromise })
-
-    const productsResult = await payload.find({
-      collection: 'products',
-      where: { status: { equals: 'published' } },
-      limit: 50,
-      depth: 1,
-    })
 
     const categoriesResult = await payload.find({
       collection: 'categories',
       where: { type: { equals: 'main' } },
       limit: 20,
     })
+    mainCategories = categoriesResult.docs
+
+    if (queryCategory) {
+      const isNumeric = /^\d+$/.test(queryCategory)
+      const catResult = await payload.find({
+        collection: 'categories',
+        where: isNumeric
+          ? { id: { equals: Number(queryCategory) } }
+          : { slug: { equals: queryCategory } },
+        limit: 1,
+      })
+      selectedCategory = catResult.docs?.[0] || null
+    }
+
+    let payloadSort = 'title'
+    if (sortQuery === '-createdAt') payloadSort = '-createdAt'
+    else if (sortQuery === 'priceInUSD') payloadSort = 'basePricePKR'
+    else if (sortQuery === '-priceInUSD') payloadSort = '-basePricePKR'
+
+    const whereConditions: any[] = [{ status: { equals: 'published' } }]
+    if (selectedCategory) {
+      whereConditions.push({
+        categories: {
+          in: [selectedCategory.id],
+        },
+      })
+    }
+
+    const productsResult = await payload.find({
+      collection: 'products',
+      where: {
+        and: whereConditions,
+      },
+      sort: payloadSort,
+      limit: 50,
+      depth: 1,
+    })
 
     products = productsResult.docs
-    mainCategories = categoriesResult.docs
   } catch {
     // Database connection catch
   }
+
+  const pageTitle = selectedCategory ? selectedCategory.name : 'All Collections'
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen pb-20">
@@ -50,11 +91,11 @@ export default async function ShopPage() {
             Curated Catalog
           </span>
           <h1 className="font-serif text-4xl sm:text-5xl font-normal tracking-[0.15em] uppercase text-stone-900 mb-4">
-            All Collections
+            {pageTitle}
           </h1>
           <p className="text-xs text-stone-500 tracking-wider max-w-md mx-auto leading-relaxed">
-            Discover exquisite Pakistani unstitched fabrics, luxury pret, and hand-tailored formal
-            wear.
+            {selectedCategory?.description ||
+              'Discover exquisite Pakistani unstitched fabrics, luxury pret, and hand-tailored formal wear.'}
           </p>
         </div>
 
@@ -92,6 +133,10 @@ export default async function ShopPage() {
             {products.map((product: any) => {
               const imageObj = product.images?.[0]?.image
               const imageUrl = typeof imageObj === 'object' ? imageObj?.url : imageObj
+              const categoryName =
+                (typeof product.primaryCategory === 'object' ? product.primaryCategory?.name : null) ||
+                (typeof product.categories?.[0] === 'object' ? product.categories[0]?.name : null) ||
+                'Luxury Fashion'
 
               return (
                 <div
@@ -120,6 +165,7 @@ export default async function ShopPage() {
                     <div>
                       <span className="text-[10px] uppercase tracking-[0.2em] text-amber-800 font-semibold block mb-1">
                         {product.mainCategory?.name || 'Luxury Fashion'}
+                        {categoryName}
                       </span>
                       <h2 className="font-serif text-base font-medium text-stone-900 uppercase tracking-wider group-hover:text-amber-900 transition-colors mb-3 leading-snug">
                         <Link href={`/products/${product.slug}`}>{product.title}</Link>
