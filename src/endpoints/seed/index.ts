@@ -178,6 +178,7 @@ export const seed = async ({
         freeShippingThreshold: 15000,
         majorCityFee: 250,
         secondaryCityFee: 350,
+        codFee: 250,
       },
       paymentDetails: {
         bankTransfer: {

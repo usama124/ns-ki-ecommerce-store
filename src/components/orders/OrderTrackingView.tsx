@@ -1,15 +1,7 @@
 'use client'
 
 import { formatPKR } from '@/utilities/formatPKR'
-import {
-    CheckCircle2,
-    Clock,
-    ExternalLink,
-    Package,
-    Search,
-    Truck,
-    XCircle
-} from 'lucide-react'
+import { CheckCircle2, Clock, ExternalLink, Package, Search, Truck, XCircle } from 'lucide-react'
 import Image from 'next/image'
 import React, { useState } from 'react'
 
@@ -417,6 +409,12 @@ export function OrderTrackingView() {
                     <span>Shipping Fee</span>
                     <span>{formatPKR(order.shippingFee)}</span>
                   </div>
+                  {Boolean(order.codFee && order.codFee > 0) && (
+                    <div className="flex justify-between text-amber-800 font-medium">
+                      <span>Cash on Delivery (COD) Fee</span>
+                      <span>+{formatPKR(order.codFee)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm font-bold text-black border-t pt-2 border-gray-300">
                     <span>Total Amount</span>
                     <span>{formatPKR(order.totalAmount)}</span>

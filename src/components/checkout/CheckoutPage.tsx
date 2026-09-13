@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 
-export function CheckoutPage() {
+export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const { items, subtotal, clearCart } = useCart()
   const router = useRouter()
 
@@ -45,25 +45,27 @@ export function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Account details defaults (matching Pakistani banking standards)
-  const bankDetails = {
+  // Account details defaults (matching Pakistani banking standards or site settings)
+  const bankDetails = siteSettings?.paymentDetails?.bankTransfer || {
     bankName: 'Meezan Bank',
     accountTitle: "N's KI LUXURY FASHION",
     accountNumber: 'PK00MEZN0001020304050607',
     raastId: '03001234567',
   }
-  const jazzcashDetails = {
+  const jazzcashDetails = siteSettings?.paymentDetails?.jazzcash || {
     mobileNumber: '03001234567',
     accountName: "N's KI CLOTHING",
   }
-  const easypaisaDetails = {
+  const easypaisaDetails = siteSettings?.paymentDetails?.easypaisa || {
     mobileNumber: '03001234567',
     accountName: "N's KI CLOTHING",
   }
 
-  // Shipping calculation
+  // Shipping & COD calculation
+  const codFeeFromAdmin = siteSettings?.shipping?.codFee ?? 250
   const shippingFee = calculateShipping(customer.city, subtotal)
-  const totalAmount = subtotal + shippingFee
+  const codFee = paymentMethod === 'cod' ? codFeeFromAdmin : 0
+  const totalAmount = subtotal + shippingFee + codFee
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -137,6 +139,7 @@ export function CheckoutPage() {
               : undefined,
           subtotal,
           shippingFee,
+          codFee,
           totalAmount,
         }),
       })
@@ -304,7 +307,14 @@ export function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 {[
-                  { id: 'cod', title: 'Cash on Delivery', desc: 'Pay cash when package arrives' },
+                  {
+                    id: 'cod',
+                    title: 'Cash on Delivery',
+                    desc:
+                      codFeeFromAdmin > 0
+                        ? `Pay cash upon delivery (+ ${formatPKR(codFeeFromAdmin)} COD fee)`
+                        : 'Pay cash when package arrives',
+                  },
                   {
                     id: 'bank_transfer',
                     title: 'Bank / Raast Transfer',
@@ -637,6 +647,12 @@ export function CheckoutPage() {
                   <span>Shipping Fee ({customer.city})</span>
                   <span className="font-semibold text-black">{getShippingLabel(shippingFee)}</span>
                 </div>
+                {paymentMethod === 'cod' && codFee > 0 && (
+                  <div className="flex justify-between text-amber-800 font-semibold bg-amber-50/60 p-2 rounded border border-amber-200/60">
+                    <span>Cash on Delivery (COD) Fee</span>
+                    <span>+{formatPKR(codFee)}</span>
+                  </div>
+                )}
                 {subtotal >= 15000 && (
                   <p className="text-[11px] text-green-700 font-medium">
                     ✓ You unlocked FREE Shipping nationwide!

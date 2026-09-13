@@ -1,22 +1,21 @@
+import configPromise from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import configPromise from '@payload-config'
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const {
-      customer,
-      items,
-      paymentMethod,
-      paymentProof,
-      subtotal,
-      shippingFee,
-      totalAmount,
-    } = body
+    const { customer, items, paymentMethod, paymentProof, subtotal, shippingFee, totalAmount } =
+      body
 
-    if (!customer?.name || !customer?.phone || !customer?.address || !customer?.city || !customer?.province) {
+    if (
+      !customer?.name ||
+      !customer?.phone ||
+      !customer?.address ||
+      !customer?.city ||
+      !customer?.province
+    ) {
       return NextResponse.json({ error: 'Missing required customer details.' }, { status: 400 })
     }
 
@@ -32,12 +31,24 @@ export async function POST(req: Request) {
       if (!paymentProof?.transactionId && !paymentProof?.screenshot) {
         return NextResponse.json(
           { error: 'Please provide TRX ID or screenshot proof for digital payment.' },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
 
     const payload = await getPayload({ config: configPromise })
+
+    let effectiveCodFee = 0
+    if (paymentMethod === 'cod') {
+      if (typeof body.codFee === 'number') {
+        effectiveCodFee = body.codFee
+      } else {
+        const siteSettings = await payload.findGlobal({ slug: 'site-settings' }).catch(() => null)
+        effectiveCodFee = (siteSettings as any)?.shipping?.codFee ?? 250
+      }
+    }
+
+    const computedTotal = subtotal + shippingFee + effectiveCodFee
 
     const orderData: any = {
       customer,
@@ -52,7 +63,8 @@ export async function POST(req: Request) {
       paymentProof: paymentMethod !== 'cod' ? paymentProof : undefined,
       subtotal,
       shippingFee,
-      totalAmount,
+      codFee: effectiveCodFee,
+      totalAmount: computedTotal,
       status: 'pending_verification',
     }
 
@@ -72,9 +84,6 @@ export async function POST(req: Request) {
     console.error('Error submitting order to Payload:', error)
     const message = error?.message || 'An error occurred while placing order.'
     const isStockError = message.toLowerCase().includes('stock')
-    return NextResponse.json(
-      { error: message },
-      { status: isStockError ? 400 : 500 }
-    )
+    return NextResponse.json({ error: message }, { status: isStockError ? 400 : 500 })
   }
 }

@@ -5,6 +5,7 @@ import * as migration_20260909_231100_variant_colors from './20260909_231100_var
 import * as migration_20260911_000000_sizes_colors_collections from './20260911_000000_sizes_colors_collections'
 import * as migration_20260911_180000_single_garment_color from './20260911_180000_single_garment_color'
 import * as migration_20260911_190000_multi_category_assignment from './20260911_190000_multi_category_assignment'
+import * as migration_20260913_170000_cod_fee from './20260913_170000_cod_fee'
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20260911_190000_multi_category_assignment.up,
     down: migration_20260911_190000_multi_category_assignment.down,
     name: '20260911_190000_multi_category_assignment',
+  },
+  {
+    up: migration_20260913_170000_cod_fee.up,
+    down: migration_20260913_170000_cod_fee.down,
+    name: '20260913_170000_cod_fee',
   },
 ]

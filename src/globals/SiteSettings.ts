@@ -60,6 +60,16 @@ export const SiteSettings: GlobalConfig = {
           label: 'Secondary City Shipping Fee (PKR)',
         },
         {
+          name: 'codFee',
+          type: 'number',
+          defaultValue: 250,
+          label: 'Cash on Delivery (COD) Charges (PKR)',
+          admin: {
+            description:
+              'Extra charges applied when customer selects Cash on Delivery. Set to 0 for free COD.',
+          },
+        },
+        {
           name: 'majorCities',
           type: 'array',
           label: 'Major Cities',

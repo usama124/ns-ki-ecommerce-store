@@ -50,6 +50,10 @@ export async function validateAndDeductStock({
       stockDeducted = true
       return {
         ...variant,
+        size:
+          typeof variant.size === 'object' && variant.size !== null
+            ? (variant.size.id ?? variant.size)
+            : variant.size,
         stock: Math.max(0, currentStock - item.quantity),
       }
     })
@@ -98,6 +102,10 @@ export async function restoreOrderStock({
       stockRestored = true
       return {
         ...variant,
+        size:
+          typeof variant.size === 'object' && variant.size !== null
+            ? (variant.size.id ?? variant.size)
+            : variant.size,
         stock: currentStock + item.quantity,
       }
     })
@@ -116,13 +124,34 @@ export async function restoreOrderStock({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function variantMatches(variant: any, size: string, _color?: string): boolean {
-  const rawSize = variant.size
-  const effectiveSize = (
-    rawSize && typeof rawSize === 'object' ? (rawSize.name ?? '') : (rawSize ?? '')
-  ).trim()
+function variantMatches(variant: any, size: any, _color?: string): boolean {
+  if (!variant) return false
 
-  return effectiveSize.toLowerCase() === size.trim().toLowerCase()
+  const rawSize = variant.size
+  const searchSize = String(size ?? '')
+    .trim()
+    .toLowerCase()
+  if (!searchSize) return false
+
+  let effectiveSizeName = ''
+  let effectiveSizeId = ''
+
+  if (rawSize && typeof rawSize === 'object') {
+    effectiveSizeName = String(rawSize.name ?? '')
+      .trim()
+      .toLowerCase()
+    effectiveSizeId = String(rawSize.id ?? '')
+      .trim()
+      .toLowerCase()
+  } else if (rawSize !== undefined && rawSize !== null) {
+    effectiveSizeName = String(rawSize).trim().toLowerCase()
+    effectiveSizeId = String(rawSize).trim().toLowerCase()
+  }
+
+  return (
+    (effectiveSizeName !== '' && effectiveSizeName === searchSize) ||
+    (effectiveSizeId !== '' && effectiveSizeId === searchSize)
+  )
 }
 
 function buildVariantLabel(title: string, size: string, _color?: string): string {

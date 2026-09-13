@@ -38,7 +38,7 @@ export default async function OrderConfirmationPage({ params }: Args) {
         </div>
 
         <p className="text-xs text-gray-600 leading-relaxed mb-8">
-          Your order has been logged into Payload CMS with status{' '}
+          Your order has been logged with status{' '}
           <strong className="text-black">Pending Verification</strong>. Our team will review your
           order details and contact you shortly on WhatsApp / Phone.
         </p>

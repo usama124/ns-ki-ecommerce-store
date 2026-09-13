@@ -1,13 +1,20 @@
-import type { CollectionConfig } from 'payload'
 import { adminOnly } from '@/access/adminOnly'
 import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
+import type { CollectionConfig } from 'payload'
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
   admin: {
     useAsTitle: 'orderNumber',
     group: 'Shop',
-    defaultColumns: ['orderNumber', 'customer', 'totalAmount', 'paymentMethod', 'status', 'createdAt'],
+    defaultColumns: [
+      'orderNumber',
+      'customer',
+      'totalAmount',
+      'paymentMethod',
+      'status',
+      'createdAt',
+    ],
   },
   access: {
     // Anyone can create orders (guest checkout)
@@ -249,6 +256,12 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       label: 'Shipping Fee (PKR)',
+    },
+    {
+      name: 'codFee',
+      type: 'number',
+      defaultValue: 0,
+      label: 'COD Fee (PKR)',
     },
     {
       name: 'totalAmount',

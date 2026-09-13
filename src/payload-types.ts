@@ -819,6 +819,7 @@ export interface Order {
   }[];
   subtotal: number;
   shippingFee: number;
+  codFee?: number | null;
   totalAmount: number;
   notes?: string | null;
   updatedAt: string;
@@ -1251,6 +1252,7 @@ export interface OrdersSelect<T extends boolean = true> {
       };
   subtotal?: T;
   shippingFee?: T;
+  codFee?: T;
   totalAmount?: T;
   notes?: T;
   updatedAt?: T;
@@ -1590,6 +1592,10 @@ export interface SiteSetting {
     majorCityFee?: number | null;
     secondaryCityFee?: number | null;
     /**
+     * Extra charges applied when customer selects Cash on Delivery. Set to 0 for free COD.
+     */
+    codFee?: number | null;
+    /**
      * Cities that qualify for the lower shipping rate.
      */
     majorCities?:
@@ -1748,6 +1754,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         freeShippingThreshold?: T;
         majorCityFee?: T;
         secondaryCityFee?: T;
+        codFee?: T;
         majorCities?:
           | T
           | {
