@@ -1,10 +1,35 @@
-import type { PayloadRequest } from 'payload';
+import type { PayloadRequest } from 'payload'
 
 type OrderItemInput = {
   product: string | { id: string; title?: string }
   variantSize: string
   variantColor?: string
   quantity: number
+}
+
+async function getSizeIdToNameMap(req: PayloadRequest): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  if (!req?.payload?.find) return map
+
+  try {
+    const res = await req.payload.find({
+      collection: 'sizes',
+      limit: 300,
+      req,
+      overrideAccess: true,
+      pagination: false,
+    })
+    if (res?.docs && Array.isArray(res.docs)) {
+      res.docs.forEach((s: any) => {
+        if (s?.id !== undefined && s?.id !== null && s?.name) {
+          map.set(String(s.id).trim().toLowerCase(), String(s.name).trim().toLowerCase())
+        }
+      })
+    }
+  } catch {
+    // Return empty map on error or unmocked payload
+  }
+  return map
 }
 
 /**
@@ -19,6 +44,8 @@ export async function validateAndDeductStock({
   items: OrderItemInput[]
   req: PayloadRequest
 }) {
+  const sizeMap = await getSizeIdToNameMap(req)
+
   for (const item of items) {
     const productId = typeof item.product === 'object' ? item.product.id : item.product
     if (!productId) continue
@@ -35,15 +62,14 @@ export async function validateAndDeductStock({
 
     let stockDeducted = false
     const updatedVariants = product.variants.map((variant: any) => {
-      if (!variantMatches(variant, item.variantSize, item.variantColor)) return variant
+      if (!variantMatches(variant, item.variantSize, item.variantColor, sizeMap)) return variant
 
       const currentStock = typeof variant.stock === 'number' ? variant.stock : 0
       const allowBackorder = Boolean(variant.allowBackorder)
-      const label = buildVariantLabel(product.title, item.variantSize, item.variantColor)
 
       if (!allowBackorder && currentStock < item.quantity) {
         throw new Error(
-          `Insufficient stock for ${label}. Available: ${currentStock}, Requested: ${item.quantity}.`,
+          `Inventory constraint failed for "${product.title}" - Size: ${item.variantSize}. Order cancelled.`,
         )
       }
 
@@ -80,6 +106,8 @@ export async function restoreOrderStock({
   items: OrderItemInput[]
   req: PayloadRequest
 }) {
+  const sizeMap = await getSizeIdToNameMap(req)
+
   for (const item of items) {
     const productId = typeof item.product === 'object' ? item.product.id : item.product
     if (!productId) continue
@@ -96,7 +124,7 @@ export async function restoreOrderStock({
 
     let stockRestored = false
     const updatedVariants = product.variants.map((variant: any) => {
-      if (!variantMatches(variant, item.variantSize, item.variantColor)) return variant
+      if (!variantMatches(variant, item.variantSize, item.variantColor, sizeMap)) return variant
 
       const currentStock = typeof variant.stock === 'number' ? variant.stock : 0
       stockRestored = true
@@ -124,7 +152,12 @@ export async function restoreOrderStock({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function variantMatches(variant: any, size: any, _color?: string): boolean {
+function variantMatches(
+  variant: any,
+  size: any,
+  _color?: string,
+  sizeIdToNameMap?: Map<string, string>,
+): boolean {
   if (!variant) return false
 
   const rawSize = variant.size
@@ -144,16 +177,17 @@ function variantMatches(variant: any, size: any, _color?: string): boolean {
       .trim()
       .toLowerCase()
   } else if (rawSize !== undefined && rawSize !== null) {
-    effectiveSizeName = String(rawSize).trim().toLowerCase()
-    effectiveSizeId = String(rawSize).trim().toLowerCase()
+    const strRaw = String(rawSize).trim().toLowerCase()
+    effectiveSizeId = strRaw
+    if (sizeIdToNameMap && sizeIdToNameMap.has(strRaw)) {
+      effectiveSizeName = sizeIdToNameMap.get(strRaw)!
+    } else {
+      effectiveSizeName = strRaw
+    }
   }
 
   return (
     (effectiveSizeName !== '' && effectiveSizeName === searchSize) ||
     (effectiveSizeId !== '' && effectiveSizeId === searchSize)
   )
-}
-
-function buildVariantLabel(title: string, size: string, _color?: string): string {
-  return `"${title}" / Size: ${size}`
 }

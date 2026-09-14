@@ -67,7 +67,7 @@ describe('Inventory Management & Stock Automation', () => {
         items: [{ product: 'prod-1', variantSize: 'Unstitched', quantity: 3 }],
         req: mockReq,
       }),
-    ).rejects.toThrow(/Insufficient stock for "Silk Formal Dress"|Insufficient stock/)
+    ).rejects.toThrow(/Inventory constraint failed|Insufficient stock/)
 
     expect(mockPayload.update).not.toHaveBeenCalled()
   })

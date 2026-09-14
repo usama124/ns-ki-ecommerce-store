@@ -1,11 +1,14 @@
 'use client'
 
-import { useCart } from '@/providers/Cart';
-import { useState } from 'react';
+import { useCart } from '@/providers/Cart'
+import { useState } from 'react'
 
 // size/color can be a relationship object { id, name } or a plain string
 type RelOrString =
-  { id?: number | string; name?: string; hexCode?: string } | string | null | undefined
+  | { id?: number | string; name?: string; hexCode?: string }
+  | string
+  | null
+  | undefined
 
 type Variant = {
   size: RelOrString
@@ -38,10 +41,11 @@ type Product = {
 type Props = {
   product: Product
   selectedVariant?: ResolvedVariant
+  selectedQuantity?: number
   className?: string
 }
 
-export function AddToCart({ product, selectedVariant, className }: Props) {
+export function AddToCart({ product, selectedVariant, selectedQuantity = 1, className }: Props) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
@@ -66,6 +70,9 @@ export function AddToCart({ product, selectedVariant, className }: Props) {
       variantColor: selectedVariant.color ?? undefined,
       variantSku: selectedVariant.sku ?? undefined,
       price,
+      quantity: selectedQuantity,
+      stock: selectedVariant.stock,
+      allowBackorder: Boolean(selectedVariant.allowBackorder),
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)

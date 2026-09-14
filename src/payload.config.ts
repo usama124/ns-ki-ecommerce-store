@@ -35,6 +35,13 @@ export default buildConfig({
     components: {
       beforeLogin: ['@/components/BeforeLogin#BeforeLogin'],
       beforeDashboard: ['@/components/BeforeDashboard#BeforeDashboard'],
+      afterNavLinks: ['@/components/admin/InventoryNavLink#InventoryNavLink'],
+      views: {
+        inventory: {
+          Component: '@/components/admin/InventoryView#InventoryView',
+          path: '/inventory',
+        },
+      },
     },
     user: Users.slug,
     suppressHydrationWarning: true,

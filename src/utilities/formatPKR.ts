@@ -1,10 +1,8 @@
 /**
  * Format a number as Pakistani Rupees
- * Output: Rs. 18,500.00
+ * Example Output: Rs. 18,500
  */
-export function formatPKR(amount: number): string {
-  return `Rs. ${amount.toLocaleString('en-PK', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
+export function formatPKR(amount: number | null | undefined): string {
+  const numericAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0
+  return `Rs. ${Math.round(numericAmount).toLocaleString('en-PK')}`
 }

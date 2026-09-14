@@ -1,14 +1,11 @@
 'use client'
 
 import { AddToCart } from '@/components/Cart/AddToCart'
+import { useCart } from '@/providers/Cart'
 import { useEffect, useMemo, useState } from 'react'
 
 // Size can be a relationship object { id, name } or a plain string (legacy)
-type RelOrString =
-  | { id?: number | string; name?: string }
-  | string
-  | null
-  | undefined
+type RelOrString = { id?: number | string; name?: string } | string | null | undefined
 
 export type Variant = {
   size: RelOrString
@@ -40,6 +37,7 @@ export function getEffectiveSize(v: Variant): string {
 }
 
 export function SizeSelector({ product, onVariantChange }: Props) {
+  const { items: cartItems } = useCart()
   const rawVariants = product.variants || []
 
   const variants = useMemo(() => {
@@ -55,16 +53,33 @@ export function SizeSelector({ product, onVariantChange }: Props) {
   const [selectedSize, setSelectedSize] = useState<string>(
     firstAvailableVariant?.effectiveSize || variants[0]?.effectiveSize || '',
   )
+  const [quantity, setQuantity] = useState<number>(1)
 
   const selectedVariant = useMemo(() => {
     return variants.find((v) => v.effectiveSize === selectedSize)
   }, [variants, selectedSize])
+
+  // Reset selected quantity to 1 whenever size changes
+  useEffect(() => {
+    setQuantity(1)
+  }, [selectedSize])
+
+  const qtyInCart = useMemo(() => {
+    const match = cartItems.find(
+      (i) => i.productId === String(product.id) && i.variantSize === selectedSize,
+    )
+    return match ? match.quantity : 0
+  }, [cartItems, product.id, selectedSize])
 
   useEffect(() => {
     if (onVariantChange) {
       onVariantChange(selectedVariant)
     }
   }, [selectedVariant, onVariantChange])
+
+  const isOutOfStock = selectedVariant
+    ? selectedVariant.stock <= 0 && !selectedVariant.allowBackorder
+    : false
 
   return (
     <div className="flex flex-col gap-6 my-6">
@@ -111,19 +126,81 @@ export function SizeSelector({ product, onVariantChange }: Props) {
             })}
           </div>
 
+          {/* Dynamic Quantity Selector */}
+          {selectedVariant && (
+            <div className="flex items-center gap-3 mt-4">
+              <label className="text-xs uppercase tracking-widest font-semibold text-gray-900">
+                Quantity
+              </label>
+              <div className="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white">
+                <button
+                  type="button"
+                  disabled={quantity <= 1 || isOutOfStock}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Decrease quantity"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={!selectedVariant.allowBackorder ? Math.max(1, selectedVariant.stock) : undefined}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10) || 1
+                    const max = !selectedVariant.allowBackorder
+                      ? Math.max(1, selectedVariant.stock)
+                      : 9999
+                    setQuantity(Math.max(1, Math.min(max, val)))
+                  }}
+                  disabled={isOutOfStock}
+                  className="w-12 text-center text-xs font-bold border-none outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  disabled={
+                    isOutOfStock ||
+                    (!selectedVariant.allowBackorder && quantity >= selectedVariant.stock)
+                  }
+                  onClick={() => {
+                    const max = !selectedVariant.allowBackorder
+                      ? Math.max(1, selectedVariant.stock)
+                      : 9999
+                    setQuantity((q) => Math.min(max, q + 1))
+                  }}
+                  className="px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Stock indicator */}
           {selectedVariant && (
-            <div className="mt-3 text-[11px] uppercase tracking-wider font-medium">
+            <div className="mt-3 text-[11px] uppercase tracking-wider font-medium flex flex-wrap items-center gap-2">
               {selectedVariant.stock <= 0 && !selectedVariant.allowBackorder ? (
                 <span className="text-red-600 font-bold">Out of Stock</span>
               ) : selectedVariant.stock <= 0 && selectedVariant.allowBackorder ? (
                 <span className="text-amber-700 font-bold">
                   ✓ Available on Backorder (Pre-order)
                 </span>
+              ) : !selectedVariant.allowBackorder && qtyInCart >= selectedVariant.stock ? (
+                <span className="text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  Maximum Available Stock ({selectedVariant.stock}) Already in Bag
+                </span>
               ) : selectedVariant.stock <= 3 ? (
-                <span className="text-amber-600">Only {selectedVariant.stock} left in stock</span>
+                <span className="text-amber-600">
+                  Only {selectedVariant.stock} left in stock
+                  {qtyInCart > 0 && ` (${qtyInCart} in your bag)`}
+                </span>
               ) : (
-                <span className="text-green-700">In Stock ({selectedVariant.stock} available)</span>
+                <span className="text-green-700">
+                  In Stock ({selectedVariant.stock} available)
+                  {qtyInCart > 0 && ` (${qtyInCart} in your bag)`}
+                </span>
               )}
             </div>
           )}
@@ -137,6 +214,7 @@ export function SizeSelector({ product, onVariantChange }: Props) {
       {/* Add To Bag */}
       <AddToCart
         product={product}
+        selectedQuantity={quantity}
         selectedVariant={
           selectedVariant
             ? {

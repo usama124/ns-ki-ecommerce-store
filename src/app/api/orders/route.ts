@@ -2,12 +2,24 @@ import configPromise from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
+function parseProductId(rawId: any): number | string {
+  if (typeof rawId === 'object' && rawId !== null) {
+    rawId = rawId.id
+  }
+  if (typeof rawId === 'number') return rawId
+  if (typeof rawId === 'string' && rawId.trim() !== '') {
+    const num = Number(rawId)
+    if (!isNaN(num)) return num
+    return rawId.trim()
+  }
+  return rawId
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const { customer, items, paymentMethod, paymentProof, subtotal, shippingFee, totalAmount } =
-      body
+    const { customer, items, paymentMethod, paymentProof, subtotal, shippingFee } = body
 
     if (
       !customer?.name ||
@@ -50,15 +62,20 @@ export async function POST(req: Request) {
 
     const computedTotal = subtotal + shippingFee + effectiveCodFee
 
-    const orderData: any = {
-      customer,
-      items: items.map((item: any) => ({
-        product: item.productId,
+    const formattedItems = items.map((item: any) => {
+      const parsedId = parseProductId(item.productId ?? item.product)
+      return {
+        product: parsedId,
         variantSize: item.variantSize,
         variantSku: item.variantSku || 'LUJ-SKU',
         quantity: item.quantity,
         unitPrice: item.price,
-      })),
+      }
+    })
+
+    const orderData: any = {
+      customer,
+      items: formattedItems,
       paymentMethod,
       paymentProof: paymentMethod !== 'cod' ? paymentProof : undefined,
       subtotal,
@@ -83,7 +100,13 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error submitting order to Payload:', error)
     const message = error?.message || 'An error occurred while placing order.'
-    const isStockError = message.toLowerCase().includes('stock')
-    return NextResponse.json({ error: message }, { status: isStockError ? 400 : 500 })
+    const isBadRequest =
+      error?.name === 'ValidationError' ||
+      error?.status === 400 ||
+      message.toLowerCase().includes('stock') ||
+      message.toLowerCase().includes('invalid') ||
+      message.toLowerCase().includes('constraint')
+
+    return NextResponse.json({ error: message }, { status: isBadRequest ? 400 : 500 })
   }
 }

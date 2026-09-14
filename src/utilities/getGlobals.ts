@@ -1,8 +1,8 @@
 import type { Config } from '@/payload-types'
 
 import configPromise from '@payload-config'
+import { unstable_cache } from 'next/cache.js'
 import { getPayload } from 'payload'
-import { unstable_cache } from 'next/cache'
 
 type Global = keyof Config['globals']
 

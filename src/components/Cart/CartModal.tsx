@@ -5,13 +5,16 @@ import { formatPKR } from '@/utilities/formatPKR'
 import { Minus, Plus, ShoppingBag, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { OpenCart } from './OpenCart'
 
 export function Cart() {
   const [isOpen, setIsOpen] = useState(false)
-  const { items, removeItem, updateQuantity, itemCount, subtotal } = useCart()
+  const [validatingCheckout, setValidatingCheckout] = useState(false)
+  const { items, removeItem, updateQuantity, validateCartStock, itemCount, subtotal } = useCart()
   const overlayRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -32,6 +35,17 @@ export function Cart() {
       document.body.style.overflow = ''
     }
   }, [isOpen])
+
+  const handleProceedToCheckout = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    setValidatingCheckout(true)
+    const result = await validateCartStock()
+    setValidatingCheckout(false)
+    if (result.valid) {
+      setIsOpen(false)
+      router.push('/checkout')
+    }
+  }
 
   return (
     <>
@@ -139,45 +153,74 @@ export function Cart() {
                       <p className="text-[10px] font-mono text-stone-500">SKU: {item.variantSku}</p>
                     )}
 
-                    <div className="flex items-center justify-between mt-1">
-                      {/* Qty Controls */}
-                      <div className="flex items-center gap-1 border border-stone-300 rounded bg-white">
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.productId,
-                              item.variantSize,
-                              item.variantColor,
-                              item.quantity - 1,
-                            )
-                          }
-                          className="p-1 hover:bg-stone-100 text-stone-700 transition-colors"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="text-xs w-6 text-center font-bold text-stone-900">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.productId,
-                              item.variantSize,
-                              item.variantColor,
-                              item.quantity + 1,
-                            )
-                          }
-                          className="p-1 hover:bg-stone-100 text-stone-700 transition-colors"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <div className="flex items-center justify-between">
+                        {/* Qty Controls */}
+                        {(() => {
+                          const isMaxStockReached =
+                            item.stock !== undefined &&
+                            item.stock !== null &&
+                            !item.allowBackorder &&
+                            item.quantity >= item.stock
 
-                      <p className="text-sm font-serif font-bold text-stone-900">
-                        {formatPKR(item.price * item.quantity)}
-                      </p>
+                          return (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1 border border-stone-300 rounded bg-white">
+                                <button
+                                  onClick={() =>
+                                    updateQuantity(
+                                      item.productId,
+                                      item.variantSize,
+                                      item.variantColor,
+                                      item.quantity - 1,
+                                    )
+                                  }
+                                  className="p-1 hover:bg-stone-100 text-stone-700 transition-colors"
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="text-xs w-6 text-center font-bold text-stone-900">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  disabled={isMaxStockReached}
+                                  onClick={() =>
+                                    updateQuantity(
+                                      item.productId,
+                                      item.variantSize,
+                                      item.variantColor,
+                                      item.quantity + 1,
+                                    )
+                                  }
+                                  className={`p-1 text-stone-700 transition-colors ${
+                                    isMaxStockReached
+                                      ? 'opacity-30 cursor-not-allowed'
+                                      : 'hover:bg-stone-100'
+                                  }`}
+                                  aria-label="Increase quantity"
+                                  title={
+                                    isMaxStockReached
+                                      ? `Maximum available stock (${item.stock}) reached`
+                                      : 'Increase quantity'
+                                  }
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              </div>
+                              {isMaxStockReached && (
+                                <span className="text-[10px] font-semibold text-amber-800">
+                                  Max available stock reached
+                                </span>
+                              )}
+                            </div>
+                          )
+                        })()}
+
+                        <p className="text-sm font-serif font-bold text-stone-900">
+                          {formatPKR(item.price * item.quantity)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -200,13 +243,13 @@ export function Cart() {
             <p className="text-[11px] text-stone-500 text-center font-medium">
               Shipping & taxes calculated at checkout
             </p>
-            <Link
-              href="/checkout"
-              onClick={() => setIsOpen(false)}
-              className="block w-full bg-stone-900 text-white text-center py-3.5 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-stone-800 transition-colors shadow-md rounded"
+            <button
+              onClick={handleProceedToCheckout}
+              disabled={validatingCheckout}
+              className="block w-full bg-stone-900 text-white text-center py-3.5 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-stone-800 transition-colors shadow-md rounded disabled:opacity-50"
             >
-              Proceed to Checkout
-            </Link>
+              {validatingCheckout ? 'Validating Stock...' : 'Proceed to Checkout'}
+            </button>
             <button
               onClick={() => setIsOpen(false)}
               className="text-xs text-center font-semibold text-stone-600 hover:text-stone-900 transition-colors uppercase tracking-widest py-1"

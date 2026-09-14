@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export type CartItem = {
   productId: string
@@ -8,10 +9,12 @@ export type CartItem = {
   title: string
   imageUrl?: string
   variantSize: string
-  variantColor?: string // new
+  variantColor?: string
   variantSku?: string
   price: number
   quantity: number
+  stock?: number
+  allowBackorder?: boolean
 }
 
 type CartContextType = {
@@ -25,6 +28,7 @@ type CartContextType = {
     quantity: number,
   ) => void
   clearCart: () => void
+  validateCartStock: () => Promise<{ valid: boolean; adjustments: any[] }>
   itemCount: number
   subtotal: number
 }
@@ -75,17 +79,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = useCallback((newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems((prev) => {
-      const qty = newItem.quantity ?? 1
+      const qtyToAdd = newItem.quantity ?? 1
       const existingIndex = prev.findIndex((i) => isSameVariant(i, newItem))
+      const existingQty = existingIndex >= 0 ? prev[existingIndex].quantity : 0
+      const requestedTotal = existingQty + qtyToAdd
+
+      const availableStock = newItem.stock
+      const allowBackorder = Boolean(newItem.allowBackorder)
+
+      if (availableStock !== undefined && availableStock !== null && !allowBackorder) {
+        if (requestedTotal > availableStock) {
+          toast.error(
+            `Cannot add to cart. Only ${availableStock} items available in stock (you already have ${existingQty} in your cart).`,
+          )
+          return prev
+        }
+      }
+
       if (existingIndex >= 0) {
         const updated = [...prev]
         updated[existingIndex] = {
           ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + qty,
+          quantity: requestedTotal,
+          stock: newItem.stock ?? updated[existingIndex].stock,
+          allowBackorder: newItem.allowBackorder ?? updated[existingIndex].allowBackorder,
         }
         return updated
       }
-      return [...prev, { ...newItem, quantity: qty }]
+
+      return [...prev, { ...newItem, quantity: qtyToAdd }]
     })
   }, [])
 
@@ -103,22 +125,80 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       productId: string,
       variantSize: string,
       variantColor: string | undefined,
-      quantity: number,
+      newQuantity: number,
     ) => {
-      if (quantity < 1) {
+      if (newQuantity < 1) {
         setItems((prev) =>
           prev.filter((i) => !isSameVariant(i, { productId, variantSize, variantColor })),
         )
         return
       }
       setItems((prev) =>
-        prev.map((i) =>
-          isSameVariant(i, { productId, variantSize, variantColor }) ? { ...i, quantity } : i,
-        ),
+        prev.map((item) => {
+          if (isSameVariant(item, { productId, variantSize, variantColor })) {
+            const availableStock = item.stock
+            const allowBackorder = Boolean(item.allowBackorder)
+
+            if (
+              availableStock !== undefined &&
+              availableStock !== null &&
+              !allowBackorder &&
+              newQuantity > availableStock
+            ) {
+              toast.error('Max available stock reached')
+              return { ...item, quantity: availableStock }
+            }
+            return { ...item, quantity: newQuantity }
+          }
+          return item
+        }),
       )
     },
     [],
   )
+
+  const validateCartStock = useCallback(async (): Promise<{ valid: boolean; adjustments: any[] }> => {
+    if (items.length === 0) return { valid: true, adjustments: [] }
+
+    try {
+      const res = await fetch('/api/inventory/validate-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      })
+      const data = await res.json()
+
+      if (!data.valid && Array.isArray(data.adjustments) && data.adjustments.length > 0) {
+        const adjustmentMap = new Map<string, number>()
+        data.adjustments.forEach((adj: any) => {
+          adjustmentMap.set(`${adj.productId}-${adj.variantSize}`, adj.availableStock)
+          toast.error(
+            `${adj.title} - ${adj.variantSize} stock changed. Only ${adj.availableStock} items available.`,
+          )
+        })
+
+        setItems((prev) =>
+          prev
+            .map((item) => {
+              const key = `${item.productId}-${item.variantSize}`
+              if (adjustmentMap.has(key)) {
+                const newStock = adjustmentMap.get(key)!
+                if (newStock <= 0) return null
+                return { ...item, quantity: Math.min(item.quantity, newStock), stock: newStock }
+              }
+              return item
+            })
+            .filter(Boolean) as CartItem[],
+        )
+
+        return { valid: false, adjustments: data.adjustments }
+      }
+
+      return { valid: true, adjustments: [] }
+    } catch {
+      return { valid: true, adjustments: [] }
+    }
+  }, [items])
 
   const clearCart = useCallback(() => {
     setItems([])
@@ -130,7 +210,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, itemCount, subtotal }}
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        validateCartStock,
+        clearCart,
+        itemCount,
+        subtotal,
+      }}
     >
       {children}
     </CartContext.Provider>

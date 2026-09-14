@@ -23,6 +23,11 @@ export const BeforeDashboard: React.FC = () => {
           <a href="/">Visit Storefront</a>
           {' to view your live Pakistani fashion website.'}
         </li>
+        <li>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/admin/inventory">📦 Inventory Management</a>
+          {' — View all stock levels, set low-stock thresholds, and update quantities.'}
+        </li>
       </ul>
     </div>
   )
