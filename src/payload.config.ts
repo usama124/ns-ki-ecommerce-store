@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import {
     BoldFeature,
     EXPERIMENTAL_TableFeature,
@@ -30,6 +31,25 @@ import { plugins } from './plugins'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+const dbAdapterType = (process.env.DB_ADAPTER || 'postgres').toLowerCase()
+const shouldPushSchema = process.env.DB_PUSH === 'true'
+
+const db =
+  dbAdapterType === 'turso' || dbAdapterType === 'sqlite' || dbAdapterType === 'libsql'
+    ? sqliteAdapter({
+        client: {
+          url: process.env.TURSO_DATABASE_URL || 'file:./payload.db',
+          authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+        },
+        push: shouldPushSchema,
+      })
+    : postgresAdapter({
+        pool: {
+          connectionString: process.env.DATABASE_URL || '',
+        },
+        push: shouldPushSchema,
+      })
+
 export default buildConfig({
   admin: {
     components: {
@@ -47,12 +67,7 @@ export default buildConfig({
     suppressHydrationWarning: true,
   },
   collections: [Users, Pages, Categories, Products, Media, Orders, Sizes],
-  db: postgresAdapter({
-    pool: {
-      connectionString: process.env.DATABASE_URL || '',
-    },
-    push: false,
-  }),
+  db,
   editor: lexicalEditor({
     features: () => {
       return [

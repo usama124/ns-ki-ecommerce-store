@@ -122,7 +122,7 @@ export function OrderTrackingView() {
                 required
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="e.g. #LUJ-920182 or 920182"
+                placeholder="e.g. #NKI-920182 or 920182"
                 className="w-full px-3 py-2.5 text-xs font-mono border border-gray-300 focus:border-black focus:outline-hidden bg-white"
               />
             </div>

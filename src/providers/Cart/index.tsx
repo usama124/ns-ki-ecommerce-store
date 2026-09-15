@@ -35,12 +35,14 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null)
 
-const CART_STORAGE_KEY = 'lujain_cart'
+const CART_STORAGE_KEY = 'nski_cart'
+const LEGACY_CART_STORAGE_KEY = 'lujain_cart'
 
 function loadCart(): CartItem[] {
   if (typeof window === 'undefined') return []
   try {
-    const stored = localStorage.getItem(CART_STORAGE_KEY)
+    const stored =
+      localStorage.getItem(CART_STORAGE_KEY) || localStorage.getItem(LEGACY_CART_STORAGE_KEY)
     return stored ? JSON.parse(stored) : []
   } catch {
     return []
@@ -157,7 +159,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [],
   )
 
-  const validateCartStock = useCallback(async (): Promise<{ valid: boolean; adjustments: any[] }> => {
+  const validateCartStock = useCallback(async (): Promise<{
+    valid: boolean
+    adjustments: any[]
+  }> => {
     if (items.length === 0) return { valid: true, adjustments: [] }
 
     try {
@@ -177,18 +182,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           )
         })
 
-        setItems((prev) =>
-          prev
-            .map((item) => {
-              const key = `${item.productId}-${item.variantSize}`
-              if (adjustmentMap.has(key)) {
-                const newStock = adjustmentMap.get(key)!
-                if (newStock <= 0) return null
-                return { ...item, quantity: Math.min(item.quantity, newStock), stock: newStock }
-              }
-              return item
-            })
-            .filter(Boolean) as CartItem[],
+        setItems(
+          (prev) =>
+            prev
+              .map((item) => {
+                const key = `${item.productId}-${item.variantSize}`
+                if (adjustmentMap.has(key)) {
+                  const newStock = adjustmentMap.get(key)!
+                  if (newStock <= 0) return null
+                  return { ...item, quantity: Math.min(item.quantity, newStock), stock: newStock }
+                }
+                return item
+              })
+              .filter(Boolean) as CartItem[],
         )
 
         return { valid: false, adjustments: data.adjustments }

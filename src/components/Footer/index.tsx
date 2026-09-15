@@ -98,7 +98,7 @@ export async function Footer() {
       heading: 'Contact Us',
       links: [
         { url: 'https://wa.me/923001234567', label: 'WhatsApp' },
-        { url: 'mailto:info@lujain.pk', label: 'Email Us' },
+        { url: 'mailto:info@nski.pk', label: 'Email Us' },
         { url: '/admin', label: 'Admin Panel' },
       ],
     },

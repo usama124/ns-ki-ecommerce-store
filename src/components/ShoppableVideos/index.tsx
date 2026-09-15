@@ -293,7 +293,7 @@ function VideoCard({
       {/* Top Header */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-center text-white z-10">
         <span className="text-[10px] font-semibold uppercase tracking-widest bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/20">
-          {reel.title || 'LUJAIN Style'}
+          {reel.title || "N's KI Style"}
         </span>
         <button
           onClick={toggleMute}

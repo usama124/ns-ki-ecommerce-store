@@ -1,6 +1,6 @@
+import configPromise from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import configPromise from '@payload-config'
 
 export async function GET(req: Request) {
   try {
@@ -11,13 +11,14 @@ export async function GET(req: Request) {
     if (!orderNumQuery || !contactQuery) {
       return NextResponse.json(
         { error: 'Please provide both Order Number and Phone or Email.' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    // Normalize order number formatting (e.g. 920182 -> #LUJ-920182, #NKI-920182 -> #LUJ-920182, etc.)
+    // Normalize order number formatting (e.g. 920182 -> #NKI-920182)
     const cleanNumberStr = orderNumQuery.replace(/[^0-9]/g, '')
-    const formattedNum = `#LUJ-${cleanNumberStr}`
+    const formattedNkiNum = `#NKI-${cleanNumberStr}`
+    const formattedLujNum = `#LUJ-${cleanNumberStr}`
 
     const payload = await getPayload({ config: configPromise })
 
@@ -32,7 +33,8 @@ export async function GET(req: Request) {
           {
             or: [
               { orderNumber: { equals: orderNumQuery } },
-              { orderNumber: { equals: formattedNum } },
+              { orderNumber: { equals: formattedNkiNum } },
+              { orderNumber: { equals: formattedLujNum } },
               { orderNumber: { contains: cleanNumberStr } },
             ],
           },
@@ -50,8 +52,11 @@ export async function GET(req: Request) {
 
     if (!order) {
       return NextResponse.json(
-        { error: 'No matching order found. Please verify your order number and contact information.' },
-        { status: 404 }
+        {
+          error:
+            'No matching order found. Please verify your order number and contact information.',
+        },
+        { status: 404 },
       )
     }
 
@@ -63,7 +68,7 @@ export async function GET(req: Request) {
     console.error('Error tracking order:', error)
     return NextResponse.json(
       { error: error?.message || 'Failed to search order tracking details.' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

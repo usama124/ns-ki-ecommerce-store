@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       return {
         product: parsedId,
         variantSize: item.variantSize,
-        variantSku: item.variantSku || 'LUJ-SKU',
+        variantSku: item.variantSku || 'NKI-SKU',
         quantity: item.quantity,
         unitPrice: item.price,
       }
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      orderNumber: (orderDoc as any).orderNumber || `#LUJ-${orderDoc.id}`,
+      orderNumber: (orderDoc as any).orderNumber || `#NKI-${orderDoc.id}`,
       orderId: orderDoc.id,
     })
   } catch (error: any) {

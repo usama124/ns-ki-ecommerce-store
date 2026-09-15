@@ -1,6 +1,6 @@
+import configPromise from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import configPromise from '@payload-config'
 
 export async function GET() {
   try {
@@ -34,9 +34,7 @@ export async function GET() {
       if (Array.isArray(product.variants)) {
         product.variants.forEach((v: any, vIdx: number) => {
           const sizeName =
-            typeof v.size === 'object' && v.size !== null
-              ? v.size.name
-              : String(v.size || 'OS')
+            typeof v.size === 'object' && v.size !== null ? v.size.name : String(v.size || 'OS')
 
           inventoryItems.push({
             productId: product.id,
@@ -49,7 +47,7 @@ export async function GET() {
             imageUrl,
             variantIndex: vIdx,
             sizeName,
-            sku: v.sku || `LUJ-${product.id}-${vIdx}`,
+            sku: v.sku || `NKI-${product.id}-${vIdx}`,
             stock: typeof v.stock === 'number' ? v.stock : 0,
             allowBackorder: Boolean(v.allowBackorder),
             pricePKR: v.pricePKR ?? product.basePricePKR ?? 0,

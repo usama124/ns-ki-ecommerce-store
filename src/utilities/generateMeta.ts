@@ -12,8 +12,8 @@ export const generateMeta = async (args: { doc: Page | Product | null }): Promis
       ? `${process.env.NEXT_PUBLIC_SERVER_URL}${metaImage.url}`
       : undefined
 
-  const title = pageDoc?.meta?.title || pageDoc?.title || 'LUJAIN | Pakistani Luxury Fashion'
-  const description = pageDoc?.meta?.description || 'LUJAIN Pakistani Luxury Fashion & E-Commerce'
+  const title = pageDoc?.meta?.title || pageDoc?.title || "N's KI | Pakistani Luxury Fashion"
+  const description = pageDoc?.meta?.description || "N's KI Pakistani Luxury Fashion & E-Commerce"
 
   return {
     description,

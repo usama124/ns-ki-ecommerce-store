@@ -18,7 +18,7 @@ export const seed = async ({
   payload: Payload
   req: PayloadRequest
 }): Promise<void> => {
-  payload.logger.info('Seeding database for LUJAIN Pakistani Luxury Fashion...')
+  payload.logger.info("Seeding database for N's KI Pakistani Luxury Fashion...")
 
   // Clear globals
   await Promise.all(
@@ -96,12 +96,12 @@ export const seed = async ({
       basePricePKR: 18500,
       color: 'Emerald Green',
       variants: [
-        { size: sizeMap['XS'], stock: 10, sku: 'LUJ-ZARA-XS-101' },
-        { size: sizeMap['S'], stock: 8, sku: 'LUJ-ZARA-SM-102' },
-        { size: sizeMap['M'], stock: 15, sku: 'LUJ-ZARA-MD-103' },
-        { size: sizeMap['L'], stock: 5, sku: 'LUJ-ZARA-LG-104' },
-        { size: sizeMap['XL'], stock: 0, sku: 'LUJ-ZARA-XL-105' },
-        { size: sizeMap['Unstitched'], stock: 20, sku: 'LUJ-ZARA-UN-106' },
+        { size: sizeMap['XS'], stock: 10, sku: 'NKI-ZARA-XS-101' },
+        { size: sizeMap['S'], stock: 8, sku: 'NKI-ZARA-SM-102' },
+        { size: sizeMap['M'], stock: 15, sku: 'NKI-ZARA-MD-103' },
+        { size: sizeMap['L'], stock: 5, sku: 'NKI-ZARA-LG-104' },
+        { size: sizeMap['XL'], stock: 0, sku: 'NKI-ZARA-XL-105' },
+        { size: sizeMap['Unstitched'], stock: 20, sku: 'NKI-ZARA-UN-106' },
       ],
     },
   })
@@ -199,5 +199,5 @@ export const seed = async ({
     },
   })
 
-  payload.logger.info('LUJAIN database seeded successfully!')
+  payload.logger.info("N's KI database seeded successfully!")
 }

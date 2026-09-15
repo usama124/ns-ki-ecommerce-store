@@ -1,6 +1,6 @@
 export const productHatData = (_args: any) => ({
-  title: 'LUJAIN Sample Hat',
-  slug: 'lujain-sample-hat',
+  title: "N's KI Sample Hat",
+  slug: 'nski-sample-hat',
   status: 'published',
   basePricePKR: 4500,
 })

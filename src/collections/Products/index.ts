@@ -18,7 +18,7 @@ function generateSKU(slug: string, size: string): string {
     .slice(0, 4)
     .padEnd(4, 'X')
   const random = Math.random().toString(36).toUpperCase().slice(2, 5)
-  return `LUJ-${slugPart}-${size.toUpperCase().slice(0, 2)}-${random}`
+  return `NKI-${slugPart}-${size.toUpperCase().slice(0, 2)}-${random}`
 }
 
 export const Products: CollectionConfig = {
@@ -128,7 +128,7 @@ export const Products: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description:
-          'Select all main categories, subcategories, or seasonal collections (e.g. Unstitched, Luxury Lawn \'25, Sale) where this product should appear.',
+          "Select all main categories, subcategories, or seasonal collections (e.g. Unstitched, Luxury Lawn '25, Sale) where this product should appear.",
       },
     },
     {
@@ -224,7 +224,7 @@ export const Products: CollectionConfig = {
                   type: 'text',
                   label: 'SKU (auto-generated if blank)',
                   admin: {
-                    description: 'Format: LUJ-XXXX-SZ-XXX. Leave blank to auto-generate.',
+                    description: 'Format: NKI-XXXX-SZ-XXX. Leave blank to auto-generate.',
                   },
                 },
                 {

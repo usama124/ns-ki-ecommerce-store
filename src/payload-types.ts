@@ -490,7 +490,7 @@ export interface Product {
          */
         size: number | Size;
         /**
-         * Format: LUJ-XXXX-SZ-XXX. Leave blank to auto-generate.
+         * Format: NKI-XXXX-SZ-XXX. Leave blank to auto-generate.
          */
         sku?: string | null;
         stock: number;

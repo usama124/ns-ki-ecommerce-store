@@ -73,7 +73,7 @@ export const Orders: CollectionConfig = {
           ({ value }) => {
             if (value) return value
             const num = Math.floor(100000 + Math.random() * 899999)
-            return `#LUJ-${num}`
+            return `#NKI-${num}`
           },
         ],
       },

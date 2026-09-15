@@ -1,9 +1,9 @@
-import type { Media as MediaType } from '@/payload-types'
-import { Media } from '@/components/Media'
 import { Label } from '@/components/Grid/Label'
+import { Media } from '@/components/Media'
+import type { Media as MediaType } from '@/payload-types'
 import clsx from 'clsx'
-import React from 'react'
 import Image from 'next/image'
+import React from 'react'
 
 type Props = {
   active?: boolean
@@ -26,7 +26,7 @@ export const GridTileImage: React.FC<Props> = ({
   label,
   media,
   src,
-  alt = 'LUJAIN Product',
+  alt = "N's KI Product",
   fill,
   sizes,
   ...props

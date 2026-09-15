@@ -1,7 +1,7 @@
 {
-  "name": "lujain",
+  "name": "nski",
   "version": "1.0.0",
-  "description": "LUJAIN Pakistani Luxury Fashion E-Commerce",
+  "description": "N's KI Pakistani Luxury Fashion E-Commerce",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -26,6 +26,7 @@
   "dependencies": {
     "@payloadcms/admin-bar": "3.88.0",
     "@payloadcms/db-postgres": "3.88.0",
+    "@payloadcms/db-sqlite": "^3.88.0",
     "@payloadcms/email-nodemailer": "3.88.0",
     "@payloadcms/live-preview-react": "3.88.0",
     "@payloadcms/next": "3.88.0",
