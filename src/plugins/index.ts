@@ -83,6 +83,11 @@ export const plugins: Plugin[] = [
         s3Storage({
           collections: {
             media: {
+              // prefix: '' must be defined (not omitted) so the cloud-storage plugin
+              // injects the `prefix` field into the Media schema and persists it to DB.
+              // Our beforeChange hook in Media.ts overrides this to 'images' or 'videos'
+              // based on MIME type, which is then used as the S3 key prefix at upload time.
+              prefix: '',
               disableLocalStorage: true,
               ...(r2PublicDomain
                 ? {
