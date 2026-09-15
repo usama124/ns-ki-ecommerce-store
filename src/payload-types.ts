@@ -98,7 +98,7 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {
@@ -146,7 +146,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   name?: string | null;
   roles?: ('admin' | 'customer')[] | null;
   updatedAt: string;
@@ -173,7 +173,7 @@ export interface User {
  * via the `definition` "pages".
  */
 export interface Page {
-  id: number;
+  id: string;
   title: string;
   publishedOn?: string | null;
   hero: {
@@ -200,7 +200,7 @@ export interface Page {
             newTab?: boolean | null;
             reference?: {
               relationTo: 'pages';
-              value: number | Page;
+              value: string | Page;
             } | null;
             url?: string | null;
             label: string;
@@ -212,7 +212,7 @@ export interface Page {
           id?: string | null;
         }[]
       | null;
-    media?: (number | null) | Media;
+    media?: (string | null) | Media;
   };
   layout: (
     | CallToActionBlock
@@ -229,7 +229,7 @@ export interface Page {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (number | null) | Media;
+    image?: (string | null) | Media;
     description?: string | null;
   };
   /**
@@ -246,7 +246,7 @@ export interface Page {
  * via the `definition` "media".
  */
 export interface Media {
-  id: number;
+  id: string;
   alt?: string | null;
   caption?: {
     root: {
@@ -302,7 +302,7 @@ export interface CallToActionBlock {
           newTab?: boolean | null;
           reference?: {
             relationTo: 'pages';
-            value: number | Page;
+            value: string | Page;
           } | null;
           url?: string | null;
           label: string;
@@ -347,7 +347,7 @@ export interface ContentBlock {
           newTab?: boolean | null;
           reference?: {
             relationTo: 'pages';
-            value: number | Page;
+            value: string | Page;
           } | null;
           url?: string | null;
           label: string;
@@ -368,7 +368,7 @@ export interface ContentBlock {
  * via the `definition` "MediaBlock".
  */
 export interface MediaBlock {
-  media: number | Media;
+  media: string | Media;
   id?: string | null;
   blockName?: string | null;
   blockType: 'mediaBlock';
@@ -395,12 +395,12 @@ export interface ArchiveBlock {
   } | null;
   populateBy?: ('collection' | 'selection') | null;
   relationTo?: 'products' | null;
-  categories?: (number | Category)[] | null;
+  categories?: (string | Category)[] | null;
   limit?: number | null;
   selectedDocs?:
     | {
         relationTo: 'products';
-        value: number | Product;
+        value: string | Product;
       }[]
     | null;
   id?: string | null;
@@ -412,7 +412,7 @@ export interface ArchiveBlock {
  * via the `definition` "categories".
  */
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   /**
    * Auto-generated from name. You can override.
@@ -422,7 +422,7 @@ export interface Category {
   /**
    * Select the main category this belongs to.
    */
-  parent?: (number | null) | Category;
+  parent?: (string | null) | Category;
   /**
    * Core categories (Unstitched, Ready to Wear, etc.) should be fixed.
    */
@@ -436,7 +436,7 @@ export interface Category {
  * via the `definition` "products".
  */
 export interface Product {
-  id: number;
+  id: string;
   title: string;
   slug?: string | null;
   status?: ('draft' | 'published') | null;
@@ -444,11 +444,11 @@ export interface Product {
   /**
    * Primary category used for canonical URLs, main breadcrumb hierarchy, and primary grouping.
    */
-  primaryCategory: number | Category;
+  primaryCategory: string | Category;
   /**
    * Select all main categories, subcategories, or seasonal collections (e.g. Unstitched, Luxury Lawn '25, Sale) where this product should appear.
    */
-  categories: (number | Category)[];
+  categories: (string | Category)[];
   /**
    * Base price in Pakistani Rupees (PKR)
    */
@@ -474,12 +474,12 @@ export interface Product {
   } | null;
   images?:
     | {
-        image: number | Media;
+        image: string | Media;
         alt?: string | null;
         id?: string | null;
       }[]
     | null;
-  productVideo?: (number | null) | Media;
+  productVideo?: (string | null) | Media;
   /**
    * Add sizes for this product here. Click "Add Variant" to create a unique size variant with stock count and price overrides.
    */
@@ -488,7 +488,7 @@ export interface Product {
         /**
          * Select a size. Go to Shop → Sizes to add new sizes.
          */
-        size: number | Size;
+        size: string | Size;
         /**
          * Format: NKI-XXXX-SZ-XXX. Leave blank to auto-generate.
          */
@@ -512,7 +512,7 @@ export interface Product {
  * via the `definition` "sizes".
  */
 export interface Size {
-  id: number;
+  id: string;
   /**
    * e.g. XS, S, M, L, XL, XXL, Unstitched, Free Size
    */
@@ -531,12 +531,12 @@ export interface Size {
 export interface CarouselBlock {
   populateBy?: ('collection' | 'selection') | null;
   relationTo?: 'products' | null;
-  categories?: (number | Category)[] | null;
+  categories?: (string | Category)[] | null;
   limit?: number | null;
   selectedDocs?:
     | {
         relationTo: 'products';
-        value: number | Product;
+        value: string | Product;
       }[]
     | null;
   /**
@@ -545,7 +545,7 @@ export interface CarouselBlock {
   populatedDocs?:
     | {
         relationTo: 'products';
-        value: number | Product;
+        value: string | Product;
       }[]
     | null;
   /**
@@ -561,7 +561,7 @@ export interface CarouselBlock {
  * via the `definition` "ThreeItemGridBlock".
  */
 export interface ThreeItemGridBlock {
-  products?: (number | Product)[] | null;
+  products?: (string | Product)[] | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'threeItemGrid';
@@ -596,7 +596,7 @@ export interface BannerBlock {
  * via the `definition` "FormBlock".
  */
 export interface FormBlock {
-  form: number | Form;
+  form: string | Form;
   enableIntro?: boolean | null;
   introContent?: {
     root: {
@@ -622,7 +622,7 @@ export interface FormBlock {
  * via the `definition` "forms".
  */
 export interface Form {
-  id: number;
+  id: string;
   title: string;
   fields?:
     | (
@@ -787,7 +787,7 @@ export interface Form {
  * via the `definition` "orders".
  */
 export interface Order {
-  id: number;
+  id: string;
   orderNumber: string;
   status?: ('pending_verification' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled') | null;
   paymentMethod: 'cod' | 'bank_transfer' | 'jazzcash' | 'easypaisa';
@@ -801,7 +801,7 @@ export interface Order {
   };
   paymentProof?: {
     transactionId?: string | null;
-    screenshot?: (number | null) | Media;
+    screenshot?: (string | null) | Media;
   };
   fulfillment?: {
     courierName?: ('TCS' | 'Leopard' | 'CallCourier' | 'Trax' | 'M&P' | 'PostEx' | 'Other') | null;
@@ -809,7 +809,7 @@ export interface Order {
     trackingUrl?: string | null;
   };
   items: {
-    product: number | Product;
+    product: string | Product;
     variantSize: string;
     variantColor?: string | null;
     variantSku?: string | null;
@@ -830,8 +830,8 @@ export interface Order {
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
-  id: number;
-  form: number | Form;
+  id: string;
+  form: string | Form;
   submissionData?:
     | {
         field: string;
@@ -847,7 +847,7 @@ export interface FormSubmission {
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
+  id: string;
   key: string;
   data:
     | {
@@ -864,48 +864,48 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
+  id: string;
   document?:
     | ({
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       } | null)
     | ({
         relationTo: 'pages';
-        value: number | Page;
+        value: string | Page;
       } | null)
     | ({
         relationTo: 'categories';
-        value: number | Category;
+        value: string | Category;
       } | null)
     | ({
         relationTo: 'products';
-        value: number | Product;
+        value: string | Product;
       } | null)
     | ({
         relationTo: 'media';
-        value: number | Media;
+        value: string | Media;
       } | null)
     | ({
         relationTo: 'orders';
-        value: number | Order;
+        value: string | Order;
       } | null)
     | ({
         relationTo: 'sizes';
-        value: number | Size;
+        value: string | Size;
       } | null)
     | ({
         relationTo: 'forms';
-        value: number | Form;
+        value: string | Form;
       } | null)
     | ({
         relationTo: 'form-submissions';
-        value: number | FormSubmission;
+        value: string | FormSubmission;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -915,10 +915,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
+  id: string;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   key?: string | null;
   value?:
@@ -938,7 +938,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
+  id: string;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -1462,7 +1462,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  * via the `definition` "header".
  */
 export interface Header {
-  id: number;
+  id: string;
   navItems?:
     | {
         link: {
@@ -1470,7 +1470,7 @@ export interface Header {
           newTab?: boolean | null;
           reference?: {
             relationTo: 'pages';
-            value: number | Page;
+            value: string | Page;
           } | null;
           url?: string | null;
           label: string;
@@ -1486,7 +1486,7 @@ export interface Header {
  * via the `definition` "footer".
  */
 export interface Footer {
-  id: number;
+  id: string;
   tagline?: string | null;
   columns?:
     | {
@@ -1498,7 +1498,7 @@ export interface Footer {
                 newTab?: boolean | null;
                 reference?: {
                   relationTo: 'pages';
-                  value: number | Page;
+                  value: string | Page;
                 } | null;
                 url?: string | null;
                 label: string;
@@ -1528,7 +1528,7 @@ export interface Footer {
           newTab?: boolean | null;
           reference?: {
             relationTo: 'pages';
-            value: number | Page;
+            value: string | Page;
           } | null;
           url?: string | null;
           label: string;
@@ -1544,15 +1544,15 @@ export interface Footer {
  * via the `definition` "homepage".
  */
 export interface Homepage {
-  id: number;
+  id: string;
   /**
    * Add slides for the homepage hero banner.
    */
   heroSlider?:
     | {
         mediaType?: ('image' | 'video') | null;
-        desktopMedia: number | Media;
-        mobileMedia?: (number | null) | Media;
+        desktopMedia: string | Media;
+        mobileMedia?: (string | null) | Media;
         heading?: string | null;
         subheading?: string | null;
         ctaLabel?: string | null;
@@ -1566,9 +1566,9 @@ export interface Homepage {
   shoppableVideos?:
     | {
         title?: string | null;
-        video: number | Media;
-        poster?: (number | null) | Media;
-        linkedProduct?: (number | null) | Product;
+        video: string | Media;
+        poster?: (string | null) | Media;
+        linkedProduct?: (string | null) | Product;
         id?: string | null;
       }[]
     | null;
@@ -1581,7 +1581,7 @@ export interface Homepage {
  * via the `definition` "site-settings".
  */
 export interface SiteSetting {
-  id: number;
+  id: string;
   announcementBar?: {
     isActive?: boolean | null;
     text?: string | null;
