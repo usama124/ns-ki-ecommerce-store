@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@payloadcms/admin-bar": "3.88.0",
+    "@payloadcms/db-mongodb": "^3.89.0",
     "@payloadcms/db-postgres": "3.88.0",
     "@payloadcms/db-sqlite": "^3.88.0",
     "@payloadcms/email-nodemailer": "3.88.0",

@@ -1,3 +1,4 @@
+import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import {
@@ -31,11 +32,22 @@ import { plugins } from './plugins'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const dbAdapterType = (process.env.DB_ADAPTER || 'postgres').toLowerCase()
+const dbAdapterType = (process.env.DB_ADAPTER || '').toLowerCase()
 const shouldPushSchema = process.env.DB_PUSH === 'true'
 
-const db =
-  dbAdapterType === 'turso' || dbAdapterType === 'sqlite' || dbAdapterType === 'libsql'
+const mongoUrl =
+  process.env.MONGODB_URI || process.env.MONGODB_URL || process.env.DATABASE_URL || ''
+const isMongo =
+  dbAdapterType === 'mongodb' ||
+  dbAdapterType === 'mongo' ||
+  mongoUrl.startsWith('mongodb://') ||
+  mongoUrl.startsWith('mongodb+srv://')
+
+const db = isMongo
+  ? mongooseAdapter({
+      url: mongoUrl,
+    })
+  : dbAdapterType === 'turso' || dbAdapterType === 'sqlite' || dbAdapterType === 'libsql'
     ? sqliteAdapter({
         client: {
           url: process.env.TURSO_DATABASE_URL || 'file:./payload.db',
