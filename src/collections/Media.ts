@@ -1,12 +1,12 @@
-import type { CollectionConfig } from 'payload'
+import { adminOnly } from '@/access/adminOnly'
 import {
-  FixedToolbarFeature,
-  InlineToolbarFeature,
-  lexicalEditor,
+    FixedToolbarFeature,
+    InlineToolbarFeature,
+    lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import path from 'path'
+import type { CollectionConfig } from 'payload'
 import { fileURLToPath } from 'url'
-import { adminOnly } from '@/access/adminOnly'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -22,6 +22,18 @@ export const Media: CollectionConfig = {
     delete: adminOnly,
     read: () => true,
     update: adminOnly,
+  },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (data?.mimeType?.startsWith('video/')) {
+          data.prefix = 'videos'
+        } else if (data?.mimeType?.startsWith('image/')) {
+          data.prefix = 'images'
+        }
+        return data
+      },
+    ],
   },
   fields: [
     {

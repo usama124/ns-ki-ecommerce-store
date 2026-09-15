@@ -31,6 +31,29 @@ const nextConfig: NextConfig = {
           protocol: url.protocol.replace(':', '') as 'http' | 'https',
         }
       }),
+      // Cloudflare R2 direct endpoint (e.g. <account>.r2.cloudflarestorage.com)
+      {
+        protocol: 'https',
+        hostname: '*.r2.cloudflarestorage.com',
+        pathname: '/**',
+      },
+      // Custom R2 public domain / CDN (R2_PUBLIC_DOMAIN env var)
+      ...(process.env.R2_PUBLIC_DOMAIN
+        ? (() => {
+            try {
+              const r2Url = new URL(process.env.R2_PUBLIC_DOMAIN!)
+              return [
+                {
+                  protocol: r2Url.protocol.replace(':', '') as 'http' | 'https',
+                  hostname: r2Url.hostname,
+                  pathname: '/**',
+                },
+              ]
+            } catch {
+              return []
+            }
+          })()
+        : []),
     ],
   },
   reactStrictMode: true,

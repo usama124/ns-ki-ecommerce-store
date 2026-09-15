@@ -23,6 +23,7 @@ import { InventoryNavLink as InventoryNavLink_80f2707f655ba04334b711729c7f5882 }
 import { OrdersDashboardNavLink as OrdersDashboardNavLink_c3709662247da8634bd77922a5bc278f } from '@/components/admin/OrdersDashboardNavLink'
 import { BeforeDashboard as BeforeDashboard_1a7510af427896d367a49dbf838d2de6 } from '@/components/BeforeDashboard'
 import { BeforeLogin as BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
+import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { InventoryView as InventoryView_c57b2017f7d47f24e94a004fa8d6e9b5 } from '@/components/admin/InventoryView'
 import { OrdersDashboardView as OrdersDashboardView_f6ac0fe948337f46e9f23cedf87fc666 } from '@/components/admin/OrdersDashboardView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
@@ -54,6 +55,7 @@ export const importMap = {
   "@/components/admin/OrdersDashboardNavLink#OrdersDashboardNavLink": OrdersDashboardNavLink_c3709662247da8634bd77922a5bc278f,
   "@/components/BeforeDashboard#BeforeDashboard": BeforeDashboard_1a7510af427896d367a49dbf838d2de6,
   "@/components/BeforeLogin#BeforeLogin": BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e,
+  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@/components/admin/InventoryView#InventoryView": InventoryView_c57b2017f7d47f24e94a004fa8d6e9b5,
   "@/components/admin/OrdersDashboardView#OrdersDashboardView": OrdersDashboardView_f6ac0fe948337f46e9f23cedf87fc666,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1

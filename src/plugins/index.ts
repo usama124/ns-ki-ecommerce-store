@@ -18,6 +18,16 @@ const generateURL: GenerateURL<DocWithTitle> = ({ doc }) => {
   return doc?.slug ? `${url}/${doc.slug}` : url
 }
 
+import { s3Storage } from '@payloadcms/storage-s3'
+
+const r2Bucket = process.env.R2_BUCKET || ''
+const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID || ''
+const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY || ''
+const r2Endpoint = process.env.R2_ENDPOINT || ''
+const r2PublicDomain = (process.env.R2_PUBLIC_DOMAIN || '').replace(/\/$/, '')
+
+const isR2Configured = Boolean(r2Bucket && r2AccessKeyId && r2SecretAccessKey && r2Endpoint)
+
 export const plugins: Plugin[] = [
   seoPlugin({
     generateTitle,
@@ -68,4 +78,33 @@ export const plugins: Plugin[] = [
       },
     },
   }),
+  ...(isR2Configured
+    ? [
+        s3Storage({
+          collections: {
+            media: {
+              disableLocalStorage: true,
+              ...(r2PublicDomain
+                ? {
+                    generateFileURL: ({ filename, prefix }) => {
+                      const cleanPrefix = prefix ? `${prefix.replace(/\/$/, '')}/` : ''
+                      return `${r2PublicDomain}/${cleanPrefix}${filename}`
+                    },
+                  }
+                : {}),
+            },
+          },
+          bucket: r2Bucket,
+          config: {
+            credentials: {
+              accessKeyId: r2AccessKeyId,
+              secretAccessKey: r2SecretAccessKey,
+            },
+            region: 'auto',
+            endpoint: r2Endpoint,
+            forcePathStyle: true,
+          },
+        }),
+      ]
+    : []),
 ]
