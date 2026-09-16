@@ -21,6 +21,11 @@ function generateSKU(slug: string, size: string): string {
   return `NKI-${slugPart}-${size.toUpperCase().slice(0, 2)}-${random}`
 }
 
+import {
+  autoSyncShoppableVideo,
+  removeShoppableVideoOnDelete,
+} from './hooks/autoSyncShoppableVideo'
+
 export const Products: CollectionConfig = {
   slug: 'products',
   access: {
@@ -52,6 +57,8 @@ export const Products: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [autoSyncShoppableVideo],
+    afterDelete: [removeShoppableVideoOnDelete],
   },
   fields: [
     {

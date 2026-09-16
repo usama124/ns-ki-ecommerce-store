@@ -50,6 +50,47 @@ export default async function Homepage() {
       })
       products = allPublished.docs
     }
+
+    try {
+      const videoProductsResult = await payload.find({
+        collection: 'products',
+        where: {
+          and: [{ status: { equals: 'published' } }, { productVideo: { exists: true } }],
+        },
+        limit: 10,
+        depth: 2,
+      })
+
+      if (videoProductsResult?.docs?.length > 0) {
+        const dynamicReels = videoProductsResult.docs.map((p: any) => ({
+          title: p.title,
+          video: p.productVideo,
+          poster: p.images?.[0]?.image,
+          linkedProduct: p,
+        }))
+
+        const existingLinkedIds = new Set(
+          (homepageData?.shoppableVideos || [])
+            .map((r: any) =>
+              typeof r.linkedProduct === 'object' && r.linkedProduct !== null
+                ? r.linkedProduct.id
+                : r.linkedProduct,
+            )
+            .filter(Boolean),
+        )
+
+        const newDynamicReels = dynamicReels.filter(
+          (r: any) => !existingLinkedIds.has(r.linkedProduct?.id || r.linkedProduct),
+        )
+
+        homepageData = {
+          ...homepageData,
+          shoppableVideos: [...(homepageData?.shoppableVideos || []), ...newDynamicReels],
+        }
+      }
+    } catch {
+      // Optional fallback catch
+    }
   } catch {
     // Database connection catch
   }
