@@ -7,6 +7,7 @@ import * as migration_20260911_180000_single_garment_color from './20260911_1800
 import * as migration_20260911_190000_multi_category_assignment from './20260911_190000_multi_category_assignment'
 import * as migration_20260913_170000_cod_fee from './20260913_170000_cod_fee'
 import * as migration_20260916_000000_media_prefix from './20260916_000000_media_prefix'
+import * as migration_20260916_010000_media_sizes from './20260916_010000_media_sizes'
 
 export const migrations = [
   {
@@ -53,5 +54,10 @@ export const migrations = [
     up: migration_20260916_000000_media_prefix.up,
     down: migration_20260916_000000_media_prefix.down,
     name: '20260916_000000_media_prefix',
+  },
+  {
+    up: migration_20260916_010000_media_sizes.up,
+    down: migration_20260916_010000_media_sizes.down,
+    name: '20260916_010000_media_sizes',
   },
 ]
