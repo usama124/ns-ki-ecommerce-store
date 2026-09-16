@@ -80,36 +80,70 @@ export const plugins: Plugin[] = [
   }),
   ...(isR2Configured
     ? [
-        s3Storage({
-          collections: {
-            media: {
-              // prefix: '' must be defined (not omitted) so the cloud-storage plugin
-              // injects the `prefix` field into the Media schema and persists it to DB.
-              // Our beforeChange hook in Media.ts overrides this to 'images' or 'videos'
-              // based on MIME type, which is then used as the S3 key prefix at upload time.
-              prefix: '',
-              disableLocalStorage: true,
-              ...(r2PublicDomain
-                ? {
-                    generateFileURL: ({ filename, prefix }) => {
-                      const cleanPrefix = prefix ? `${prefix.replace(/\/$/, '')}/` : ''
-                      return `${r2PublicDomain}/${cleanPrefix}${filename}`
-                    },
+        (async (incomingConfig) => {
+          const s3Plugin = s3Storage({
+            collections: {
+              media: {
+                // prefix: '' must be defined so the cloud-storage plugin
+                // injects the `prefix` field into the Media schema.
+                prefix: '',
+                disableLocalStorage: true,
+                ...(r2PublicDomain
+                  ? {
+                      generateFileURL: ({ filename, prefix }) => {
+                        const cleanPrefix = prefix ? `${prefix.replace(/\/$/, '')}/` : ''
+                        return `${r2PublicDomain}/${cleanPrefix}${filename}`
+                      },
+                    }
+                  : {}),
+              },
+            },
+            // clientUploads: browser requests a pre-signed R2 URL and uploads the file directly,
+            // bypassing the Next.js server entirely (essential for Vercel 4.5 MB limit).
+            clientUploads: true,
+            bucket: r2Bucket,
+            config: {
+              credentials: {
+                accessKeyId: r2AccessKeyId,
+                secretAccessKey: r2SecretAccessKey,
+              },
+              region: 'auto',
+              endpoint: r2Endpoint,
+              forcePathStyle: true,
+            },
+          })
+
+          const config = await s3Plugin(incomingConfig)
+
+          // Intercept /storage-s3-generate-signed-url endpoint to dynamically supply docPrefix ('videos' | 'images')
+          // based on mimeType when clientUploads requests pre-signed URLs.
+          if (config.endpoints) {
+            const signedUrlEndpoint = config.endpoints.find(
+              (e) => e.path?.startsWith('/storage-s3-generate-signed-url') && e.method === 'post',
+            )
+            if (signedUrlEndpoint) {
+              const originalHandler = signedUrlEndpoint.handler
+              signedUrlEndpoint.handler = async (req: any) => {
+                try {
+                  const body = await req.json?.()
+                  if (body && !body.docPrefix && body.mimeType) {
+                    if (body.mimeType.startsWith('video/')) {
+                      body.docPrefix = 'videos'
+                    } else if (body.mimeType.startsWith('image/')) {
+                      body.docPrefix = 'images'
+                    }
                   }
-                : {}),
-            },
-          },
-          bucket: r2Bucket,
-          config: {
-            credentials: {
-              accessKeyId: r2AccessKeyId,
-              secretAccessKey: r2SecretAccessKey,
-            },
-            region: 'auto',
-            endpoint: r2Endpoint,
-            forcePathStyle: true,
-          },
-        }),
+                  req.json = async () => body
+                } catch {
+                  // ignore JSON parse errors, let original handler execute validation
+                }
+                return originalHandler(req)
+              }
+            }
+          }
+
+          return config
+        }) as Plugin,
       ]
     : []),
 ]

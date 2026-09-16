@@ -2,10 +2,10 @@ import { withPayload } from '@payloadcms/next/withPayload'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { redirects } from './redirects'
 
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
-import { redirects } from './redirects'
 
 const NEXT_PUBLIC_SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
@@ -58,6 +58,14 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   redirects,
+  experimental: {
+    // Raise the body-size limit to 50 MB for local-dev uploads.
+    // On Vercel, serverless functions have a hard 4.5 MB limit regardless of this setting;
+    // large video uploads bypass it via clientUploads (direct browser → R2 signed-URL upload).
+    serverActions: {
+      bodySizeLimit: '70mb',
+    },
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
