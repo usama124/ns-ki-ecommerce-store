@@ -8,6 +8,7 @@ import * as migration_20260911_190000_multi_category_assignment from './20260911
 import * as migration_20260913_170000_cod_fee from './20260913_170000_cod_fee'
 import * as migration_20260916_000000_media_prefix from './20260916_000000_media_prefix'
 import * as migration_20260916_010000_media_sizes from './20260916_010000_media_sizes'
+import * as migration_20260917_000000_cancellation_reason from './20260917_000000_cancellation_reason'
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     up: migration_20260916_010000_media_sizes.up,
     down: migration_20260916_010000_media_sizes.down,
     name: '20260916_010000_media_sizes',
+  },
+  {
+    up: migration_20260917_000000_cancellation_reason.up,
+    down: migration_20260917_000000_cancellation_reason.down,
+    name: '20260917_000000_cancellation_reason',
   },
 ]

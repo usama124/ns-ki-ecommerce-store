@@ -177,7 +177,7 @@ export default async function CategoryPage({ params, searchParams }: Args) {
                       <span className="text-[10px] uppercase tracking-[0.2em] text-secondary font-semibold block mb-1">
                         {targetCategory.name}
                       </span>
-                      <h2 className="font-serif text-base font-medium text-foreground uppercase tracking-wider group-hover:text-secondary transition-colors mb-3 leading-snug">
+                      <h2 className="font-serif text-base font-medium text-foreground uppercase tracking-wider group-hover:text-[#BDBAB9] transition-colors mb-3 leading-snug">
                         <Link href={`/products/${product.slug}`}>{product.title}</Link>
                       </h2>
                     </div>

@@ -2,6 +2,7 @@ import type { GlobalConfig } from 'payload'
 
 import { adminOnly } from '@/access/adminOnly'
 import { link } from '@/fields/link'
+import { revalidateFooter } from '@/hooks/revalidateFooter'
 
 export const Footer: GlobalConfig = {
   slug: 'footer',
@@ -9,12 +10,14 @@ export const Footer: GlobalConfig = {
     read: () => true,
     update: adminOnly,
   },
+  hooks: {
+    afterChange: [revalidateFooter],
+  },
   fields: [
     {
       name: 'tagline',
       type: 'text',
       label: 'Brand Tagline',
-      defaultValue: 'Pakistani Luxury Fashion',
     },
     {
       name: 'columns',
@@ -81,7 +84,7 @@ export const Footer: GlobalConfig = {
       name: 'copyrightText',
       type: 'text',
       label: 'Copyright Text',
-      defaultValue: "N's KI Luxury Fashion. All rights reserved.",
+      defaultValue: "N's KI. All rights reserved.",
     },
     // Legacy navItems kept for backward compat (not displayed in new footer)
     {

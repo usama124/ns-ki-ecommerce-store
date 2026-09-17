@@ -168,7 +168,8 @@ export default async function Homepage() {
                           product.categories?.[0]?.name ||
                           'Luxury Pret'}
                       </span>
-                      <h3 className="font-serif text-sm font-medium text-foreground uppercase tracking-wider group-hover:text-secondary transition-colors mb-2">
+                      {/* <h3 className="font-serif text-sm font-medium text-foreground uppercase tracking-wider group-hover:text-secondary transition-colors mb-2"> */}
+                      <h3 className="font-serif text-sm font-medium text-foreground uppercase tracking-wider group-hover:text-[#BDBAB9] transition-colors mb-2">
                         <Link href={`/products/${product.slug}`}>{product.title}</Link>
                       </h3>
                     </div>

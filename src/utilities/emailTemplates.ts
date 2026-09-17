@@ -201,7 +201,7 @@ export function getOrderPlacedCustomerEmailHtml(order: OrderData, siteUrl: strin
               <tr>
                 <td style="background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
                   If you have questions about your order, reply to this email or contact us at <a href="mailto:info@nski.pk" style="color: #0f172a;">info@nski.pk</a>.<br>
-                  © ${new Date().getFullYear()} N's KI Luxury Fashion. All rights reserved.
+                  © ${new Date().getFullYear()} N's KI. All rights reserved.
                 </td>
               </tr>
 
@@ -340,7 +340,7 @@ export function getPaymentConfirmedCustomerEmailHtml(order: OrderData, siteUrl: 
 
               <tr>
                 <td style="background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b;">
-                  © ${new Date().getFullYear()} N's KI Luxury Fashion. All rights reserved.
+                  © ${new Date().getFullYear()} N's KI. All rights reserved.
                 </td>
               </tr>
 
@@ -415,7 +415,7 @@ export function getOrderShippedCustomerEmailHtml(order: OrderData, siteUrl: stri
 
               <tr>
                 <td style="background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b;">
-                  © ${new Date().getFullYear()} N's KI Luxury Fashion. All rights reserved.
+                  © ${new Date().getFullYear()} N's KI. All rights reserved.
                 </td>
               </tr>
 
@@ -486,7 +486,7 @@ export function getOrderRejectedCustomerEmailHtml(order: OrderData, siteUrl: str
 
               <tr>
                 <td style="background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b;">
-                  © ${new Date().getFullYear()} N's KI Luxury Fashion. All rights reserved.
+                  © ${new Date().getFullYear()} N's KI. All rights reserved.
                 </td>
               </tr>
 

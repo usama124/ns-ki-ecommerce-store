@@ -119,9 +119,9 @@ export async function Footer() {
                 N's KI
               </span>
             </Link>
-            <p className="text-sm leading-relaxed text-[#648698]">
-              {footer.tagline || 'Pakistani Luxury Fashion'}
-            </p>
+            {footer.tagline && (
+              <p className="text-sm leading-relaxed text-[#648698]">{footer.tagline}</p>
+            )}
 
             {/* Social links */}
             <div className="flex items-center gap-3 mt-2">
@@ -282,8 +282,7 @@ export async function Footer() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#648698]">
             <p>
-              &copy; {currentYear}{' '}
-              {footer.copyrightText || "N's KI Luxury Fashion. All rights reserved."}
+              &copy; {currentYear} {footer.copyrightText || "N's KI. All rights reserved."}
             </p>
             <div className="flex items-center gap-4">
               <Link href="/admin" className="hover:text-white transition-colors">

@@ -77,9 +77,9 @@ export function ProductDescription({ product }: Props) {
         <div className="border-t border-border pt-6">
           <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-secondary" />
-            Product Details & Fabric Care
+            Product Details &amp; Fabric Care
           </h3>
-          <div className="prose prose-stone prose-sm max-w-none text-foreground leading-relaxed font-normal bg-[#BDBAB9]/15 dark:bg-[#648698]/10 p-4 rounded-lg border border-border">
+          <div className="prose prose-sm max-w-none leading-relaxed p-4 rounded-lg border border-border bg-[#BDBAB9]/10 dark:bg-[#648698]/10 [&_*]:!text-foreground [&_strong]:!text-foreground [&_li]:!text-foreground [&_p]:!text-foreground [&_h1]:!text-foreground [&_h2]:!text-foreground [&_h3]:!text-foreground [&_h4]:!text-foreground">
             <RichText data={product.description} enableGutter={false} />
           </div>
         </div>
