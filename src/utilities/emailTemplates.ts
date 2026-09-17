@@ -218,7 +218,7 @@ export function getOrderPlacedCustomerEmailHtml(order: OrderData, siteUrl: strin
   2. INSTANT ADMIN ALERT EMAIL
  */
 export function getNewOrderAdminAlertEmailHtml(order: OrderData, siteUrl: string): string {
-  const adminDashboardLink = `${siteUrl.replace(/\/$/, '')}/admin/orders-dashboard`
+  const adminDashboardLink = `${siteUrl.replace(/\/$/, '')}/store-admin/orders-dashboard`
 
   return `
     <!DOCTYPE html>

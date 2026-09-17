@@ -63,6 +63,9 @@ const db = isMongo
       })
 
 export default buildConfig({
+  routes: {
+    admin: '/store-admin',
+  },
   admin: {
     components: {
       beforeLogin: ['@/components/BeforeLogin#BeforeLogin'],

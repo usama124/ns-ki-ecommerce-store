@@ -10,12 +10,12 @@ import { usePathname } from 'next/navigation'
  */
 export function OrdersDashboardNavLink() {
   const pathname = usePathname()
-  const isActive = pathname?.startsWith('/admin/orders-dashboard') ?? false
+  const isActive = pathname?.startsWith('/store-admin/orders-dashboard') ?? false
 
   return (
     <div style={{ padding: '0 var(--base)' }}>
       <a
-        href="/admin/orders-dashboard"
+        href="/store-admin/orders-dashboard"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -45,4 +45,3 @@ export function OrdersDashboardNavLink() {
     </div>
   )
 }
-

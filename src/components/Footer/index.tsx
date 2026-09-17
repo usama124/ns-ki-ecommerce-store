@@ -99,7 +99,6 @@ export async function Footer() {
       links: [
         { url: 'https://wa.me/923001234567', label: 'WhatsApp' },
         { url: 'mailto:info@nski.pk', label: 'Email Us' },
-        { url: '/admin', label: 'Admin Panel' },
       ],
     },
   ]
@@ -285,10 +284,6 @@ export async function Footer() {
               &copy; {currentYear} {footer.copyrightText || "N's KI. All rights reserved."}
             </p>
             <div className="flex items-center gap-4">
-              <Link href="/admin" className="hover:text-white transition-colors">
-                Admin
-              </Link>
-              <span>|</span>
               <span>Designed in Pakistan 🇵🇰</span>
             </div>
           </div>

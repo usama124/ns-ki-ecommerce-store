@@ -5,7 +5,7 @@ import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { Providers } from '@/providers'
-import { InitTheme } from '@/providers/Theme/InitTheme'
+import { themeScriptCode } from '@/providers/Theme/InitTheme'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import './globals.css'
@@ -46,7 +46,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <InitTheme />
+        <script
+          id="theme-script"
+          dangerouslySetInnerHTML={{
+            __html: themeScriptCode,
+          }}
+        />
         <link href="/favicon.ico" rel="icon" sizes="32x32" />
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       </head>

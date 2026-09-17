@@ -10,12 +10,12 @@ import { usePathname } from 'next/navigation'
  */
 export function InventoryNavLink() {
   const pathname = usePathname()
-  const isActive = pathname?.startsWith('/admin/inventory') ?? false
+  const isActive = pathname?.startsWith('/store-admin/inventory') ?? false
 
   return (
     <div style={{ padding: '0 var(--base)' }}>
       <a
-        href="/admin/inventory"
+        href="/store-admin/inventory"
         style={{
           display: 'flex',
           alignItems: 'center',

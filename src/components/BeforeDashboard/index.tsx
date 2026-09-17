@@ -25,7 +25,7 @@ export const BeforeDashboard: React.FC = () => {
         </li>
         <li>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/admin/inventory">📦 Inventory Management</a>
+          <a href="/store-admin/inventory">📦 Inventory Management</a>
           {' — View all stock levels, set low-stock thresholds, and update quantities.'}
         </li>
       </ul>

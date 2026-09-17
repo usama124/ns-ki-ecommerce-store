@@ -49,7 +49,7 @@ export const homeStaticData: () => RequiredDataFromCollectionSlug<'pages'> = () 
                   fields: {
                     linkType: 'custom',
                     newTab: false,
-                    url: '/admin',
+                    url: '/store-admin',
                   },
                   format: '',
                   indent: 0,

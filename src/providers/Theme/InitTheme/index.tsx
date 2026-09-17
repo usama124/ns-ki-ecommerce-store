@@ -1,15 +1,7 @@
-import Script from 'next/script'
 import React from 'react'
-
 import { defaultTheme, themeLocalStorageKey } from '../shared'
 
-export const InitTheme: React.FC = () => {
-  return (
-    <Script
-      id="theme-script"
-      strategy="beforeInteractive"
-      dangerouslySetInnerHTML={{
-        __html: `
+export const themeScriptCode = `
   (function () {
     function getImplicitPreference() {
       var mediaQuery = '(prefers-color-scheme: dark)'
@@ -42,7 +34,14 @@ export const InitTheme: React.FC = () => {
 
     document.documentElement.setAttribute('data-theme', themeToSet)
   })();
-  `,
+`
+
+export const InitTheme: React.FC = () => {
+  return (
+    <script
+      id="theme-script"
+      dangerouslySetInnerHTML={{
+        __html: themeScriptCode,
       }}
     />
   )

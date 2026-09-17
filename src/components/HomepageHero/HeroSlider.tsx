@@ -126,15 +126,15 @@ export function HeroSlider({ slides = [] }: Props) {
                 {/* Content Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center text-center text-white px-6">
                   <div className="max-w-2xl">
-                    {slide.subheading && (
-                      <span className="block text-xs uppercase tracking-[0.3em] font-light mb-3 text-gray-200">
-                        {slide.subheading}
-                      </span>
-                    )}
                     {slide.heading && (
-                      <h2 className="font-serif text-3xl sm:text-5xl md:text-6xl font-normal tracking-[0.15em] uppercase mb-6 drop-shadow-sm">
+                      <h2 className="font-serif text-3xl sm:text-5xl md:text-6xl font-normal tracking-[0.15em] uppercase mb-3 drop-shadow-sm">
                         {slide.heading}
                       </h2>
+                    )}
+                    {slide.subheading && (
+                      <span className="block text-xs uppercase tracking-[0.3em] font-light mb-6 text-gray-200">
+                        {slide.subheading}
+                      </span>
                     )}
                     {slide.ctaLink && (
                       <Link

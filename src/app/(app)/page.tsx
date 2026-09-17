@@ -123,13 +123,13 @@ export default async function Homepage() {
               No Products Published Yet
             </h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto mb-6">
-              Log into Payload Admin (/admin) to add luxury products to your collection.
+              Log into Admin (/store-admin) to add luxury products to your collection.
             </p>
             <Link
-              href="/admin"
+              href="/store-admin"
               className="inline-block glass-button-primary text-xs font-semibold uppercase tracking-widest px-6 py-3 rounded-lg"
             >
-              Open Payload Admin
+              Open Admin Panel
             </Link>
           </div>
         ) : (

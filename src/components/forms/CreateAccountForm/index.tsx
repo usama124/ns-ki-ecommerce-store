@@ -76,7 +76,7 @@ export const CreateAccountForm: React.FC = () => {
       <div className="prose dark:prose-invert mb-6">
         <p>
           {`This is where new customers can signup and create a new account. To manage all users, `}
-          <Link href="/admin/collections/users">login to the admin dashboard</Link>.
+          <Link href="/store-admin/collections/users">login to the admin dashboard</Link>.
         </p>
       </div>
 
