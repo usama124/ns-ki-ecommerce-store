@@ -848,6 +848,10 @@ export interface Order {
   shippingFee: number;
   codFee?: number | null;
   totalAmount: number;
+  /**
+   * Provide a reason to inform the customer why their order was rejected/cancelled.
+   */
+  cancellationReason?: string | null;
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1316,6 +1320,7 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingFee?: T;
   codFee?: T;
   totalAmount?: T;
+  cancellationReason?: T;
   notes?: T;
   updatedAt?: T;
   createdAt?: T;

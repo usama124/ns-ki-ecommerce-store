@@ -45,6 +45,9 @@ describe('Inventory Management & Stock Automation', () => {
       },
       req: mockReq,
       overrideAccess: true,
+      context: {
+        skipShoppableVideoSync: true,
+      },
     })
   })
 
@@ -99,6 +102,9 @@ describe('Inventory Management & Stock Automation', () => {
       },
       req: mockReq,
       overrideAccess: true,
+      context: {
+        skipShoppableVideoSync: true,
+      },
     })
   })
 
@@ -129,6 +135,9 @@ describe('Inventory Management & Stock Automation', () => {
       },
       req: mockReq,
       overrideAccess: true,
+      context: {
+        skipShoppableVideoSync: true,
+      },
     })
   })
 })

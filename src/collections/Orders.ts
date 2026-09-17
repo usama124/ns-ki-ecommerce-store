@@ -1,5 +1,10 @@
 import { adminOnly } from '@/access/adminOnly'
 import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
+import {
+    sendAdminOrderPlacedAlert,
+    sendCustomerOrderConfirmedEmail,
+    sendStatusUpdateEmail,
+} from '@/utilities/sendOrderEmails'
 import type { CollectionConfig } from 'payload'
 
 export const Orders: CollectionConfig = {
@@ -30,6 +35,13 @@ export const Orders: CollectionConfig = {
         if (req.context?.skipStockHook) return data
 
         if (operation === 'create') {
+          // COD orders are auto-confirmed by default; digital payments require verification
+          if (data?.paymentMethod === 'cod') {
+            data.status = 'confirmed'
+          } else if (!data?.status) {
+            data.status = 'pending_verification'
+          }
+
           if (data?.items && Array.isArray(data.items)) {
             await validateAndDeductStock({ items: data.items, req })
           }
@@ -55,6 +67,27 @@ export const Orders: CollectionConfig = {
         }
 
         return data
+      },
+    ],
+    afterChange: [
+      ({ doc, previousDoc, operation }) => {
+        if (operation === 'create') {
+          // Send instant alert email to store admin on every order creation
+          void sendAdminOrderPlacedAlert(doc).catch((err) => {
+            console.warn('[Orders] Background admin alert dispatch error:', err)
+          })
+
+          // COD orders are auto-confirmed at creation; send customer confirmation email immediately
+          if (doc.status === 'confirmed') {
+            void sendCustomerOrderConfirmedEmail(doc).catch((err) => {
+              console.warn('[Orders] Background customer confirmation error:', err)
+            })
+          }
+        } else if (operation === 'update') {
+          void sendStatusUpdateEmail(doc, previousDoc?.status).catch((err) => {
+            console.warn('[Orders] Background status email dispatch error:', err)
+          })
+        }
       },
     ],
   },
@@ -268,6 +301,16 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       label: 'Total Amount (PKR)',
+    },
+    {
+      name: 'cancellationReason',
+      type: 'textarea',
+      label: 'Cancellation / Rejection Reason',
+      admin: {
+        condition: (data) => data?.status === 'cancelled',
+        description:
+          'Provide a reason to inform the customer why their order was rejected/cancelled.',
+      },
     },
     {
       name: 'notes',

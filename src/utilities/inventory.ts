@@ -1,4 +1,4 @@
-import type { PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload';
 
 type OrderItemInput = {
   product: string | { id: string; title?: string }
@@ -91,6 +91,9 @@ export async function validateAndDeductStock({
         data: { variants: updatedVariants },
         req,
         overrideAccess: true,
+        context: {
+          skipShoppableVideoSync: true,
+        },
       })
     }
   }
@@ -145,6 +148,9 @@ export async function restoreOrderStock({
         data: { variants: updatedVariants },
         req,
         overrideAccess: true,
+        context: {
+          skipShoppableVideoSync: true,
+        },
       })
     }
   }

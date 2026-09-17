@@ -1,9 +1,8 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({
-  doc,
-  req,
-}) => {
+export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, req }) => {
+  if (req?.context?.skipShoppableVideoSync) return
+
   try {
     const videoMediaId =
       typeof doc?.productVideo === 'object' && doc.productVideo !== null
@@ -80,10 +79,7 @@ export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({
   }
 }
 
-export const removeShoppableVideoOnDelete: CollectionAfterDeleteHook = async ({
-  id,
-  req,
-}) => {
+export const removeShoppableVideoOnDelete: CollectionAfterDeleteHook = async ({ id, req }) => {
   try {
     const homepage = await req.payload.findGlobal({
       slug: 'homepage',
@@ -116,4 +112,3 @@ export const removeShoppableVideoOnDelete: CollectionAfterDeleteHook = async ({
     })
   }
 }
-
