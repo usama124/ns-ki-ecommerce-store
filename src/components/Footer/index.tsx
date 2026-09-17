@@ -49,7 +49,7 @@ function WhatsAppIcon() {
 // COD icon
 function CodBadge() {
   return (
-    <span className="flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 px-2 py-1 text-xs font-semibold tracking-wide uppercase">
+    <span className="flex items-center gap-1 rounded border border-[#648698]/40 bg-[#03171E]/50 text-[#CBCCC7] px-2.5 py-1 text-xs font-semibold tracking-wide uppercase backdrop-blur-xs">
       COD
     </span>
   )
@@ -58,7 +58,7 @@ function CodBadge() {
 // Generic payment badge
 function PayBadge({ label }: { label: string }) {
   return (
-    <span className="flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 px-2 py-1 text-xs font-semibold tracking-wide">
+    <span className="flex items-center gap-1 rounded border border-[#648698]/40 bg-[#03171E]/50 text-[#CBCCC7] px-2.5 py-1 text-xs font-semibold tracking-wide backdrop-blur-xs">
       {label}
     </span>
   )
@@ -107,19 +107,19 @@ export async function Footer() {
   const displayColumns = columns.length > 0 ? columns : defaultColumns
 
   return (
-    <footer className="bg-neutral-50 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-t border-neutral-200 dark:border-neutral-700">
+    <footer className="bg-[#03171E] text-[#CBCCC7] border-t border-[#648698]/30">
       {/* Main footer grid */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand column */}
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3">
-              <LogoIcon width={40} height={40} className="object-contain" />
-              <span className="text-2xl font-bold tracking-[0.2em] text-neutral-900 dark:text-white uppercase font-serif">
+              <LogoIcon width={40} height={40} className="object-contain filter drop-shadow-sm" />
+              <span className="text-2xl font-bold tracking-[0.2em] text-[#CBCCC7] uppercase font-serif">
                 N's KI
               </span>
             </Link>
-            <p className="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+            <p className="text-sm leading-relaxed text-[#648698]">
               {footer.tagline || 'Pakistani Luxury Fashion'}
             </p>
 
@@ -131,7 +131,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                  className="text-[#648698] hover:text-white transition-colors"
                 >
                   <InstagramIcon />
                 </a>
@@ -142,7 +142,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                  className="text-[#648698] hover:text-white transition-colors"
                 >
                   <FacebookIcon />
                 </a>
@@ -153,7 +153,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="TikTok"
-                  className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                  className="text-[#648698] hover:text-white transition-colors"
                 >
                   <TikTokIcon />
                 </a>
@@ -164,7 +164,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="YouTube"
-                  className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                  className="text-[#648698] hover:text-white transition-colors"
                 >
                   <YouTubeIcon />
                 </a>
@@ -175,7 +175,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="WhatsApp"
-                  className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                  className="text-[#648698] hover:text-white transition-colors"
                 >
                   <WhatsAppIcon />
                 </a>
@@ -190,7 +190,7 @@ export async function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Instagram"
-                      className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                      className="text-[#648698] hover:text-white transition-colors"
                     >
                       <InstagramIcon />
                     </a>
@@ -199,7 +199,7 @@ export async function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Facebook"
-                      className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                      className="text-[#648698] hover:text-white transition-colors"
                     >
                       <FacebookIcon />
                     </a>
@@ -208,7 +208,7 @@ export async function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="TikTok"
-                      className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                      className="text-[#648698] hover:text-white transition-colors"
                     >
                       <TikTokIcon />
                     </a>
@@ -221,7 +221,7 @@ export async function Footer() {
           {columns.length > 0
             ? columns.map((col: any, idx: number) => (
                 <div key={col.id ?? idx} className="flex flex-col gap-3">
-                  <h3 className="text-xs font-bold tracking-widest uppercase text-neutral-900 dark:text-white">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-[#CBCCC7]">
                     {col.heading}
                   </h3>
                   <ul className="flex flex-col gap-2">
@@ -230,7 +230,7 @@ export async function Footer() {
                         <CMSLink
                           appearance="link"
                           {...item.link}
-                          className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                          className="text-sm text-[#648698] hover:text-white transition-colors"
                         />
                       </li>
                     ))}
@@ -239,7 +239,7 @@ export async function Footer() {
               ))
             : defaultColumns.map((col, idx) => (
                 <div key={idx} className="flex flex-col gap-3">
-                  <h3 className="text-xs font-bold tracking-widest uppercase text-neutral-900 dark:text-white">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-[#CBCCC7]">
                     {col.heading}
                   </h3>
                   <ul className="flex flex-col gap-2">
@@ -247,7 +247,7 @@ export async function Footer() {
                       <li key={i}>
                         <Link
                           href={item.url}
-                          className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                          className="text-sm text-[#648698] hover:text-white transition-colors"
                         >
                           {item.label}
                         </Link>
@@ -260,10 +260,10 @@ export async function Footer() {
       </div>
 
       {/* Payment methods strip */}
-      <div className="border-t border-neutral-200 dark:border-neutral-700">
+      <div className="border-t border-[#648698]/20 bg-[#07242e]/60">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-[#648698]">
               {footer.paymentNote ||
                 'We accept Cash on Delivery, Bank Transfer, JazzCash & EasyPaisa'}
             </p>
@@ -278,18 +278,15 @@ export async function Footer() {
       </div>
 
       {/* Copyright bar */}
-      <div className="border-t border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-950">
+      <div className="border-t border-[#648698]/20 bg-[#021015]">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500 dark:text-neutral-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#648698]">
             <p>
               &copy; {currentYear}{' '}
               {footer.copyrightText || "N's KI Luxury Fashion. All rights reserved."}
             </p>
             <div className="flex items-center gap-4">
-              <Link
-                href="/admin"
-                className="hover:text-neutral-900 dark:hover:text-white transition-colors"
-              >
+              <Link href="/admin" className="hover:text-white transition-colors">
                 Admin
               </Link>
               <span>|</span>

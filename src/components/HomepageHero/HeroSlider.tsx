@@ -139,7 +139,7 @@ export function HeroSlider({ slides = [] }: Props) {
                     {slide.ctaLink && (
                       <Link
                         href={slide.ctaLink}
-                        className="inline-block border border-white px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.25em] bg-white text-black hover:bg-black hover:text-white hover:border-black transition-all duration-300"
+                        className="inline-block glass-button-primary px-10 py-4 text-xs font-bold uppercase tracking-[0.25em] rounded-lg shadow-xl"
                       >
                         {slide.ctaLabel || 'Shop Now'}
                       </Link>
@@ -157,14 +157,14 @@ export function HeroSlider({ slides = [] }: Props) {
         <>
           <button
             onClick={scrollPrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white text-white hover:text-black flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#03171E]/60 backdrop-blur-md border border-[#648698]/30 hover:bg-[#648698] text-[#CBCCC7] hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-lg"
             aria-label="Previous slide"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           <button
             onClick={scrollNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white text-white hover:text-black flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#03171E]/60 backdrop-blur-md border border-[#648698]/30 hover:bg-[#648698] text-[#CBCCC7] hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-lg"
             aria-label="Next slide"
           >
             <ChevronRight className="h-6 w-6" />
@@ -177,7 +177,7 @@ export function HeroSlider({ slides = [] }: Props) {
                 key={i}
                 onClick={() => emblaApi && emblaApi.scrollTo(i)}
                 className={`h-1.5 transition-all duration-300 rounded-full ${
-                  selectedIndex === i ? 'w-8 bg-white' : 'w-2 bg-white/50'
+                  selectedIndex === i ? 'w-8 bg-[#648698]' : 'w-2 bg-[#CBCCC7]/50'
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />

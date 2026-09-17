@@ -6,10 +6,8 @@ import { createUrl } from '@/utilities/createUrl'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import React from 'react'
 
-import type { ListItem } from '.'
-import type { PathFilterItem as PathFilterItemType } from '.'
+import type { ListItem, PathFilterItem as PathFilterItemType } from '.'
 
 function PathFilterItem({ item }: { item: PathFilterItemType }) {
   const pathname = usePathname()
@@ -21,12 +19,14 @@ function PathFilterItem({ item }: { item: PathFilterItemType }) {
   newParams.delete('q')
 
   return (
-    <li className="mt-2 flex text-black dark:text-white" key={item.title}>
+    <li className="mt-1 flex" key={item.title}>
       <DynamicTag
         className={clsx(
-          'w-full text-sm underline-offset-4 hover:underline dark:hover:text-neutral-100',
+          'w-full text-xs uppercase tracking-wider py-1.5 px-3 rounded-lg transition-all font-medium',
           {
-            'underline underline-offset-4': active,
+            'font-bold text-foreground bg-[#648698]/25 border border-[#648698]/40 shadow-xs':
+              active,
+            'text-muted-foreground hover:text-foreground hover:bg-[#648698]/10': !active,
           },
         )}
         href={createUrl(item.path, newParams)}
@@ -52,11 +52,16 @@ function SortFilterItem({ item }: { item: SortFilterItemType }) {
   const DynamicTag = active ? 'p' : Link
 
   return (
-    <li className="mt-2 flex text-sm text-black dark:text-white" key={item.title}>
+    <li className="mt-1 flex" key={item.title}>
       <DynamicTag
-        className={clsx('w-full hover:underline hover:underline-offset-4', {
-          'underline underline-offset-4': active,
-        })}
+        className={clsx(
+          'w-full text-xs uppercase tracking-wider py-1.5 px-3 rounded-lg transition-all font-medium',
+          {
+            'font-bold text-foreground bg-[#648698]/25 border border-[#648698]/40 shadow-xs':
+              active,
+            'text-muted-foreground hover:text-foreground hover:bg-[#648698]/10': !active,
+          },
+        )}
         href={href}
         prefetch={!active ? false : undefined}
       >

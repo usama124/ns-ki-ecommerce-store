@@ -1,14 +1,11 @@
 'use client'
 
-import { useCart } from '@/providers/Cart'
-import { useState } from 'react'
+import { useCart } from '@/providers/Cart';
+import { useState } from 'react';
 
 // size/color can be a relationship object { id, name } or a plain string
 type RelOrString =
-  | { id?: number | string; name?: string; hexCode?: string }
-  | string
-  | null
-  | undefined
+  { id?: number | string; name?: string; hexCode?: string } | string | null | undefined
 
 type Variant = {
   size: RelOrString
@@ -80,14 +77,14 @@ export function AddToCart({ product, selectedVariant, selectedQuantity = 1, clas
 
   return (
     <button
-      className={`w-full py-4 px-8 text-sm font-medium tracking-widest uppercase transition-colors ${
+      className={`w-full py-4 px-8 text-xs font-bold tracking-[0.2em] uppercase rounded-lg transition-all ${
         isOutOfStock || !selectedVariant
-          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
           : added
-            ? 'bg-green-800 text-white'
+            ? 'bg-emerald-700 text-white border border-emerald-500 shadow-md'
             : isBackorder
-              ? 'bg-amber-900 text-white hover:bg-amber-800'
-              : 'bg-black text-white hover:bg-gray-800'
+              ? 'bg-amber-900 text-[#CBCCC7] hover:bg-amber-800 border border-amber-600'
+              : 'glass-button-primary'
       } ${className ?? ''}`}
       disabled={isOutOfStock || !selectedVariant}
       onClick={handleAddToCart}

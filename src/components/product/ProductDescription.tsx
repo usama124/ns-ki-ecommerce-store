@@ -13,7 +13,8 @@ type Props = {
 
 export function ProductDescription({ product }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<Variant | undefined>()
-  const primaryCategory = typeof product.primaryCategory === 'object' ? product.primaryCategory : null
+  const primaryCategory =
+    typeof product.primaryCategory === 'object' ? product.primaryCategory : null
   const categoryName = primaryCategory?.name
   const categoriesList = Array.isArray(product.categories)
     ? product.categories.filter((cat: any) => typeof cat === 'object')
@@ -21,18 +22,18 @@ export function ProductDescription({ product }: Props) {
   const activePrice = selectedVariant?.pricePKR ?? product.basePricePKR
 
   return (
-    <div className="flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-xl border border-stone-200/80 shadow-sm">
+    <div className="flex flex-col gap-6 glass-card p-6 sm:p-8 rounded-xl shadow-sm">
       {/* Category & Title */}
       <div>
         {categoryName && (
           <Link
             href={`/shop/${primaryCategory?.slug || ''}`}
-            className="text-xs uppercase tracking-[0.3em] font-semibold text-amber-800 hover:underline block mb-2"
+            className="text-xs uppercase tracking-[0.3em] font-semibold text-secondary hover:underline block mb-2"
           >
             {categoryName}
           </Link>
         )}
-        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-[0.1em] uppercase text-stone-900 leading-tight">
+        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-[0.1em] uppercase text-foreground leading-tight">
           {product.title}
         </h1>
         {categoriesList.length > 0 && (
@@ -41,7 +42,7 @@ export function ProductDescription({ product }: Props) {
               <Link
                 key={cat.id}
                 href={`/shop/${cat.slug}`}
-                className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200/60 hover:bg-amber-100 transition-colors font-medium"
+                className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded glass-pill text-foreground hover:bg-[#648698]/20 transition-colors font-medium"
               >
                 {cat.name}
               </Link>
@@ -49,23 +50,23 @@ export function ProductDescription({ product }: Props) {
           </div>
         )}
         {product.color && (
-          <p className="text-xs uppercase tracking-widest text-stone-500 font-medium mt-3">
-            Color: <span className="text-stone-900 font-semibold">{product.color}</span>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mt-3">
+            Color: <span className="text-foreground font-semibold">{product.color}</span>
           </p>
         )}
       </div>
 
       {/* PKR Pricing */}
-      <div className="border-y border-stone-200/60 py-4 flex items-center justify-between bg-stone-50/50 px-4 rounded-lg">
+      <div className="border-y border-border py-4 flex items-center justify-between bg-[#BDBAB9]/25 dark:bg-[#648698]/10 px-4 rounded-lg">
         <div className="flex flex-col">
-          <span className="text-[10px] uppercase tracking-[0.25em] text-stone-500 font-semibold">
+          <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-semibold">
             Price (PKR)
           </span>
-          <span className="text-[11px] text-stone-400">
+          <span className="text-[11px] text-muted-foreground">
             {selectedVariant?.pricePKR ? 'Special variant price' : 'Inclusive of all taxes'}
           </span>
         </div>
-        <Price amount={activePrice} className="text-2xl font-bold text-stone-900 font-serif" />
+        <Price amount={activePrice} className="text-2xl font-bold text-foreground font-serif" />
       </div>
 
       {/* Dynamic Size & Color Selector & Add To Cart */}
@@ -73,33 +74,33 @@ export function ProductDescription({ product }: Props) {
 
       {/* Product Description */}
       {product.description && (
-        <div className="border-t border-stone-200/80 pt-6">
-          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-4 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-700" />
+        <div className="border-t border-border pt-6">
+          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-secondary" />
             Product Details & Fabric Care
           </h3>
-          <div className="prose prose-stone prose-sm max-w-none text-stone-800 leading-relaxed font-normal bg-stone-50/60 p-4 rounded-lg border border-stone-200/60">
+          <div className="prose prose-stone prose-sm max-w-none text-foreground leading-relaxed font-normal bg-[#BDBAB9]/15 dark:bg-[#648698]/10 p-4 rounded-lg border border-border">
             <RichText data={product.description} enableGutter={false} />
           </div>
         </div>
       )}
 
       {/* Luxury Service Badges */}
-      <div className="border-t border-stone-200/80 pt-6 grid grid-cols-1 gap-3 text-xs text-stone-700">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-stone-50/80 border border-stone-200/40">
-          <Truck className="w-4 h-4 text-amber-800 flex-shrink-0" />
+      <div className="border-t border-border pt-6 grid grid-cols-1 gap-3 text-xs text-foreground/80">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-[#BDBAB9]/20 dark:bg-[#03171E]/40 border border-border">
+          <Truck className="w-4 h-4 text-secondary flex-shrink-0" />
           <span>
             <strong>Express Nationwide Delivery</strong> across Pakistan (2-4 business days)
           </span>
         </div>
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-stone-50/80 border border-stone-200/40">
-          <ShieldCheck className="w-4 h-4 text-amber-800 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-[#BDBAB9]/20 dark:bg-[#03171E]/40 border border-border">
+          <ShieldCheck className="w-4 h-4 text-secondary flex-shrink-0" />
           <span>
             <strong>Cash on Delivery (COD)</strong> & Online Payment Available
           </span>
         </div>
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-stone-50/80 border border-stone-200/40">
-          <RotateCcw className="w-4 h-4 text-amber-800 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-[#BDBAB9]/20 dark:bg-[#03171E]/40 border border-border">
+          <RotateCcw className="w-4 h-4 text-secondary flex-shrink-0" />
           <span>
             <strong>7-Day Easy Exchange</strong> policy on all luxury unstitched & pret items
           </span>

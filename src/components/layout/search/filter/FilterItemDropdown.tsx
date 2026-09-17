@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { ListItem } from '.'
 
@@ -40,17 +40,17 @@ export function FilterItemDropdown({ list }: { list: ListItem[] }) {
   return (
     <div className="relative" ref={ref}>
       <div
-        className="flex w-full items-center justify-between rounded border border-black/30 px-4 py-2 text-sm dark:border-white/30"
+        className="flex w-full items-center justify-between rounded-lg glass-pill px-4 py-2 text-sm text-foreground cursor-pointer"
         onClick={() => {
           setOpenSelect(!openSelect)
         }}
       >
         <div>{active}</div>
-        <ChevronDownIcon className="h-4" />
+        <ChevronDownIcon className="h-4 text-secondary" />
       </div>
       {openSelect && (
         <div
-          className="absolute z-40 w-full rounded-b-md bg-white p-4 shadow-md dark:bg-black"
+          className="absolute z-40 w-full rounded-xl glass-card p-4 shadow-xl mt-2"
           onClick={() => {
             setOpenSelect(false)
           }}

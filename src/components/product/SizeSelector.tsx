@@ -87,11 +87,11 @@ export function SizeSelector({ product, onVariantChange }: Props) {
       {variants.length > 0 ? (
         <div>
           <div className="flex justify-between items-center mb-3">
-            <label className="text-xs uppercase tracking-widest font-semibold text-gray-900">
+            <label className="text-xs uppercase tracking-widest font-semibold text-foreground">
               Select Size
             </label>
             {selectedVariant && (
-              <span className="text-xs text-gray-500 font-mono">
+              <span className="text-xs text-muted-foreground font-mono">
                 SKU: {selectedVariant.sku || 'N/A'}
               </span>
             )}
@@ -112,12 +112,12 @@ export function SizeSelector({ product, onVariantChange }: Props) {
                   onClick={() => setSelectedSize(variant.effectiveSize)}
                   className={`px-4 py-2.5 min-w-[3.5rem] text-xs uppercase tracking-wider font-semibold border rounded-md whitespace-nowrap transition-all ${
                     isSelected
-                      ? 'border-black bg-black text-white shadow-xs'
+                      ? 'border-[#03171e] bg-[#03171e] text-[#bdbab9] shadow-xs dark:bg-[#648698] dark:border-[#648698] dark:text-[#03171e]'
                       : isDisabled
-                        ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed bg-gray-50'
+                        ? 'border-border/40 text-muted-foreground/40 line-through cursor-not-allowed bg-[#BDBAB9]/10'
                         : outOfStock && backorderAllowed
-                          ? 'border-amber-400 text-amber-900 bg-amber-50 hover:border-amber-600'
-                          : 'border-gray-300 text-gray-800 hover:border-black'
+                          ? 'border-amber-500/50 text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:border-amber-600'
+                          : 'border-border text-foreground hover:border-[#648698] bg-[#BDBAB9]/20 dark:bg-[#03171E]/40'
                   }`}
                 >
                   {variant.effectiveSize}
@@ -129,15 +129,15 @@ export function SizeSelector({ product, onVariantChange }: Props) {
           {/* Dynamic Quantity Selector */}
           {selectedVariant && (
             <div className="flex items-center gap-3 mt-4">
-              <label className="text-xs uppercase tracking-widest font-semibold text-gray-900">
+              <label className="text-xs uppercase tracking-widest font-semibold text-foreground">
                 Quantity
               </label>
-              <div className="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white">
+              <div className="flex items-center border border-border rounded-md overflow-hidden bg-[#BDBAB9]/30 dark:bg-[#03171E]/60">
                 <button
                   type="button"
                   disabled={quantity <= 1 || isOutOfStock}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm font-bold text-foreground hover:bg-[#648698]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Decrease quantity"
                 >
                   -
@@ -145,7 +145,9 @@ export function SizeSelector({ product, onVariantChange }: Props) {
                 <input
                   type="number"
                   min={1}
-                  max={!selectedVariant.allowBackorder ? Math.max(1, selectedVariant.stock) : undefined}
+                  max={
+                    !selectedVariant.allowBackorder ? Math.max(1, selectedVariant.stock) : undefined
+                  }
                   value={quantity}
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10) || 1
@@ -155,7 +157,7 @@ export function SizeSelector({ product, onVariantChange }: Props) {
                     setQuantity(Math.max(1, Math.min(max, val)))
                   }}
                   disabled={isOutOfStock}
-                  className="w-12 text-center text-xs font-bold border-none outline-none focus:ring-0"
+                  className="w-12 text-center text-xs font-bold border-none outline-none focus:ring-0 bg-transparent text-foreground"
                 />
                 <button
                   type="button"
@@ -169,7 +171,7 @@ export function SizeSelector({ product, onVariantChange }: Props) {
                       : 9999
                     setQuantity((q) => Math.min(max, q + 1))
                   }}
-                  className="px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm font-bold text-foreground hover:bg-[#648698]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Increase quantity"
                 >
                   +

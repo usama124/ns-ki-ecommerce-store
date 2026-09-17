@@ -39,11 +39,11 @@ export const CategoryItem: React.FC<Props> = ({ category }) => {
     <button
       onClick={() => setQuery()}
       className={clsx(
-        'hover:cursor-pointer block text-xs uppercase tracking-wider py-1 transition-colors',
+        'hover:cursor-pointer block text-xs uppercase tracking-wider py-1.5 px-3 rounded-lg transition-all w-full text-left font-medium',
         {
-          'font-bold text-amber-800 underline underline-offset-4': isActive,
-          'text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white':
-            !isActive,
+          'font-bold text-foreground bg-[#648698]/25 border border-[#648698]/40 shadow-xs':
+            isActive,
+          'text-muted-foreground hover:text-foreground hover:bg-[#648698]/10': !isActive,
         },
       )}
     >

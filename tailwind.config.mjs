@@ -84,6 +84,15 @@ export default {
         success: 'hsl(var(--success))',
         error: 'hsl(var(--error))',
         warning: 'hsl(var(--warning))',
+        brand: {
+          dark: '#03171E',
+          slate: '#648698',
+          pearl: '#CBCCC7',
+          silver: '#BDBAB9',
+          deep: '#07242e',
+          light: '#f0f3f4',
+          muted: '#466270',
+        },
       },
       typography: {
         DEFAULT: {

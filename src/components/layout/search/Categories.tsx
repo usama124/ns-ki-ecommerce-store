@@ -1,9 +1,8 @@
 import configPromise from '@payload-config'
-import { getPayload } from 'payload'
 import clsx from 'clsx'
-import React, { Suspense } from 'react'
+import { getPayload } from 'payload'
+import { Suspense } from 'react'
 
-import { FilterList } from './filter'
 import { CategoryItem } from './Categories.client'
 
 async function CategoryList() {
@@ -16,7 +15,9 @@ async function CategoryList() {
 
   return (
     <div>
-      <h3 className="text-xs mb-2 text-neutral-500 dark:text-neutral-400">Category</h3>
+      <h3 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 px-1">
+        Category
+      </h3>
 
       <ul>
         {categories.docs.map((category) => {

@@ -96,38 +96,38 @@ export default async function Homepage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       <HomepageHero heroSlider={homepageData?.heroSlider || []} />
 
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-gray-100 pb-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-border pb-4">
           <div>
-            <span className="text-xs uppercase tracking-[0.3em] text-gray-500 font-medium block mb-2">
+            <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground font-medium block mb-2">
               Curated Elegance
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal tracking-[0.15em] uppercase text-black">
+            <h2 className="font-serif text-3xl sm:text-4xl font-normal tracking-[0.15em] uppercase text-foreground">
               {homepageData?.featuredSectionTitle || 'Featured Collection'}
             </h2>
           </div>
           <Link
             href="/shop"
-            className="mt-4 md:mt-0 text-xs font-semibold uppercase tracking-[0.2em] border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors self-start md:self-auto"
+            className="mt-4 md:mt-0 text-xs font-semibold uppercase tracking-[0.2em] border-b-2 border-secondary pb-1 text-foreground hover:text-secondary transition-colors self-start md:self-auto"
           >
             View All Products &rarr;
           </Link>
         </div>
 
         {products.length === 0 ? (
-          <div className="text-center py-16 bg-neutral-50 rounded-xs border border-dashed border-gray-200">
-            <h3 className="font-serif text-xl text-gray-800 uppercase tracking-widest mb-2">
+          <div className="text-center py-16 glass-card rounded-xl shadow-sm border border-dashed border-border">
+            <h3 className="font-serif text-xl text-foreground uppercase tracking-widest mb-2">
               No Products Published Yet
             </h3>
-            <p className="text-xs text-gray-500 max-w-md mx-auto mb-6">
+            <p className="text-xs text-muted-foreground max-w-md mx-auto mb-6">
               Log into Payload Admin (/admin) to add luxury products to your collection.
             </p>
             <Link
               href="/admin"
-              className="inline-block bg-black text-white text-xs font-semibold uppercase tracking-widest px-6 py-3 hover:bg-gray-800"
+              className="inline-block glass-button-primary text-xs font-semibold uppercase tracking-widest px-6 py-3 rounded-lg"
             >
               Open Payload Admin
             </Link>
@@ -139,10 +139,13 @@ export default async function Homepage() {
               const imageUrl = typeof imageObj === 'object' ? imageObj?.url : imageObj
 
               return (
-                <div key={product.id} className="group flex flex-col">
+                <div
+                  key={product.id}
+                  className="group flex flex-col glass-card rounded-xl p-4 transition-all hover:shadow-xl"
+                >
                   <Link
                     href={`/products/${product.slug}`}
-                    className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100 mb-4"
+                    className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-[#648698]/10 mb-4"
                   >
                     {imageUrl ? (
                       <GridTileImage
@@ -152,7 +155,7 @@ export default async function Homepage() {
                         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs uppercase tracking-widest">
+                      <div className="w-full h-full flex items-center justify-center bg-[#648698]/10 text-muted-foreground text-xs uppercase tracking-widest">
                         N's KI
                       </div>
                     )}
@@ -160,18 +163,18 @@ export default async function Homepage() {
 
                   <div className="flex flex-col flex-1 justify-between">
                     <div>
-                      <span className="text-[10px] uppercase tracking-widest text-gray-400 font-medium block mb-1">
+                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium block mb-1">
                         {product.primaryCategory?.name ||
                           product.categories?.[0]?.name ||
                           'Luxury Pret'}
                       </span>
-                      <h3 className="font-serif text-sm font-medium text-black uppercase tracking-wider group-hover:text-gray-600 transition-colors mb-2">
+                      <h3 className="font-serif text-sm font-medium text-foreground uppercase tracking-wider group-hover:text-secondary transition-colors mb-2">
                         <Link href={`/products/${product.slug}`}>{product.title}</Link>
                       </h3>
                     </div>
                     <Price
                       amount={product.basePricePKR}
-                      className="text-sm font-semibold text-black"
+                      className="text-sm font-semibold text-foreground"
                     />
                   </div>
                 </div>
