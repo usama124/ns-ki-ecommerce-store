@@ -2,8 +2,8 @@ import Image from 'next/image'
 
 export function LogoIcon({
   className,
-  width = 40,
-  height = 40,
+  width = 280,
+  height = 80,
 }: {
   className?: string
   width?: number
@@ -17,6 +17,7 @@ export function LogoIcon({
       height={height}
       className={className}
       priority
+      unoptimized
     />
   )
 }

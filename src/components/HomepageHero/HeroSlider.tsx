@@ -119,33 +119,6 @@ export function HeroSlider({ slides = [] }: Props) {
                     )}
                   </div>
                 )}
-
-                {/* Dark Gradient Overlay */}
-                <div className="absolute inset-0 bg-black/30" />
-
-                {/* Content Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center text-center text-white px-6">
-                  <div className="max-w-2xl">
-                    {slide.heading && (
-                      <h2 className="font-serif text-3xl sm:text-5xl md:text-6xl font-normal tracking-[0.15em] uppercase mb-3 drop-shadow-sm">
-                        {slide.heading}
-                      </h2>
-                    )}
-                    {slide.subheading && (
-                      <span className="block text-xs uppercase tracking-[0.3em] font-light mb-6 text-gray-200">
-                        {slide.subheading}
-                      </span>
-                    )}
-                    {slide.ctaLink && (
-                      <Link
-                        href={slide.ctaLink}
-                        className="inline-block glass-button-primary px-10 py-4 text-xs font-bold uppercase tracking-[0.25em] rounded-lg shadow-xl"
-                      >
-                        {slide.ctaLabel || 'Shop Now'}
-                      </Link>
-                    )}
-                  </div>
-                </div>
               </div>
             )
           })}
