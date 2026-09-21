@@ -81,7 +81,7 @@ export function HeroSlider({ slides = [] }: Props) {
             return (
               <div
                 key={index}
-                className="relative flex-[0_0_100%] min-w-0 h-[75vh] min-h-[550px] max-h-[850px] overflow-hidden"
+                className="relative flex-[0_0_100%] min-w-0 aspect-[4/5] sm:aspect-[16/9] lg:aspect-[16/6] h-[55vh] sm:h-[70vh] lg:h-[75vh] max-h-[850px] overflow-hidden"
               >
                 {/* Media rendering */}
                 {isVideo ? (

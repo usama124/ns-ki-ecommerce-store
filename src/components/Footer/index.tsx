@@ -111,19 +111,20 @@ export async function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand column */}
-          <div className="flex flex-col gap-4">
-            <Link href="/" className="flex items-center gap-3">
-              <LogoIcon width={40} height={40} className="object-contain filter drop-shadow-sm" />
-              <span className="text-2xl font-bold tracking-[0.2em] text-[#CBCCC7] uppercase font-serif">
-                N's KI
-              </span>
+          <div className="flex flex-col items-center sm:items-start gap-4 text-center sm:text-left">
+            <Link href="/" className="inline-block">
+              <LogoIcon
+                width={220}
+                height={70}
+                className="h-14 sm:h-16 w-auto max-w-[220px] object-contain object-center sm:object-left"
+              />
             </Link>
             {footer.tagline && (
               <p className="text-sm leading-relaxed text-[#648698]">{footer.tagline}</p>
             )}
 
             {/* Social links */}
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center justify-center sm:justify-start gap-3 mt-2">
               {(social as any).instagram && (
                 <a
                   href={(social as any).instagram}

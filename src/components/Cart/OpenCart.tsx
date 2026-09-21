@@ -17,6 +17,7 @@ export function OpenCart({ onClick }: { onClick?: () => void }) {
   return (
     <button
       onClick={onClick}
+      data-cart-trigger="true"
       className="relative flex items-center gap-1.5 p-2 text-sm uppercase tracking-widest text-[#03171E] dark:text-[#CBCCC7] hover:text-[#648698] transition-colors"
       aria-label={`Open cart (${itemCount} items)`}
     >

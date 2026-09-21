@@ -661,7 +661,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
           </div>
 
           {/* Right Column: Order Summary */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 order-first lg:order-none">
             <div className="glass-card p-6 sm:p-8 sticky top-28 rounded-xl shadow-sm">
               <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-6 border-b pb-3 border-border">
                 Order Summary ({items.length} items)

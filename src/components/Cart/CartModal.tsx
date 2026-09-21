@@ -69,7 +69,7 @@ export function Cart() {
 
       {/* Drawer */}
       <div
-        className={`fixed right-0 top-0 z-50 h-screen w-full max-w-sm bg-white/95 dark:bg-[#03171E]/95 backdrop-blur-xl border-l border-[#648698]/30 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-50 h-screen w-full sm:max-w-md bg-white/95 dark:bg-[#03171E]/95 backdrop-blur-xl border-l border-[#648698]/30 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         aria-label="Shopping bag"

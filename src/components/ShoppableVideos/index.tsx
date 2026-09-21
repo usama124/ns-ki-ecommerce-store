@@ -316,9 +316,9 @@ function VideoCard({
 
             <button
               onClick={() => onQuickShop(product)}
-              className="bg-[#03171E] dark:bg-[#648698] text-[#CBCCC7] dark:text-white px-3 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-[#648698] dark:hover:bg-[#03171E] transition-colors flex items-center gap-1.5 flex-shrink-0 rounded-md border border-[#648698]/40"
+              className="bg-[#03171E] dark:bg-[#648698] text-[#CBCCC7] dark:text-white px-3.5 py-2.5 min-h-[44px] text-[10px] font-bold uppercase tracking-widest hover:bg-[#648698] dark:hover:bg-[#03171E] transition-colors flex items-center justify-center gap-1.5 flex-shrink-0 rounded-md border border-[#648698]/40"
             >
-              <ShoppingBag className="h-3 w-3" />
+              <ShoppingBag className="h-3.5 w-3.5" />
               Quick Shop
             </button>
           </div>

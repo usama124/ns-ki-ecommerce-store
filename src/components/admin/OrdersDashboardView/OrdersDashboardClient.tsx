@@ -217,6 +217,7 @@ export function OrdersDashboardClient() {
   const [activeDetailOrder, setActiveDetailOrder] = useState<OrderDoc | null>(null)
   const [quickVerifyOrder, setQuickVerifyOrder] = useState<OrderDoc | null>(null)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
+  const [zoomScale, setZoomScale] = useState(1)
 
   // Tracking form inside detail view
   const [courierName, setCourierName] = useState('TCS')
@@ -1456,7 +1457,9 @@ export function OrdersDashboardClient() {
                           }}
                         >
                           {activeDetailOrder.paymentProof?.transactionId || 'None Provided'}
-                          <span>{activeDetailOrder.paymentProof?.transactionId || 'None Provided'}</span>
+                          <span>
+                            {activeDetailOrder.paymentProof?.transactionId || 'None Provided'}
+                          </span>
                           <StanBadge trxId={activeDetailOrder.paymentProof?.transactionId} />
                         </div>
                       </div>
@@ -1889,43 +1892,119 @@ export function OrdersDashboardClient() {
         </div>
       )}
 
-      {/* FULLSCREEN LIGHTBOX IMAGE VIEWER */}
+      {/* FULLSCREEN LIGHTBOX IMAGE VIEWER WITH ZOOM CONTROLS */}
       {lightboxImage && (
         <div
-          onClick={() => setLightboxImage(null)}
+          onClick={() => {
+            setLightboxImage(null)
+            setZoomScale(1)
+          }}
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
             zIndex: 10000,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '24px',
-            cursor: 'zoom-out',
           }}
         >
-          <img
-            src={lightboxImage}
-            alt="Expanded Payment Proof"
-            style={{
-              maxWidth: '95vw',
-              maxHeight: '95vh',
-              objectFit: 'contain',
-              borderRadius: '12px',
-            }}
-          />
-          <button
-            onClick={() => setLightboxImage(null)}
+          {/* Zoom controls bar */}
+          <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: 'absolute',
-              top: '24px',
-              right: '24px',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: '8px',
+              background: 'rgba(30, 41, 59, 0.9)',
+              padding: '8px 16px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              zIndex: 10001,
+            }}
+          >
+            <button
+              onClick={() => setZoomScale((s) => Math.min(s + 0.5, 4))}
+              style={{
+                background: '#0284c7',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                fontSize: '14px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Zoom +
+            </button>
+            <button
+              onClick={() => setZoomScale((s) => Math.max(s - 0.5, 0.5))}
+              style={{
+                background: '#475569',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                fontSize: '14px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Zoom -
+            </button>
+            <button
+              onClick={() => setZoomScale(1)}
+              style={{
+                background: '#334155',
+                color: '#94a3b8',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Reset ({Math.round(zoomScale * 100)}%)
+            </button>
+          </div>
+
+          <div style={{ overflow: 'auto', maxWidth: '95vw', maxHeight: '85vh' }}>
+            <img
+              src={lightboxImage}
+              alt="Expanded Payment Proof"
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '80vh',
+                objectFit: 'contain',
+                borderRadius: '12px',
+                transform: `scale(${zoomScale})`,
+                transition: 'transform 0.2s ease-in-out',
+                transformOrigin: 'center center',
+              }}
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              setLightboxImage(null)
+              setZoomScale(1)
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
               background: '#ffffff',
               border: 'none',
               borderRadius: '999px',
-              width: '40px',
-              height: '40px',
+              width: '44px',
+              height: '44px',
               fontSize: '20px',
               fontWeight: 900,
               cursor: 'pointer',
