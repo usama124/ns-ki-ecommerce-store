@@ -248,6 +248,10 @@ export interface Page {
 export interface Media {
   id: number;
   alt?: string | null;
+  /**
+   * SHA-256 hash of uploaded media file content
+   */
+  fileHash?: string | null;
   caption?: {
     root: {
       type: string;
@@ -852,6 +856,12 @@ export interface Order {
    * Provide a reason to inform the customer why their order was rejected/cancelled.
    */
   cancellationReason?: string | null;
+  /**
+   * Sanitized 6-18 character Transaction / STAN Reference ID
+   */
+  trxId?: string | null;
+  compositeTrxKey?: string | null;
+  paymentProofHash?: string | null;
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1226,6 +1236,7 @@ export interface ProductsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  fileHash?: T;
   caption?: T;
   prefix?: T;
   updatedAt?: T;
@@ -1321,6 +1332,9 @@ export interface OrdersSelect<T extends boolean = true> {
   codFee?: T;
   totalAmount?: T;
   cancellationReason?: T;
+  trxId?: T;
+  compositeTrxKey?: T;
+  paymentProofHash?: T;
   notes?: T;
   updatedAt?: T;
   createdAt?: T;

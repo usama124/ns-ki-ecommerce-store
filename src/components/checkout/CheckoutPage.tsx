@@ -181,7 +181,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   }
 
   return (
-    <div className="min-h-screen py-6">
+    <div className="min-h-screen py-6 w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="font-serif text-3xl font-normal uppercase tracking-[0.15em] text-foreground text-center mb-10">
           Checkout & Payment
@@ -606,9 +606,13 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                         type="text"
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="e.g. 0192837465"
+                        placeholder="e.g. 849201 or 019283746501"
                         className="w-full px-4 py-3 text-sm font-mono font-bold border border-border focus:border-[#648698] focus:outline-hidden bg-[#BDBAB9]/25 dark:bg-[#03171E]/60 text-foreground placeholder:text-muted-foreground rounded-lg shadow-2xs"
                       />
+                      <p className="text-[11px] text-muted-foreground mt-1.5 font-medium leading-normal">
+                        Enter your 12-digit Reference/RRN Number or 6-digit STAN number shown on
+                        your bank/wallet receipt.
+                      </p>
                     </div>
 
                     <div>
@@ -666,7 +670,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
               <div className="max-h-80 overflow-y-auto space-y-4 mb-6 pr-2">
                 {items.map((item, idx) => (
                   <div key={idx} className="flex gap-4 border-b border-border/60 pb-3">
-                    <div className="relative w-14 h-18 bg-[#648698]/20 rounded-md overflow-hidden flex-shrink-0">
+                    <div className="relative w-14 h-[4.5rem] bg-[#648698]/20 rounded-md overflow-hidden flex-shrink-0">
                       {item.imageUrl && (
                         <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
                       )}

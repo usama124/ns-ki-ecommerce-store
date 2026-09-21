@@ -7,14 +7,21 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { OpenCart } from './OpenCart'
 
 export function Cart() {
   const [isOpen, setIsOpen] = useState(false)
   const [validatingCheckout, setValidatingCheckout] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { items, removeItem, updateQuantity, validateCartStock, itemCount, subtotal } = useCart()
   const overlayRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+
+  // Must be mounted before using portal (SSR safe)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -47,10 +54,10 @@ export function Cart() {
     }
   }
 
-  return (
+  // The drawer & backdrop are portalled into document.body so they
+  // are never clipped by any parent overflow:hidden / sticky context.
+  const drawerContent = (
     <>
-      <OpenCart onClick={() => setIsOpen(true)} />
-
       {/* Backdrop */}
       {isOpen && (
         <div
@@ -62,13 +69,13 @@ export function Cart() {
 
       {/* Drawer */}
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-sm bg-white/95 dark:bg-[#03171E]/95 backdrop-blur-xl border-l border-[#648698]/30 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-50 h-screen w-full max-w-sm bg-white/95 dark:bg-[#03171E]/95 backdrop-blur-xl border-l border-[#648698]/30 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         aria-label="Shopping bag"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#648698]/20 px-6 py-4 bg-[#03171E] text-[#CBCCC7]">
+        <div className="flex items-center justify-between border-b border-[#648698]/20 px-6 py-4 bg-[#03171E] text-[#CBCCC7] flex-shrink-0">
           <div className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-[#648698]" />
             <h2 className="text-sm font-semibold uppercase tracking-widest text-[#CBCCC7]">
@@ -84,8 +91,8 @@ export function Cart() {
           </button>
         </div>
 
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        {/* Items — flex-1 + min-h-0 allows this to scroll properly inside the flex column */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
               <ShoppingBag className="h-12 w-12 text-[#648698]/50" />
@@ -229,9 +236,9 @@ export function Cart() {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer — flex-shrink-0 ensures it is always visible at the bottom */}
         {items.length > 0 && (
-          <div className="border-t border-[#648698]/20 px-6 py-5 flex flex-col gap-3.5 bg-gray-50/80 dark:bg-[#05212b]">
+          <div className="flex-shrink-0 border-t border-[#648698]/20 px-6 py-5 flex flex-col gap-3.5 bg-gray-50/80 dark:bg-[#05212b]">
             <div className="flex justify-between items-center">
               <span className="text-xs uppercase tracking-widest font-semibold text-[#648698]">
                 Subtotal
@@ -241,7 +248,7 @@ export function Cart() {
               </span>
             </div>
             <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center font-medium">
-              Shipping & taxes calculated at checkout
+              Shipping &amp; taxes calculated at checkout
             </p>
             <button
               onClick={handleProceedToCheckout}
@@ -259,6 +266,16 @@ export function Cart() {
           </div>
         )}
       </div>
+    </>
+  )
+
+  return (
+    <>
+      {/* Trigger button — stays inside the header */}
+      <OpenCart onClick={() => setIsOpen(true)} />
+
+      {/* Drawer & backdrop portalled to document.body — escapes any parent overflow/clip */}
+      {mounted && createPortal(drawerContent, document.body)}
     </>
   )
 }

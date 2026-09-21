@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
+import { useScrollDirection } from '@/hooks/useScrollDirection'
+
 type Category = {
   id: string
   name: string
@@ -36,7 +38,9 @@ export function HeaderClient({
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const { isVisible, scrollY } = useScrollDirection()
 
+  // Track scroll position for styling
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
@@ -44,6 +48,14 @@ export function HeaderClient({
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Automatically close open navigation drawers when header hides during downward scrolling
+  useEffect(() => {
+    if (!isVisible) {
+      setMobileMenuOpen(false)
+      setActiveMegaMenu(null)
+    }
+  }, [isVisible])
 
   // Group subcategories by parent category ID
   const getSubcategories = (mainCatId: string) => {
@@ -56,7 +68,11 @@ export function HeaderClient({
   const showAnnouncement = announcementBar?.isActive !== false && announcementBar?.text
 
   return (
-    <header className="sticky top-0 z-50 glass-header shadow-sm transition-all duration-300">
+    <header
+      className={`sticky top-0 z-50 w-full glass-header shadow-sm transition-transform duration-300 ease-in-out ${
+        !isVisible ? '-translate-y-full' : 'translate-y-0'
+      }`}
+    >
       {/* High-Contrast Brand Announcement Bar */}
       {showAnnouncement && (
         <div className="bg-[#03171E] text-[#CBCCC7] border-b border-[#648698]/30 text-center py-2 px-4 text-xs font-semibold tracking-widest uppercase flex items-center justify-center">
@@ -108,12 +124,12 @@ export function HeaderClient({
           </div>
 
           {/* Center Logo (Only Logo Image, Visible Size, No Text) */}
-          <div className="flex justify-center items-center w-1/3">
-            <Link href="/" className="flex items-center justify-center group py-1">
+          <div className="flex justify-center items-center w-1/3 min-w-0">
+            <Link href="/" className="flex items-center justify-center group py-1 min-w-0">
               <LogoIcon
-                width={300}
-                height={85}
-                className="h-14 sm:h-16 md:h-20 max-h-24 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+                width={240}
+                height={80}
+                className="h-12 sm:h-14 md:h-18 max-h-20 w-auto max-w-[140px] sm:max-w-[180px] md:max-w-[240px] object-contain transition-transform group-hover:scale-[1.02]"
               />
             </Link>
           </div>

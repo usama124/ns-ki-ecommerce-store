@@ -9,6 +9,7 @@ import * as migration_20260913_170000_cod_fee from './20260913_170000_cod_fee'
 import * as migration_20260916_000000_media_prefix from './20260916_000000_media_prefix'
 import * as migration_20260916_010000_media_sizes from './20260916_010000_media_sizes'
 import * as migration_20260917_000000_cancellation_reason from './20260917_000000_cancellation_reason'
+import * as migration_20260918_180000_trx_security from './20260918_180000_trx_security'
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20260917_000000_cancellation_reason.up,
     down: migration_20260917_000000_cancellation_reason.down,
     name: '20260917_000000_cancellation_reason',
+  },
+  {
+    up: migration_20260918_180000_trx_security.up,
+    down: migration_20260918_180000_trx_security.down,
+    name: '20260918_180000_trx_security',
   },
 ]

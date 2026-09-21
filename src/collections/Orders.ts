@@ -5,7 +5,11 @@ import {
     sendCustomerOrderConfirmedEmail,
     sendStatusUpdateEmail,
 } from '@/utilities/sendOrderEmails'
+import crypto from 'crypto'
+import fs from 'fs'
+import path from 'path'
 import type { CollectionConfig } from 'payload'
+import { ValidationError } from 'payload'
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -30,6 +34,129 @@ export const Orders: CollectionConfig = {
     delete: adminOnly,
   },
   hooks: {
+    beforeValidate: [
+      async ({ data, req, originalDoc }) => {
+        if (!data) return data
+
+        const paymentMethod = data.paymentMethod || originalDoc?.paymentMethod
+        const isDigital = paymentMethod && paymentMethod !== 'cod'
+
+        // Extract raw trxId from data.trxId OR data.paymentProof?.transactionId
+        let rawTrxId = data.trxId || data.paymentProof?.transactionId
+
+        if (isDigital && rawTrxId) {
+          // 1. Sanitize input: Strip whitespace, dashes, special characters, convert to UPPERCASE
+          const cleanTrxId = String(rawTrxId).replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+
+          // Validate length (between 6 and 18)
+          if (cleanTrxId.length < 6 || cleanTrxId.length > 18) {
+            throw new ValidationError({
+              errors: [
+                {
+                  message: 'Transaction Reference / STAN ID must be between 6 and 18 alphanumeric characters.',
+                  path: 'paymentProof.transactionId',
+                },
+              ],
+            })
+          }
+
+          // Set clean sanitized TRX ID on data
+          data.trxId = cleanTrxId
+          if (data.paymentProof) {
+            data.paymentProof.transactionId = cleanTrxId
+          } else {
+            data.paymentProof = { transactionId: cleanTrxId }
+          }
+
+          // 2. Compute compositeTrxKey
+          const todayDate = new Date().toISOString().slice(0, 10)
+          const compositeTrxKey = `${paymentMethod}-${todayDate}-${cleanTrxId}`
+          data.compositeTrxKey = compositeTrxKey
+
+          // 3. Validate Uniqueness of compositeTrxKey across Payload DB
+          if (req?.payload) {
+            const existingComposite = await req.payload.find({
+              collection: 'orders',
+              where: {
+                compositeTrxKey: { equals: compositeTrxKey },
+                ...(originalDoc?.id ? { id: { not_equals: originalDoc.id } } : {}),
+              },
+              limit: 1,
+              overrideAccess: true,
+            })
+
+            if (existingComposite.docs.length > 0) {
+              throw new ValidationError({
+                errors: [
+                  {
+                    message: 'This Transaction Reference / STAN ID has already been submitted for an order today. Please verify your receipt.',
+                    path: 'paymentProof.transactionId',
+                  },
+                ],
+              })
+            }
+          }
+        }
+
+        // 4. Image File SHA-256 Hash Check
+        const screenshotId = data.paymentProof?.screenshot || data.screenshot
+        if (isDigital && screenshotId && req?.payload) {
+          let imageHash = data.paymentProofHash
+          const mediaId = typeof screenshotId === 'object' ? screenshotId.id : screenshotId
+
+          if (mediaId) {
+            try {
+              const mediaDoc: any = await req.payload.findByID({
+                collection: 'media',
+                id: mediaId,
+                overrideAccess: true,
+              })
+
+              if (mediaDoc) {
+                if (mediaDoc.fileHash) {
+                  imageHash = mediaDoc.fileHash
+                } else if (mediaDoc.filename) {
+                  const filePath = path.resolve(process.cwd(), 'public/media', mediaDoc.filename)
+                  if (fs.existsSync(filePath)) {
+                    const buf = fs.readFileSync(filePath)
+                    imageHash = crypto.createHash('sha256').update(buf).digest('hex')
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('[Orders Hook] Could not inspect media hash:', err)
+            }
+          }
+
+          if (imageHash) {
+            data.paymentProofHash = imageHash
+
+            const existingHash = await req.payload.find({
+              collection: 'orders',
+              where: {
+                paymentProofHash: { equals: imageHash },
+                ...(originalDoc?.id ? { id: { not_equals: originalDoc.id } } : {}),
+              },
+              limit: 1,
+              overrideAccess: true,
+            })
+
+            if (existingHash.docs.length > 0) {
+              throw new ValidationError({
+                errors: [
+                  {
+                    message: 'This payment receipt image has already been uploaded for another order.',
+                    path: 'paymentProof.screenshot',
+                  },
+                ],
+              })
+            }
+          }
+        }
+
+        return data
+      },
+    ],
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
         if (req.context?.skipStockHook) return data
@@ -310,6 +437,33 @@ export const Orders: CollectionConfig = {
         condition: (data) => data?.status === 'cancelled',
         description:
           'Provide a reason to inform the customer why their order was rejected/cancelled.',
+      },
+    },
+    {
+      name: 'trxId',
+      type: 'text',
+      admin: {
+        description: 'Sanitized 6-18 character Transaction / STAN Reference ID',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'compositeTrxKey',
+      type: 'text',
+      index: true,
+      unique: true,
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'paymentProofHash',
+      type: 'text',
+      index: true,
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
       },
     },
     {

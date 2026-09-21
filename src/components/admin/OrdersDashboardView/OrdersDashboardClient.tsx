@@ -166,6 +166,33 @@ function PaymentMethodBadge({ method }: { method: string }) {
   )
 }
 
+function StanBadge({ trxId }: { trxId?: string }) {
+  if (!trxId) return null
+  const clean = String(trxId).replace(/[^a-zA-Z0-9]/g, '')
+  if (clean.length !== 6) return null
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        padding: '2px 7px',
+        borderRadius: '4px',
+        fontSize: '10px',
+        fontWeight: 700,
+        backgroundColor: '#e2e8f0',
+        color: '#334155',
+        border: '1px solid #cbd5e1',
+        marginLeft: '4px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      6-Digit STAN Reference
+    </span>
+  )
+}
+
 export function OrdersDashboardClient() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -888,9 +915,14 @@ export function OrdersDashboardClient() {
                             color: '#2563eb',
                             marginTop: '3px',
                             fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
                           }}
                         >
                           TRX: {order.paymentProof.transactionId}
+                          <span>TRX: {order.paymentProof.transactionId}</span>
+                          <StanBadge trxId={order.paymentProof.transactionId} />
                         </div>
                       )}
                     </td>
@@ -1418,9 +1450,14 @@ export function OrdersDashboardClient() {
                             fontFamily: 'monospace',
                             color: '#78350f',
                             marginTop: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
                           }}
                         >
                           {activeDetailOrder.paymentProof?.transactionId || 'None Provided'}
+                          <span>{activeDetailOrder.paymentProof?.transactionId || 'None Provided'}</span>
+                          <StanBadge trxId={activeDetailOrder.paymentProof?.transactionId} />
                         </div>
                       </div>
                       {activeDetailOrder.paymentProof?.transactionId && (

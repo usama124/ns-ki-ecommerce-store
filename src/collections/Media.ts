@@ -12,6 +12,9 @@ import { fileURLToPath } from 'url'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+import crypto from 'crypto'
+import fs from 'fs'
+
 export const Media: CollectionConfig = {
   slug: 'media',
   admin: {
@@ -40,6 +43,23 @@ export const Media: CollectionConfig = {
         } else if (data?.mimeType?.startsWith('image/')) {
           data.prefix = 'images'
         }
+
+        // Compute SHA-256 hash of media file content for duplicate proof detection
+        try {
+          const fileObj = req?.file as unknown as { data?: Buffer; buffer?: Buffer; tempFilePath?: string } | undefined
+          if (fileObj?.data || fileObj?.buffer) {
+            const buf = fileObj.data || fileObj.buffer
+            if (buf) {
+              data.fileHash = crypto.createHash('sha256').update(buf).digest('hex')
+            }
+          } else if (fileObj?.tempFilePath && fs.existsSync(fileObj.tempFilePath)) {
+            const fileBuf = fs.readFileSync(fileObj.tempFilePath)
+            data.fileHash = crypto.createHash('sha256').update(fileBuf).digest('hex')
+          }
+        } catch (err) {
+          console.warn('[Media] Could not compute fileHash:', err)
+        }
+
         return data
       },
     ],
@@ -48,6 +68,15 @@ export const Media: CollectionConfig = {
     {
       name: 'alt',
       type: 'text',
+    },
+    {
+      name: 'fileHash',
+      type: 'text',
+      index: true,
+      admin: {
+        readOnly: true,
+        description: 'SHA-256 hash of uploaded media file content',
+      },
     },
     {
       name: 'caption',
