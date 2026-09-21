@@ -218,6 +218,8 @@ export function HeaderClient({
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
         onOpenSearch={() => setSearchOverlayOpen(true)}
         onOpenCart={() => openCartModal()}
+        mobileMenuOpen={mobileMenuOpen}
+        searchOverlayOpen={searchOverlayOpen}
       />
 
       {/* Mobile drawer portalled to body — escapes sticky header clipping */}
