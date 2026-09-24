@@ -106,12 +106,14 @@ export interface Config {
     footer: Footer;
     homepage: Homepage;
     'site-settings': SiteSetting;
+    'sale-settings': SaleSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     homepage: HomepageSelect<false> | HomepageSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'sale-settings': SaleSettingsSelect<false> | SaleSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1710,6 +1712,47 @@ export interface SiteSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sale-settings".
+ */
+export interface SaleSetting {
+  id: number;
+  /**
+   * When enabled, products in targeted categories will display the computed sale discount across the store.
+   */
+  isActive?: boolean | null;
+  /**
+   * e.g., Mid-Summer Clearance, Blessed Friday Sale
+   */
+  title?: string | null;
+  /**
+   * Exact date and time when the sale starts.
+   */
+  startDate?: string | null;
+  /**
+   * Exact date and time when the sale automatically concludes.
+   */
+  endDate?: string | null;
+  /**
+   * Percentage discount (1–99%) applied uniformly to all products in targeted categories.
+   */
+  discountPercentage?: number | null;
+  /**
+   * Select main categories or subcategories eligible for this flash sale.
+   */
+  targetedCategories?: (number | Category)[] | null;
+  /**
+   * Text displayed on the storefront alert banner / popup modal.
+   */
+  announcementText?: string | null;
+  /**
+   * Show announcement popup banner to site visitors when sale is active.
+   */
+  enablePopup?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -1867,6 +1910,23 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               accountName?: T;
             };
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sale-settings_select".
+ */
+export interface SaleSettingsSelect<T extends boolean = true> {
+  isActive?: T;
+  title?: T;
+  startDate?: T;
+  endDate?: T;
+  discountPercentage?: T;
+  targetedCategories?: T;
+  announcementText?: T;
+  enablePopup?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

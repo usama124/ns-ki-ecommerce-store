@@ -26,6 +26,7 @@ import { Users } from '@/collections/Users'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { Homepage } from '@/globals/Homepage'
+import { SaleSettings } from '@/globals/SaleSettings'
 import { SiteSettings } from '@/globals/SiteSettings'
 import { plugins } from './plugins'
 
@@ -33,7 +34,7 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const dbAdapterType = (process.env.DB_ADAPTER || '').toLowerCase()
-const shouldPushSchema = process.env.DB_PUSH === 'true'
+const shouldPushSchema = process.env.DB_PUSH !== 'false'
 
 const mongoUrl =
   process.env.MONGODB_URI || process.env.MONGODB_URL || process.env.DATABASE_URL || ''
@@ -73,6 +74,7 @@ export default buildConfig({
       afterNavLinks: [
         '@/components/admin/InventoryNavLink#InventoryNavLink',
         '@/components/admin/OrdersDashboardNavLink#OrdersDashboardNavLink',
+        '@/components/admin/SaleDashboardNavLink#SaleDashboardNavLink',
       ],
       views: {
         inventory: {
@@ -82,6 +84,10 @@ export default buildConfig({
         ordersDashboard: {
           Component: '@/components/admin/OrdersDashboardView#OrdersDashboardView',
           path: '/orders-dashboard',
+        },
+        saleDashboard: {
+          Component: '@/components/admin/SaleDashboardView#SaleDashboardView',
+          path: '/sale-dashboard',
         },
       },
     },
@@ -125,7 +131,7 @@ export default buildConfig({
     },
   }),
   endpoints: [],
-  globals: [Header, Footer, Homepage, SiteSettings],
+  globals: [Header, Footer, Homepage, SiteSettings, SaleSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

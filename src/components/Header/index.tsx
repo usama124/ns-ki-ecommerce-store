@@ -1,9 +1,10 @@
+import { SalePopupBanner } from '@/components/navigation/SalePopupBanner'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
-import './index.css'
 import { HeaderClient } from './index.client'
+import './index.css'
 
 export async function Header() {
   const header = await getCachedGlobal('header', 1)()
@@ -34,15 +35,26 @@ export async function Header() {
     // site-settings global may not exist yet
   }
 
+  // Fetch sale settings for storefront sale popup banner
+  let saleSettings: any = null
+  try {
+    saleSettings = await getCachedGlobal('sale-settings' as any, 1)()
+  } catch {
+    // sale-settings global may not exist yet
+  }
+
   const mainCategories = categoriesResult.docs
   const subcategories = subcategoriesResult.docs
 
   return (
-    <HeaderClient
-      header={header}
-      mainCategories={mainCategories as any}
-      subcategories={subcategories as any}
-      announcementBar={siteSettings?.announcementBar}
-    />
+    <>
+      <SalePopupBanner saleSettings={saleSettings} />
+      <HeaderClient
+        header={header}
+        mainCategories={mainCategories as any}
+        subcategories={subcategories as any}
+        announcementBar={siteSettings?.announcementBar}
+      />
+    </>
   )
 }
