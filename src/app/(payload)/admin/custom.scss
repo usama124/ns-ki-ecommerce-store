@@ -1,0 +1,231 @@
+/* ================================================================
+   LUJAIN Admin Panel — Glassmorphism Theme
+   Brand: Dark Emerald + Metallic Gold + Pearl Silver
+   ================================================================ */
+
+/* 1. CSS Custom Properties */
+:root {
+  --bg-dark-emerald: #0a1210;
+  --bg-deep-slate: #0f1715;
+  --glass-card-bg: rgba(20, 31, 28, 0.65);
+  --glass-card-border: rgba(212, 175, 55, 0.18);
+  --glass-hover-border: rgba(212, 175, 55, 0.45);
+  --accent-gold: #d4af37;
+  --accent-gold-hover: #f3e5ab;
+  --accent-gold-dim: rgba(212, 175, 55, 0.08);
+  --accent-slate: #648698;
+  --accent-pearl: #cbccc7;
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-glow: 0 0 15px rgba(212, 175, 55, 0.12);
+}
+
+/* 2. Payload CSS Variable Overrides */
+:root {
+  --theme-elevation-0: #0a1210;
+  --theme-elevation-50: #0d1a17;
+  --theme-elevation-100: #101f1b;
+  --theme-elevation-150: #122019;
+  --theme-elevation-200: #152419;
+  --theme-elevation-300: #1a2e22;
+  --theme-elevation-400: #203826;
+  --theme-elevation-500: #284330;
+  --theme-elevation-1000: #f8fafc;
+  --theme-text: #f8fafc;
+  --theme-success-500: #10b981;
+  --theme-warning-500: #f59e0b;
+  --theme-error-500: #ef4444;
+  --color-base-0: #0a1210;
+  --color-base-800: #f8fafc;
+  --color-base-850: #ffffff;
+  --color-base-1000: #ffffff;
+  --style-radius-m: 10px;
+  --style-radius-l: 14px;
+}
+
+/* 3. Root Background */
+html, body, #app, .payload__body {
+  background: radial-gradient(circle at top left, #12211c 0%, #0a1210 60%, #050807 100%) !important;
+  min-height: 100vh;
+  color: var(--text-primary) !important;
+}
+
+/* 4. Sidebar / Nav */
+.nav,
+.nav__wrap,
+.template-default__nav {
+  background: rgba(10, 18, 16, 0.8) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  border-right: 1px solid var(--glass-card-border) !important;
+}
+
+.nav__link,
+.nav a {
+  color: var(--accent-pearl) !important;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
+  border-left: 3px solid transparent;
+}
+
+.nav__link:hover,
+.nav a:hover,
+.nav__link.active,
+.nav a[aria-current="page"] {
+  border-left: 3px solid var(--accent-gold) !important;
+  background: var(--accent-gold-dim) !important;
+  color: var(--accent-gold-hover) !important;
+}
+
+/* 5. Top Header */
+.template-default__header,
+.step-nav {
+  background: rgba(10, 18, 16, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid var(--glass-card-border) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 6. Cards, Tables, Dashboard Panels */
+.card,
+.collection-list__wrap,
+.list-controls,
+.render-fields,
+.document-controls,
+.field-type,
+.collection-list {
+  background: var(--glass-card-bg) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  border: 1px solid var(--glass-card-border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.card:hover,
+.collection-list__wrap:hover {
+  border-color: var(--glass-hover-border) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), var(--glass-glow) !important;
+}
+
+/* Table */
+.table tbody tr:hover td {
+  background: rgba(212, 175, 55, 0.04) !important;
+}
+
+.table th {
+  color: var(--accent-pearl) !important;
+  border-bottom: 1px solid var(--glass-card-border) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+/* 7. Form Inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+textarea,
+select {
+  background: rgba(15, 23, 21, 0.6) !important;
+  border: 1px solid rgba(100, 134, 152, 0.3) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
+  outline: none !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.7;
+}
+
+/* 8. Buttons */
+.btn--style-primary {
+  background: linear-gradient(135deg, #b8860b 0%, #d4af37 50%, #f3e5ab 100%) !important;
+  color: #0a1210 !important;
+  border: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  transition: opacity 0.2s, box-shadow 0.2s !important;
+}
+
+.btn--style-primary:hover {
+  opacity: 0.9 !important;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35) !important;
+}
+
+.btn--style-secondary {
+  background: transparent !important;
+  border: 1px solid var(--glass-card-border) !important;
+  color: var(--accent-pearl) !important;
+}
+
+.btn--style-secondary:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold-hover) !important;
+  background: var(--accent-gold-dim) !important;
+}
+
+/* 9. Modals */
+.modal__wrap {
+  background: rgba(12, 20, 18, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--glass-card-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), var(--glass-glow) !important;
+}
+
+/* 10. Upload */
+.file-details {
+  border: 1px dashed var(--glass-card-border) !important;
+  border-radius: 10px !important;
+  background: rgba(10, 18, 16, 0.5) !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.file-details:hover {
+  border-color: var(--accent-gold) !important;
+}
+
+/* 11. Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-dark-emerald); }
+::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.55); }
+
+/* 12. Toast */
+.toast {
+  background: rgba(20, 31, 28, 0.9) !important;
+  border: 1px solid var(--glass-card-border) !important;
+  backdrop-filter: blur(16px) !important;
+  color: var(--text-primary) !important;
+  border-radius: 10px !important;
+}
+
+/* 13. Typography */
+h1, h2, h3 {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+a { color: var(--accent-slate) !important; text-decoration: none !important; }
+a:hover { color: var(--accent-gold-hover) !important; }
+.table a { color: var(--accent-pearl) !important; }
