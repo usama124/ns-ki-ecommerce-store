@@ -57,26 +57,26 @@ export function SalePopupBanner({ saleSettings }: Props) {
   if (!isLive || dismissed) return null
 
   return (
-    <div className="relative z-50 bg-gradient-to-r from-[#800020] via-[#500014] to-[#03171E] text-white px-4 py-2.5 shadow-lg border-b border-[#B8860B]/30">
+    <div className="relative z-50 bg-gradient-to-r from-[#0A1210] via-[#0F1715] to-[#0A1210] text-white px-4 py-2.5 shadow-lg border-b border-emerald-500/30">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 text-xs sm:text-sm">
         <div className="flex items-center gap-2 overflow-hidden">
-          <Sparkles className="h-4 w-4 text-[#B8860B] shrink-0 animate-pulse" />
-          <p className="truncate font-semibold tracking-wide">
+          <Sparkles className="h-4 w-4 text-emerald-400 shrink-0 animate-pulse" />
+          <p className="truncate font-semibold tracking-wide text-slate-100">
             {saleSettings?.announcementText}
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           {timeLeft && (
-            <div className="hidden sm:flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full text-xs font-mono border border-[#B8860B]/40 text-[#FFD700]">
-              <Clock className="h-3.5 w-3.5" />
+            <div className="hidden sm:flex items-center gap-1.5 bg-black/50 px-2.5 py-1 rounded-full text-xs font-mono border border-emerald-500/30 text-emerald-300">
+              <Clock className="h-3.5 w-3.5 text-emerald-400" />
               <span>{timeLeft}</span>
             </div>
           )}
 
           <Link
             href="/sale"
-            className="bg-[#B8860B] hover:bg-[#D4AF37] text-black font-extrabold px-3 py-1 rounded-md text-xs uppercase tracking-wider transition-colors shadow-sm"
+            className="bg-slate-100 hover:bg-white text-slate-950 font-bold px-3 py-1 rounded-md text-xs uppercase tracking-wider transition-all shadow-sm"
           >
             Shop Sale
           </Link>
@@ -94,4 +94,3 @@ export function SalePopupBanner({ saleSettings }: Props) {
     </div>
   )
 }
-

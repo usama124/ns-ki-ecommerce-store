@@ -1,6 +1,6 @@
 'use client'
 
-import { ProductGridItem } from '@/components/ProductGridItem'
+import { ProductGrid } from '@/components/products/ProductGrid'
 import { Clock, Filter, Mail, Sparkles, Tag } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -59,23 +59,26 @@ export function SalePageClient({
     selectedSubcategory === 'all'
       ? initialProducts
       : initialProducts.filter((p) => {
-          if (!p.categories || !Array.isArray(p.categories)) return false
-          return p.categories.some((c: any) => {
-            const catId = typeof c === 'object' ? c.id : c
-            return String(catId) === selectedSubcategory
-          })
+          if (Array.isArray(p.categories)) {
+            return p.categories.some((c: any) =>
+              typeof c === 'object' ? c.id === selectedSubcategory : c === selectedSubcategory,
+            )
+          }
+          return false
         })
+
+  const discount = saleSettings?.discountPercentage || 20
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newsletterEmail) return
     setSubscribed(true)
-    toast.success("You're subscribed! We will notify you when the next sale launches.")
+    toast.success('Thank you! You will be notified before our next flash sale.')
   }
 
   if (!isLive || initialProducts.length === 0) {
     return (
-      <div className="min-h-[70vh] bg-[#03171E] text-white flex flex-col items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] bg-[#03171E] text-white flex flex-col items-center justify-center px-4 py-16 pb-24 sm:pb-12">
         <div className="max-w-md w-full text-center space-y-6 bg-white/5 backdrop-blur-md p-8 sm:p-12 rounded-3xl border border-white/10 shadow-2xl">
           <div className="w-16 h-16 bg-[#648698]/20 rounded-2xl flex items-center justify-center mx-auto border border-[#648698]/40 text-[#CBCCC7]">
             <Tag className="w-8 h-8" />
@@ -99,13 +102,14 @@ export function SalePageClient({
                 onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Enter your email for early access"
                 required
-                className="w-full bg-white/5 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder:text-[#CBCCC7]/50 focus:outline-none focus:border-[#648698]"
+                disabled={subscribed}
+                className="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 transition-colors"
               />
             </div>
             <button
               type="submit"
               disabled={subscribed}
-              className="w-full bg-[#648698] hover:bg-[#648698]/80 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-xl transition-all shadow-md"
+              className="w-full bg-white text-[#03171E] font-bold py-3 rounded-xl text-xs uppercase tracking-widest hover:bg-[#CBCCC7] transition-colors disabled:opacity-50 shadow-md"
             >
               {subscribed ? 'Subscribed ✓' : 'Notify Me'}
             </button>
@@ -115,10 +119,8 @@ export function SalePageClient({
     )
   }
 
-  const discount = saleSettings?.discountPercentage || 20
-
   return (
-    <div className="min-h-screen bg-[#03171E] text-[#CBCCC7] pb-20">
+    <div className="min-h-screen bg-[#03171E] text-[#CBCCC7] pb-24 sm:pb-12">
       {/* HERO SECTION */}
       <div className="relative overflow-hidden bg-gradient-to-b from-[#800020]/40 via-[#03171E] to-[#03171E] border-b border-white/10 px-4 py-12 sm:py-16">
         <div className="max-w-7xl mx-auto text-center space-y-6">
@@ -211,19 +213,11 @@ export function SalePageClient({
         )}
 
         {/* PRODUCT GRID */}
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-16 text-[#CBCCC7]/70 text-sm">
-            No products found matching this filter category.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductGridItem key={product.id} product={product} />
-            ))}
-          </div>
-        )}
+        <ProductGrid
+          products={filteredProducts}
+          emptyMessage="No products found matching this filter category."
+        />
       </div>
     </div>
   )
 }
-

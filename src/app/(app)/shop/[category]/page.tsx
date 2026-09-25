@@ -1,7 +1,6 @@
-import { GridTileImage } from '@/components/Grid/tile'
-import { Price } from '@/components/Price'
+import { ProductGrid } from '@/components/products/ProductGrid'
 import configPromise from '@payload-config'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -38,14 +37,14 @@ export async function generateMetadata({ params, searchParams }: Args): Promise<
     })
 
     const cat = categoryResult.docs?.[0]
-    if (!cat) return { title: "Collection | N's KI" }
+    if (!cat) return { title: "Collection | LUJAIN" }
 
     return {
-      title: `${cat.name} Collection | N's KI Pakistani Luxury Fashion`,
-      description: `Shop luxury ${cat.name} from N's KI Pakistani Luxury Fashion with express nationwide delivery.`,
+      title: `${cat.name} Collection | LUJAIN Pakistani Luxury Fashion`,
+      description: `Shop luxury ${cat.name} from LUJAIN Pakistani Luxury Fashion with express nationwide delivery.`,
     }
   } catch {
-    return { title: "Collection | N's KI" }
+    return { title: "Collection | LUJAIN" }
   }
 }
 
@@ -103,7 +102,7 @@ export default async function CategoryPage({ params, searchParams }: Args) {
   if (!targetCategory) return notFound()
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-24 sm:pb-12">
       {/* Hero Banner Header */}
       <div className="relative glass-card rounded-xl p-5 sm:p-7 mb-6 text-center border border-[#648698]/30 shadow-lg overflow-hidden bg-gradient-to-br from-[#03171E]/90 via-[#0a2d3b]/80 to-[#648698]/20 backdrop-blur-xl">
         {/* Ambient Glow */}
@@ -130,9 +129,9 @@ export default async function CategoryPage({ params, searchParams }: Args) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+      <div className="w-full max-w-7xl mx-auto pt-6">
         {products.length === 0 ? (
-          <div className="text-center py-20 glass-card border border-dashed border-border rounded-xl shadow-xs">
+          <div className="text-center py-20 px-4 glass-card border border-dashed border-border rounded-xl shadow-xs max-w-2xl mx-auto">
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-6">
               No products currently available in the "{targetCategory.name}" collection.
             </p>
@@ -144,61 +143,7 @@ export default async function CategoryPage({ params, searchParams }: Args) {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product: any) => {
-              const imageObj = product.images?.[0]?.image
-              const imageUrl = typeof imageObj === 'object' ? imageObj?.url : imageObj
-
-              return (
-                <div
-                  key={product.id}
-                  className="group flex flex-col glass-card rounded-xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300"
-                >
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="relative aspect-[3/4] w-full overflow-hidden bg-[#648698]/10"
-                  >
-                    {imageUrl ? (
-                      <GridTileImage
-                        alt={product.title}
-                        src={imageUrl}
-                        fill
-                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#648698]/10 text-muted-foreground font-serif text-xs uppercase tracking-widest">
-                        N's KI
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="flex flex-col flex-1 justify-between p-5">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-secondary font-semibold block mb-1">
-                        {targetCategory.name}
-                      </span>
-                      <h2 className="font-serif text-base font-medium text-foreground uppercase tracking-wider group-hover:text-[#BDBAB9] transition-colors mb-3 leading-snug">
-                        <Link href={`/products/${product.slug}`}>{product.title}</Link>
-                      </h2>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-border/60">
-                      <Price
-                        amount={product.basePricePKR}
-                        className="text-base font-serif font-bold text-foreground"
-                      />
-                      <Link
-                        href={`/products/${product.slug}`}
-                        className="text-[11px] uppercase tracking-widest font-semibold text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform"
-                      >
-                        View <ArrowRight className="w-3 h-3 text-secondary" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <ProductGrid products={products} />
         )}
       </div>
     </div>

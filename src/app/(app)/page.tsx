@@ -1,6 +1,6 @@
-import { GridTileImage } from '@/components/Grid/tile'
+import { CategoryTabs } from '@/components/CategoryTabs'
 import { HomepageHero } from '@/components/HomepageHero'
-import { Price } from '@/components/Price'
+import { ProductGrid } from '@/components/products/ProductGrid'
 import { ShoppableVideos } from '@/components/ShoppableVideos'
 import configPromise from '@payload-config'
 import type { Metadata } from 'next'
@@ -10,102 +10,96 @@ import { getPayload } from 'payload'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: "N's KI | Pakistani Luxury Fashion & E-Commerce",
+  title: "LUJAIN | Pakistani Luxury Fashion",
   description:
-    "Discover luxury Pakistani unstitched, pret, and formal collections dynamically curated by N's KI.",
+    'Experience premier Pakistani unstitched and pret collections. Handcrafted luxury, pure fabrics, and timeless design.',
 }
 
-export default async function Homepage() {
+export default async function HomePage() {
   let homepageData: any = null
   let products: any[] = []
+  let categories: any[] = []
 
   try {
     const payload = await getPayload({ config: configPromise })
 
-    try {
-      homepageData = await payload.findGlobal({
-        slug: 'homepage',
-        depth: 2,
-      })
-    } catch {
-      // global missing fallback
-    }
+    const homepageResult = await payload.findGlobal({
+      slug: 'homepage',
+      depth: 2,
+    })
+    homepageData = homepageResult
 
-    const featuredProductsResult = await payload.find({
-      collection: 'products',
+    const categoriesResult = await payload.find({
+      collection: 'categories',
       where: {
-        and: [{ status: { equals: 'published' } }, { isFeatured: { equals: true } }],
+        type: {
+          equals: 'main',
+        },
       },
-      limit: 8,
+      limit: 12,
       depth: 1,
     })
+    categories = categoriesResult.docs
 
-    products = featuredProductsResult.docs
-    if (products.length === 0) {
-      const allPublished = await payload.find({
+    let featuredIds: any[] = []
+    if (homepageData?.featuredProducts && Array.isArray(homepageData.featuredProducts)) {
+      featuredIds = homepageData.featuredProducts
+        .map((p: any) => (typeof p === 'object' ? p.id : p))
+        .filter(Boolean)
+    }
+
+    if (featuredIds.length > 0) {
+      const productsResult = await payload.find({
         collection: 'products',
-        where: { status: { equals: 'published' } },
+        where: {
+          and: [
+            {
+              id: {
+                in: featuredIds,
+              },
+            },
+            {
+              status: {
+                equals: 'published',
+              },
+            },
+          ],
+        },
+        limit: 12,
+        depth: 1,
+      })
+      products = productsResult.docs
+    } else {
+      const productsResult = await payload.find({
+        collection: 'products',
+        where: {
+          status: {
+            equals: 'published',
+          },
+        },
+        sort: '-createdAt',
         limit: 8,
         depth: 1,
       })
-      products = allPublished.docs
-    }
-
-    try {
-      const videoProductsResult = await payload.find({
-        collection: 'products',
-        where: {
-          and: [{ status: { equals: 'published' } }, { productVideo: { exists: true } }],
-        },
-        limit: 10,
-        depth: 2,
-      })
-
-      if (videoProductsResult?.docs?.length > 0) {
-        const dynamicReels = videoProductsResult.docs.map((p: any) => ({
-          title: p.title,
-          video: p.productVideo,
-          poster: p.images?.[0]?.image,
-          linkedProduct: p,
-        }))
-
-        const existingLinkedIds = new Set(
-          (homepageData?.shoppableVideos || [])
-            .map((r: any) =>
-              typeof r.linkedProduct === 'object' && r.linkedProduct !== null
-                ? r.linkedProduct.id
-                : r.linkedProduct,
-            )
-            .filter(Boolean),
-        )
-
-        const newDynamicReels = dynamicReels.filter(
-          (r: any) => !existingLinkedIds.has(r.linkedProduct?.id || r.linkedProduct),
-        )
-
-        homepageData = {
-          ...homepageData,
-          shoppableVideos: [...(homepageData?.shoppableVideos || []), ...newDynamicReels],
-        }
-      }
-    } catch {
-      // Optional fallback catch
+      products = productsResult.docs
     }
   } catch {
-    // Database connection catch
+    // Catch connection / compilation issues during setup
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="pb-24 sm:pb-12">
+      {/* Dynamic Homepage Hero Slider */}
       <HomepageHero heroSlider={homepageData?.heroSlider || []} />
 
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-border pb-4">
+      {/* Featured Collection Section */}
+      <section className="py-14 sm:py-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 border-b border-border/60 pb-4 px-1 sm:px-0">
           <div>
             <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground font-medium block mb-2">
               Curated Elegance
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal tracking-[0.15em] uppercase text-foreground">
+            <h2 className="font-serif text-2xl sm:text-4xl font-normal tracking-[0.15em] uppercase text-foreground">
               {homepageData?.featuredSectionTitle || 'Featured Collection'}
             </h2>
           </div>
@@ -117,72 +111,10 @@ export default async function Homepage() {
           </Link>
         </div>
 
-        {products.length === 0 ? (
-          <div className="text-center py-16 glass-card rounded-xl shadow-sm border border-dashed border-border">
-            <h3 className="font-serif text-xl text-foreground uppercase tracking-widest mb-2">
-              No Products Published Yet
-            </h3>
-            <p className="text-xs text-muted-foreground max-w-md mx-auto mb-6">
-              Log into Admin (/store-admin) to add luxury products to your collection.
-            </p>
-            <Link
-              href="/store-admin"
-              className="inline-block glass-button-primary text-xs font-semibold uppercase tracking-widest px-6 py-3 rounded-lg"
-            >
-              Open Admin Panel
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
-            {products.map((product: any) => {
-              const imageObj = product.images?.[0]?.image
-              const imageUrl = typeof imageObj === 'object' ? imageObj?.url : imageObj
-
-              return (
-                <div
-                  key={product.id}
-                  className="group flex flex-col glass-card rounded-xl p-4 transition-all hover:shadow-xl"
-                >
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-[#648698]/10 mb-4"
-                  >
-                    {imageUrl ? (
-                      <GridTileImage
-                        alt={product.title}
-                        src={imageUrl}
-                        fill
-                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#648698]/10 text-muted-foreground text-xs uppercase tracking-widest">
-                        N's KI
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="flex flex-col flex-1 justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium block mb-1">
-                        {product.primaryCategory?.name ||
-                          product.categories?.[0]?.name ||
-                          'Luxury Pret'}
-                      </span>
-                      {/* <h3 className="font-serif text-sm font-medium text-foreground uppercase tracking-wider group-hover:text-secondary transition-colors mb-2"> */}
-                      <h3 className="font-serif text-sm font-medium text-foreground uppercase tracking-wider group-hover:text-[#BDBAB9] transition-colors mb-2">
-                        <Link href={`/products/${product.slug}`}>{product.title}</Link>
-                      </h3>
-                    </div>
-                    <Price
-                      amount={product.basePricePKR}
-                      className="text-sm font-semibold text-foreground"
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+        <ProductGrid
+          products={products}
+          emptyMessage="No products published in the featured collection yet."
+        />
       </section>
 
       {homepageData?.shoppableVideos && homepageData.shoppableVideos.length > 0 && (
