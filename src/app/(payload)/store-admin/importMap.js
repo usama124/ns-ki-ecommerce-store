@@ -19,6 +19,8 @@ import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { default as default_534076e2c753ea5d539a54b05f456b1b } from '@/components/admin/Icon'
+import { default as default_a44df17d0fc3dcd873dae43dc3bf66bd } from '@/components/admin/Logo'
 import { InventoryNavLink as InventoryNavLink_80f2707f655ba04334b711729c7f5882 } from '@/components/admin/InventoryNavLink'
 import { OrdersDashboardNavLink as OrdersDashboardNavLink_c3709662247da8634bd77922a5bc278f } from '@/components/admin/OrdersDashboardNavLink'
 import { SaleDashboardNavLink as SaleDashboardNavLink_e255651f144f4b3f561619354f3fa3c1 } from '@/components/admin/SaleDashboardNavLink'
@@ -53,6 +55,8 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@/components/admin/Icon#default": default_534076e2c753ea5d539a54b05f456b1b,
+  "@/components/admin/Logo#default": default_a44df17d0fc3dcd873dae43dc3bf66bd,
   "@/components/admin/InventoryNavLink#InventoryNavLink": InventoryNavLink_80f2707f655ba04334b711729c7f5882,
   "@/components/admin/OrdersDashboardNavLink#OrdersDashboardNavLink": OrdersDashboardNavLink_c3709662247da8634bd77922a5bc278f,
   "@/components/admin/SaleDashboardNavLink#SaleDashboardNavLink": SaleDashboardNavLink_e255651f144f4b3f561619354f3fa3c1,

@@ -2,6 +2,7 @@
 
 import { toast } from '@payloadcms/ui'
 import React, { useEffect, useState } from 'react'
+import { C, glassCard, pageWrap, btnPrimary, btnDanger, btnSecondary, inputStyle, TH, TD } from '../adminTheme'
 
 export function SaleDashboardClient() {
   const [loading, setLoading] = useState(true)
@@ -64,39 +65,20 @@ export function SaleDashboardClient() {
 
   // Live countdown ticker
   useEffect(() => {
-    if (!endDate || !isActive) {
-      setTimeLeft('')
-      return
-    }
-
+    if (!endDate || !isActive) { setTimeLeft(''); return }
     const interval = setInterval(() => {
-      const now = Date.now()
-      const end = new Date(endDate).getTime()
-      const diff = end - now
-
-      if (diff <= 0) {
-        setTimeLeft('Expired')
-        setIsLive(false)
-        clearInterval(interval)
-      } else {
-        const hours = Math.floor(diff / (1000 * 60 * 60))
-        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-        const secs = Math.floor((diff % (1000 * 60)) / 1000)
-        setTimeLeft(
-          `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs
-            .toString()
-            .padStart(2, '0')}`,
-        )
-      }
+      const diff = new Date(endDate).getTime() - Date.now()
+      if (diff <= 0) { setTimeLeft('Expired'); setIsLive(false); clearInterval(interval); return }
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setTimeLeft(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`)
     }, 1000)
-
     return () => clearInterval(interval)
   }, [endDate, isActive])
 
   const handleCategoryToggle = (catId: string) => {
-    setTargetedCategories((prev) =>
-      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId],
-    )
+    setTargetedCategories(prev => prev.includes(catId) ? prev.filter(id => id !== catId) : [...prev, catId])
   }
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -106,18 +88,8 @@ export function SaleDashboardClient() {
       const res = await fetch('/api/admin/sale-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          isActive,
-          title,
-          startDate: startDate ? new Date(startDate).toISOString() : null,
-          endDate: endDate ? new Date(endDate).toISOString() : null,
-          discountPercentage,
-          targetedCategories,
-          announcementText,
-          enablePopup,
-        }),
+        body: JSON.stringify({ isActive, title, startDate: startDate ? new Date(startDate).toISOString() : null, endDate: endDate ? new Date(endDate).toISOString() : null, discountPercentage, targetedCategories, announcementText, enablePopup }),
       })
-
       if (!res.ok) throw new Error('Failed to save sale settings')
       toast.success('Sale campaign settings updated successfully!')
       fetchDashboardData()
@@ -132,16 +104,10 @@ export function SaleDashboardClient() {
     if (!confirm('Are you sure you want to end the flash sale immediately?')) return
     try {
       setEnding(true)
-      const res = await fetch('/api/admin/sale-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'end_immediately' }),
-      })
-
+      const res = await fetch('/api/admin/sale-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'end_immediately' }) })
       if (!res.ok) throw new Error('Failed to terminate sale')
       toast.success('Flash sale terminated immediately!')
-      setIsActive(false)
-      setIsLive(false)
+      setIsActive(false); setIsLive(false)
       fetchDashboardData()
     } catch (err: any) {
       toast.error(err.message || 'Error ending sale')
@@ -152,498 +118,175 @@ export function SaleDashboardClient() {
 
   if (loading) {
     return (
-      <div style={{ padding: '32px', fontFamily: 'sans-serif' }}>
-        <p style={{ color: 'var(--color-base-600)' }}>Loading Flash Sale Dashboard...</p>
+      <div style={{ ...pageWrap, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏷️</div>
+          <p style={{ color: C.textMuted, fontSize: '14px' }}>Loading Flash Sale Dashboard...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div
-      style={{
-        padding: '24px 32px',
-        maxWidth: '1280px',
-        margin: '0 auto',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: 'var(--color-base-1000)',
-      }}
-    >
-      {/* TOP BAR */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px',
-          padding: '20px 24px',
-          backgroundColor: 'var(--color-base-100)',
-          borderRadius: '12px',
-          border: '1px solid var(--color-base-200)',
-          marginBottom: '28px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        }}
-      >
+    <div style={pageWrap}>
+
+      {/* ── TOP BAR ── */}
+      <div style={{ ...glassCard, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', padding: '20px 24px', marginBottom: '28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em' }}>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: C.textPrimary, letterSpacing: '-0.02em' }}>
             🏷️ Flash Sale Campaign Management
           </h1>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 12px',
-                borderRadius: '999px',
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                backgroundColor: isLive ? '#22c55e1a' : '#64748b1a',
-                color: isLive ? '#15803d' : '#64748b',
-                border: `1px solid ${isLive ? '#22c55e40' : '#64748b30'}`,
-              }}
-            >
-              <span
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: isLive ? '#22c55e' : '#94a3b8',
-                  boxShadow: isLive ? '0 0 8px #22c55e' : 'none',
-                }}
-              />
-              {isLive ? 'LIVE CAMPAIGN' : 'INACTIVE'}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px',
+            borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+            backgroundColor: isLive ? C.successBg : C.goldDim,
+            color: isLive ? C.successText : C.textMuted,
+            border: `1px solid ${isLive ? C.successBorder : C.border}`,
+          }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: isLive ? '#34d399' : C.slate, boxShadow: isLive ? '0 0 8px #34d399' : 'none' }} />
+            {isLive ? 'LIVE' : 'INACTIVE'}
+          </span>
+          {isLive && timeLeft && (
+            <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', background: C.goldDim, color: C.gold, border: `1px solid ${C.border}` }}>
+              ⏱ {timeLeft}
             </span>
-
-            {isLive && timeLeft && (
-              <span
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  fontFamily: 'monospace',
-                  backgroundColor: 'var(--color-base-200)',
-                  color: 'var(--color-base-900)',
-                }}
-              >
-                ⏱️ {timeLeft}
-              </span>
-            )}
-          </div>
+          )}
         </div>
-
         {isLive && (
-          <button
-            type="button"
-            onClick={handleEndImmediately}
-            disabled={ending}
-            style={{
-              padding: '10px 18px',
-              backgroundColor: '#dc2626',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: ending ? 'not-allowed' : 'pointer',
-              opacity: ending ? 0.7 : 1,
-              transition: 'background 0.2s',
-            }}
-          >
+          <button type="button" onClick={handleEndImmediately} disabled={ending} style={btnDanger}>
             {ending ? 'Ending Sale...' : '🔴 End Sale Immediately'}
           </button>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '28px' }}>
-        {/* CAMPAIGN FORM PANEL */}
-        <form
-          onSubmit={handleSaveSettings}
-          style={{
-            backgroundColor: 'var(--color-base-100)',
-            padding: '24px',
-            borderRadius: '12px',
-            border: '1px solid var(--color-base-200)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>
+      <div style={{ display: 'grid', gap: '24px' }}>
+        {/* ── CAMPAIGN FORM ── */}
+        <form onSubmit={handleSaveSettings} style={{ ...glassCard, padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: C.textGold, letterSpacing: '0.04em' }}>
             ⚙️ Campaign Configuration
           </h2>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '16px',
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+            {/* Status toggle */}
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}
-              >
-                Campaign Status
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  style={{ width: '18px', height: '18px' }}
-                />
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>
-                  Enable Flash Sale ({isActive ? 'Active' : 'Disabled'})
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Campaign Status</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 14px', borderRadius: '8px', border: `1px solid ${isActive ? C.successBorder : C.borderInput}`, background: isActive ? C.successBg : C.inputBg }}>
+                <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#34d399' }} />
+                <span style={{ fontSize: '14px', fontWeight: 600, color: isActive ? C.successText : C.textSecondary }}>
+                  {isActive ? '✓ Sale Active' : 'Sale Disabled'}
                 </span>
               </label>
             </div>
 
+            {/* Title */}
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}
-              >
-                Campaign Title
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Mid-Summer Clearance"
-                required
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-base-300)',
-                  backgroundColor: 'var(--color-base-0)',
-                  color: 'inherit',
-                }}
-              />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Campaign Title</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Mid-Summer Clearance" required style={inputStyle} />
             </div>
 
+            {/* Discount */}
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}
-              >
-                Discount Percentage (%)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={99}
-                value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Number(e.target.value))}
-                required
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-base-300)',
-                  backgroundColor: 'var(--color-base-0)',
-                  color: 'inherit',
-                }}
-              />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Discount %</label>
+              <input type="number" min={1} max={99} value={discountPercentage} onChange={e => setDiscountPercentage(Number(e.target.value))} required style={inputStyle} />
             </div>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '16px',
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}
-              >
-                Start Datetime
-              </label>
-              <input
-                type="datetime-local"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-base-300)',
-                  backgroundColor: 'var(--color-base-0)',
-                  color: 'inherit',
-                }}
-              />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Start Datetime</label>
+              <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ ...inputStyle, colorScheme: 'dark' }} />
             </div>
-
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}
-              >
-                End Datetime
-              </label>
-              <input
-                type="datetime-local"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-base-300)',
-                  backgroundColor: 'var(--color-base-0)',
-                  color: 'inherit',
-                }}
-              />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>End Datetime</label>
+              <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ ...inputStyle, colorScheme: 'dark' }} />
             </div>
           </div>
 
-          {/* TARGETED CATEGORIES MULTI-SELECT */}
+          {/* Categories */}
           <div>
-            <label
-              style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}
-            >
-              Targeted Categories / Subcategories (Check all eligible)
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              Targeted Categories ({targetedCategories.length} selected)
             </label>
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: '8px',
-                border: '1px solid var(--color-base-300)',
-                backgroundColor: 'var(--color-base-0)',
-                maxHeight: '160px',
-                overflowY: 'auto',
-              }}
-            >
-              {categories.map((cat) => {
-                const isChecked = targetedCategories.includes(cat.id)
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px', borderRadius: '8px', border: `1px solid ${C.borderInput}`, background: C.inputBg, maxHeight: '160px', overflowY: 'auto' }}>
+              {categories.length === 0 && <span style={{ fontSize: '12px', color: C.textMuted }}>No categories found</span>}
+              {categories.map(cat => {
+                const checked = targetedCategories.includes(cat.id)
                 return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => handleCategoryToggle(cat.id)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '999px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      border: isChecked
-                        ? '1px solid var(--color-base-800)'
-                        : '1px solid var(--color-base-300)',
-                      backgroundColor: isChecked
-                        ? 'var(--color-base-900)'
-                        : 'var(--color-base-100)',
-                      color: isChecked ? 'var(--color-base-0)' : 'var(--color-base-800)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {cat.name} {cat.parent ? `(${cat.parent})` : ''} {isChecked ? '✓' : ''}
+                  <button key={cat.id} type="button" onClick={() => handleCategoryToggle(cat.id)} style={{
+                    padding: '5px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                    border: checked ? `1px solid ${C.gold}` : `1px solid ${C.borderInput}`,
+                    background: checked ? C.goldDim : 'transparent',
+                    color: checked ? C.gold : C.textSecondary,
+                  }}>
+                    {checked ? '✓ ' : ''}{cat.name}{cat.parent ? ` (${cat.parent})` : ''}
                   </button>
                 )
               })}
             </div>
           </div>
 
-          {/* ANNOUNCEMENT TEXT & POPUP */}
+          {/* Announcement */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Storefront Announcement Banner Text</label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginLeft: 'auto' }}>
-                <input
-                  type="checkbox"
-                  checked={enablePopup}
-                  onChange={(e) => setEnablePopup(e.target.checked)}
-                />
-                <span style={{ fontSize: '12px', fontWeight: 600 }}>Enable Alert Banner</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Announcement Banner Text</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={enablePopup} onChange={e => setEnablePopup(e.target.checked)} style={{ accentColor: C.gold }} />
+                <span style={{ fontSize: '12px', fontWeight: 600, color: C.textSecondary }}>Show Banner</span>
               </label>
             </div>
-            <textarea
-              rows={2}
-              value={announcementText}
-              onChange={(e) => setAnnouncementText(e.target.value)}
-              placeholder="🔥 FLASH SALE LIVE! Enjoy up to 20% OFF on selected collections."
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-base-300)',
-                backgroundColor: 'var(--color-base-0)',
-                color: 'inherit',
-                fontSize: '13px',
-              }}
-            />
+            <textarea rows={2} value={announcementText} onChange={e => setAnnouncementText(e.target.value)} placeholder="🔥 FLASH SALE LIVE! Enjoy up to 20% OFF on selected collections." style={{ ...inputStyle, resize: 'vertical' as const }} />
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                padding: '10px 24px',
-                backgroundColor: 'var(--color-base-900)',
-                color: 'var(--color-base-0)',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: saving ? 'not-allowed' : 'pointer',
-                opacity: saving ? 0.7 : 1,
-              }}
-            >
+            <button type="submit" disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.7 : 1 }}>
               {saving ? 'Saving...' : '💾 Save Sale Settings'}
             </button>
           </div>
         </form>
 
-        {/* ACTIVE PRODUCTS MATRIX TABLE */}
-        <div
-          style={{
-            backgroundColor: 'var(--color-base-100)',
-            padding: '24px',
-            borderRadius: '12px',
-            border: '1px solid var(--color-base-200)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '16px',
-            }}
-          >
-            <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>
-              📦 Active On-Sale Products ({activeProducts.length})
+        {/* ── ACTIVE PRODUCTS TABLE ── */}
+        <div style={{ ...glassCard, padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: C.textGold }}>
+              📦 On-Sale Products ({activeProducts.length})
             </h2>
-            <span style={{ fontSize: '12px', color: 'var(--color-base-600)' }}>
-              Products receiving discount based on selected categories
-            </span>
+            <span style={{ fontSize: '12px', color: C.textMuted }}>Products receiving discount based on selected categories</span>
           </div>
 
           {activeProducts.length === 0 ? (
-            <p style={{ fontSize: '13px', color: 'var(--color-base-600)', margin: 0 }}>
-              No active products found matching the targeted sale categories. Select categories and enable sale above.
+            <p style={{ fontSize: '13px', color: C.textMuted, margin: 0, padding: '24px', textAlign: 'center', border: `1px dashed ${C.border}`, borderRadius: '8px' }}>
+              No active products found. Select categories and enable sale above.
             </p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '13px',
-                  textAlign: 'left',
-                }}
-              >
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--color-base-300)' }}>
-                    <th style={{ padding: '10px 12px' }}>Product</th>
-                    <th style={{ padding: '10px 12px' }}>Category</th>
-                    <th style={{ padding: '10px 12px' }}>Base Price (PKR)</th>
-                    <th style={{ padding: '10px 12px' }}>Discounted Price (PKR)</th>
-                    <th style={{ padding: '10px 12px' }}>Discount</th>
+                  <tr>
+                    <th style={TH}>Product</th>
+                    <th style={TH}>Category</th>
+                    <th style={TH}>Base Price (PKR)</th>
+                    <th style={TH}>Sale Price (PKR)</th>
+                    <th style={TH}>Discount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {activeProducts.map((p) => (
-                    <tr
-                      key={p.id}
-                      style={{ borderBottom: '1px solid var(--color-base-200)' }}
-                    >
-                      <td
-                        style={{
-                          padding: '10px 12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                        }}
-                      >
+                  {activeProducts.map(p => (
+                    <tr key={p.id} style={{ transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = C.rowHover)}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <td style={{ ...TD, display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {p.image ? (
-                          <img
-                            src={p.image}
-                            alt={p.title}
-                            style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '4px',
-                              objectFit: 'cover',
-                            }}
-                          />
+                          <img src={p.image} alt={p.title} style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', border: `1px solid ${C.border}` }} />
                         ) : (
-                          <div
-                            style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '4px',
-                              backgroundColor: 'var(--color-base-200)',
-                            }}
-                          />
+                          <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: C.cardBgSolid, border: `1px solid ${C.border}` }} />
                         )}
-                        <span style={{ fontWeight: 600 }}>{p.title}</span>
+                        <span style={{ fontWeight: 600, color: C.textPrimary }}>{p.title}</span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: 'var(--color-base-700)' }}>
-                        {p.primaryCategory}
-                      </td>
-                      <td
-                        style={{
-                          padding: '10px 12px',
-                          textDecoration: 'line-through',
-                          color: 'var(--color-base-600)',
-                        }}
-                      >
-                        Rs. {p.basePricePKR.toLocaleString()}
-                      </td>
-                      <td
-                        style={{
-                          padding: '10px 12px',
-                          fontWeight: 700,
-                          color: '#dc2626',
-                        }}
-                      >
-                        Rs. {p.effectivePrice.toLocaleString()}
-                      </td>
-                      <td style={{ padding: '10px 12px' }}>
-                        <span
-                          style={{
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            backgroundColor: '#dc2626',
-                            color: '#ffffff',
-                          }}
-                        >
+                      <td style={TD}><span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: C.goldDim, color: C.gold, border: `1px solid ${C.border}` }}>{p.primaryCategory}</span></td>
+                      <td style={{ ...TD, textDecoration: 'line-through', color: C.textMuted }}>Rs. {p.basePricePKR?.toLocaleString()}</td>
+                      <td style={{ ...TD, fontWeight: 700, color: C.dangerText }}>Rs. {p.effectivePrice?.toLocaleString()}</td>
+                      <td style={TD}>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, background: C.dangerBg, color: C.dangerText, border: `1px solid ${C.dangerBorder}` }}>
                           -{p.discountPercentage}%
                         </span>
                       </td>

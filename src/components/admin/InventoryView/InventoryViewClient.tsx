@@ -2,6 +2,16 @@
 
 import { toast } from '@payloadcms/ui'
 import React, { useEffect, useMemo, useState } from 'react'
+import {
+  C,
+  glassCard,
+  pageWrap,
+  btnPrimary,
+  btnSecondary,
+  inputStyle,
+  TH,
+  TD,
+} from '../adminTheme'
 
 export type InventoryRow = {
   productId: string
@@ -28,10 +38,10 @@ function Badge({
   color: 'green' | 'amber' | 'red' | 'purple'
 }) {
   const map: Record<string, React.CSSProperties> = {
-    green: { background: '#dcfce7', color: '#15803d', border: '1px solid #86efac' },
-    amber: { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
-    red: { background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' },
-    purple: { background: '#f3e8ff', color: '#6b21a8', border: '1px solid #d8b4fe' },
+    green: { background: C.successBg, color: C.successText, border: `1px solid ${C.successBorder}` },
+    amber: { background: C.warningBg, color: C.warningText, border: `1px solid ${C.warningBorder}` },
+    red: { background: C.dangerBg, color: C.dangerText, border: `1px solid ${C.dangerBorder}` },
+    purple: { background: C.purpleBg, color: C.purpleText, border: `1px solid ${C.purpleBorder}` },
   }
   return (
     <span
@@ -39,7 +49,7 @@ function Badge({
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        padding: '2px 8px',
+        padding: '3px 10px',
         borderRadius: '999px',
         fontSize: '11px',
         fontWeight: 700,
@@ -203,157 +213,120 @@ export function InventoryViewClient() {
 
   const dirtyCount = Object.keys(editedStocks).length
 
-  // ── styles ────────────────────────────────────────────────────────────────
-  const btn = (variant: 'primary' | 'secondary' | 'save'): React.CSSProperties => {
-    const base: React.CSSProperties = {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '6px',
-      padding: '8px 16px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      border: 'none',
-      letterSpacing: '0.03em',
-      transition: 'opacity 0.15s',
-    }
-    if (variant === 'primary') return { ...base, background: '#1c1917', color: '#fff' }
-    if (variant === 'save') return { ...base, background: '#92400e', color: '#fff' }
-    return { ...base, background: '#fff', color: '#44403c', border: '1px solid #d6d3d1' }
-  }
-
   const tabBtn = (active: boolean, variant?: 'amber' | 'red'): React.CSSProperties => {
     const base: React.CSSProperties = {
-      padding: '6px 14px',
+      padding: '7px 14px',
       fontSize: '11px',
       fontWeight: 700,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
-      borderRadius: '6px',
+      borderRadius: '8px',
       border: '1px solid transparent',
       cursor: 'pointer',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '4px',
+      gap: '5px',
+      transition: 'all 0.15s ease',
     }
-    if (active && variant === 'amber') return { ...base, background: '#92400e', color: '#fff' }
-    if (active && variant === 'red') return { ...base, background: '#991b1b', color: '#fff' }
-    if (active) return { ...base, background: '#1c1917', color: '#fff' }
-    if (variant === 'amber')
-      return { ...base, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }
-    if (variant === 'red')
-      return { ...base, background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' }
-    return { ...base, background: '#f5f5f4', color: '#44403c' }
-  }
-
-  const TH: React.CSSProperties = {
-    padding: '10px 12px',
-    textAlign: 'left',
-    background: '#f5f5f4',
-    borderBottom: '1px solid #e7e5e4',
-    fontSize: '11px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    color: '#78716c',
-    whiteSpace: 'nowrap',
-  }
-  const TD: React.CSSProperties = {
-    padding: '10px 12px',
-    borderBottom: '1px solid #f0eeee',
-    verticalAlign: 'middle',
+    if (active && variant === 'amber') return { ...base, background: C.warningBg, color: C.warningText, border: `1px solid ${C.warningBorder}` }
+    if (active && variant === 'red') return { ...base, background: C.dangerBg, color: C.dangerText, border: `1px solid ${C.dangerBorder}` }
+    if (active) return { ...base, background: C.goldDim, color: C.gold, border: `1px solid ${C.border}` }
+    if (variant === 'amber') return { ...base, background: 'transparent', color: C.warningText, border: `1px solid ${C.warningBorder}` }
+    if (variant === 'red') return { ...base, background: 'transparent', color: C.dangerText, border: `1px solid ${C.dangerBorder}` }
+    return { ...base, background: 'transparent', color: C.textSecondary, border: `1px solid ${C.borderInput}` }
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        fontFamily: 'var(--font-body, sans-serif)',
-        color: '#1c1917',
-        background: '#fafaf9',
-        minHeight: '100%',
-      }}
-    >
-      {/* Header */}
+    <div style={pageWrap}>
+      {/* Header Bar */}
       <div
         style={{
+          ...glassCard,
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '16px',
+          padding: '20px 24px',
           marginBottom: '24px',
-          paddingBottom: '20px',
-          borderBottom: '1px solid #e7e5e4',
         }}
       >
         <div>
-          <p
-            style={{
-              margin: 0,
-              fontSize: '11px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: '#92400e',
-              marginBottom: '4px',
-            }}
-          >
-            📦 Payload Admin
-          </p>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#1c1917' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ fontSize: '18px' }}>📦</span>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: C.gold,
+              }}
+            >
+              LUJAIN Stock Hub
+            </p>
+          </div>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.02em' }}>
             Inventory &amp; Stock Control
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#78716c' }}>
-            Monitor stock levels, set low-stock threshold, and update quantities.
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.textSecondary }}>
+            Real-time multi-variant inventory management and quick inline stock adjustments.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button style={btn('secondary')} onClick={fetchInventory} disabled={loading}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button style={btnSecondary} onClick={fetchInventory} disabled={loading}>
             {loading ? '↻ Loading…' : '↻ Refresh'}
           </button>
           {dirtyCount > 0 && (
-            <button style={btn('save')} onClick={handleBatchSave} disabled={batchSaving}>
-              💾 {batchSaving ? 'Saving…' : `Save All (${dirtyCount})`}
+            <button
+              style={{
+                ...btnPrimary,
+                background: 'linear-gradient(135deg, #b45309 0%, #f59e0b 100%)',
+                color: '#fff',
+              }}
+              onClick={handleBatchSave}
+              disabled={batchSaving}
+            >
+              💾 {batchSaving ? 'Saving…' : `Save Changes (${dirtyCount})`}
             </button>
           )}
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      {/* Stats Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         {[
           {
             label: 'Total Variants',
             value: stats.totalVariants,
-            color: '#1c1917',
-            bg: '#fff',
-            border: '#e7e5e4',
+            color: C.textPrimary,
+            bg: C.cardBg,
+            border: C.border,
             tab: 'all' as const,
           },
           {
             label: 'In-Stock Units',
             value: stats.totalUnits.toLocaleString(),
-            color: '#1c1917',
-            bg: '#fff',
-            border: '#e7e5e4',
+            color: C.textGoldBright,
+            bg: C.cardBg,
+            border: C.border,
             tab: 'all' as const,
           },
           {
             label: `⚠ Low (≤${threshold})`,
             value: stats.lowStockCount,
-            color: '#92400e',
-            bg: filterTab === 'low_stock' ? '#fef3c7' : '#fff',
-            border: filterTab === 'low_stock' ? '#fcd34d' : '#e7e5e4',
+            color: C.warningText,
+            bg: filterTab === 'low_stock' ? C.warningBg : C.cardBg,
+            border: filterTab === 'low_stock' ? C.warningBorder : C.border,
             tab: 'low_stock' as const,
           },
           {
             label: '✕ Out of Stock',
             value: stats.outOfStockCount,
-            color: '#991b1b',
-            bg: filterTab === 'out_of_stock' ? '#fee2e2' : '#fff',
-            border: filterTab === 'out_of_stock' ? '#fca5a5' : '#e7e5e4',
+            color: C.dangerText,
+            bg: filterTab === 'out_of_stock' ? C.dangerBg : C.cardBg,
+            border: filterTab === 'out_of_stock' ? C.dangerBorder : C.border,
             tab: 'out_of_stock' as const,
           },
         ].map(({ label, value, color, bg, border, tab }) => (
@@ -363,11 +336,13 @@ export function InventoryViewClient() {
             style={{
               background: bg,
               border: `1px solid ${border}`,
-              borderRadius: '10px',
-              padding: '16px',
+              borderRadius: '12px',
+              padding: '18px',
               cursor: 'pointer',
-              flex: '1 1 140px',
-              minWidth: '130px',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: C.shadowCard,
+              transition: 'transform 0.15s ease, border-color 0.15s ease',
             }}
           >
             <div
@@ -382,27 +357,25 @@ export function InventoryViewClient() {
             >
               {label}
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 700, color }}>{value}</div>
+            <div style={{ fontSize: '26px', fontWeight: 800, color }}>{value}</div>
           </div>
         ))}
       </div>
 
-      {/* Filter bar */}
+      {/* Filter & Search Bar */}
       <div
         style={{
-          background: '#fff',
-          border: '1px solid #e7e5e4',
-          borderRadius: '10px',
-          padding: '14px 16px',
-          marginBottom: '16px',
+          ...glassCard,
+          padding: '14px 18px',
+          marginBottom: '20px',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '10px',
+          gap: '12px',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button style={tabBtn(filterTab === 'all')} onClick={() => setFilterTab('all')}>
             All ({stats.totalVariants})
           </button>
@@ -419,21 +392,22 @@ export function InventoryViewClient() {
             ✕ Out of Stock ({stats.outOfStockCount})
           </button>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '8px',
               fontSize: '12px',
-              background: '#f5f5f4',
-              border: '1px solid #d6d3d1',
-              borderRadius: '6px',
-              padding: '6px 10px',
+              background: C.inputBg,
+              border: `1px solid ${C.borderInput}`,
+              borderRadius: '8px',
+              padding: '6px 12px',
             }}
           >
-            <span style={{ fontWeight: 600, color: '#57534e', whiteSpace: 'nowrap' }}>
-              Low threshold:
+            <span style={{ fontWeight: 600, color: C.textSecondary, whiteSpace: 'nowrap' }}>
+              Low Alert Threshold:
             </span>
             <input
               type="number"
@@ -442,27 +416,28 @@ export function InventoryViewClient() {
               value={threshold}
               onChange={(e) => setThreshold(Math.max(1, Number(e.target.value) || 1))}
               style={{
-                width: '44px',
+                width: '42px',
                 textAlign: 'center',
                 fontWeight: 700,
-                border: '1px solid #d6d3d1',
+                border: `1px solid ${C.borderInput}`,
                 borderRadius: '4px',
-                padding: '2px 4px',
+                padding: '3px 4px',
                 fontSize: '12px',
-                color: '#1c1917',
-                background: '#fff',
+                color: C.textPrimary,
+                background: 'rgba(0,0,0,0.3)',
                 outline: 'none',
               }}
             />
           </div>
+
           <div style={{ position: 'relative' }}>
             <span
               style={{
                 position: 'absolute',
-                left: '9px',
+                left: '10px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#a8a29e',
+                color: C.textMuted,
                 fontSize: '13px',
                 pointerEvents: 'none',
               }}
@@ -475,39 +450,37 @@ export function InventoryViewClient() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
-                width: '220px',
-                padding: '7px 10px 7px 30px',
+                width: '240px',
+                padding: '8px 12px 8px 32px',
                 fontSize: '12px',
-                border: '1px solid #d6d3d1',
-                borderRadius: '6px',
+                border: `1px solid ${C.borderInput}`,
+                borderRadius: '8px',
                 outline: 'none',
-                background: '#fff',
-                color: '#1c1917',
+                background: C.inputBg,
+                color: C.textPrimary,
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Inventory Table */}
       <div
         style={{
-          background: '#fff',
-          border: '1px solid #e7e5e4',
-          borderRadius: '10px',
+          ...glassCard,
           overflow: 'hidden',
         }}
       >
         {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#78716c', fontSize: '13px' }}>
-            Loading inventory…
+          <div style={{ padding: '60px', textAlign: 'center', color: C.textMuted, fontSize: '13px' }}>
+            Loading inventory items…
           </div>
         ) : error ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#991b1b', fontSize: '13px' }}>
+          <div style={{ padding: '60px', textAlign: 'center', color: C.dangerText, fontSize: '13px' }}>
             {error}
           </div>
         ) : filteredInventory.length === 0 ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#78716c', fontSize: '13px' }}>
+          <div style={{ padding: '60px', textAlign: 'center', color: C.textMuted, fontSize: '13px' }}>
             No inventory items match the current filters.
           </div>
         ) : (
@@ -519,7 +492,7 @@ export function InventoryViewClient() {
                   <th style={TH}>Category / Color</th>
                   <th style={TH}>Size &amp; SKU</th>
                   <th style={TH}>Status</th>
-                  <th style={{ ...TH, textAlign: 'center' }}>Stock</th>
+                  <th style={{ ...TH, textAlign: 'center' }}>Stock Qty</th>
                   <th style={{ ...TH, textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
@@ -532,28 +505,39 @@ export function InventoryViewClient() {
                   const isSavingThis = savingKey === key
                   const isLow = currentStock > 0 && currentStock <= threshold
                   const isOut = currentStock === 0 && !item.allowBackorder
-                  const rowBg = isOut ? '#fff5f5' : isLow ? '#fffbeb' : '#fff'
+                  const rowBg = isOut ? C.rowOut : isLow ? C.rowLow : 'transparent'
 
                   return (
-                    <tr key={key} style={{ background: rowBg }}>
+                    <tr
+                      key={key}
+                      style={{
+                        background: rowBg,
+                        transition: 'background 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isOut && !isLow) e.currentTarget.style.background = C.rowHover
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isOut && !isLow) e.currentTarget.style.background = 'transparent'
+                      }}
+                    >
                       <td style={TD}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div
                             style={{
-                              width: '40px',
-                              height: '48px',
-                              background: '#f5f5f4',
-                              borderRadius: '4px',
+                              width: '42px',
+                              height: '52px',
+                              background: C.cardBgSolid,
+                              borderRadius: '6px',
                               overflow: 'hidden',
                               flexShrink: 0,
-                              border: '1px solid #e7e5e4',
+                              border: `1px solid ${C.border}`,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                             }}
                           >
                             {item.imageUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={item.imageUrl}
                                 alt={item.productTitle}
@@ -565,17 +549,17 @@ export function InventoryViewClient() {
                                 }}
                               />
                             ) : (
-                              <span style={{ fontSize: '9px', color: '#a8a29e' }}>N's KI</span>
+                              <span style={{ fontSize: '9px', color: C.textMuted }}>LUJAIN</span>
                             )}
                           </div>
                           <div>
                             <a
                               href={`/store-admin/collections/products/${item.productId}`}
                               style={{
-                                fontWeight: 600,
-                                color: '#1c1917',
+                                fontWeight: 700,
+                                color: C.textPrimary,
                                 textDecoration: 'none',
-                                fontSize: '12px',
+                                fontSize: '13px',
                                 display: 'block',
                                 lineHeight: 1.3,
                               }}
@@ -585,7 +569,7 @@ export function InventoryViewClient() {
                             <span
                               style={{
                                 fontSize: '10px',
-                                color: '#a8a29e',
+                                color: C.textMuted,
                                 fontFamily: 'monospace',
                               }}
                             >
@@ -598,8 +582,8 @@ export function InventoryViewClient() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <Badge color="amber">{item.primaryCategory}</Badge>
                           {item.color && (
-                            <span style={{ fontSize: '11px', color: '#57534e' }}>
-                              Color: <strong>{item.color}</strong>
+                            <span style={{ fontSize: '11px', color: C.textSecondary }}>
+                              Color: <strong style={{ color: C.textPrimary }}>{item.color}</strong>
                             </span>
                           )}
                         </div>
@@ -609,6 +593,7 @@ export function InventoryViewClient() {
                           style={{
                             fontWeight: 700,
                             fontSize: '12px',
+                            color: C.textGoldBright,
                             textTransform: 'uppercase',
                             marginBottom: '2px',
                           }}
@@ -616,7 +601,7 @@ export function InventoryViewClient() {
                           {item.sizeName}
                         </div>
                         <div
-                          style={{ fontSize: '10px', fontFamily: 'monospace', color: '#78716c' }}
+                          style={{ fontSize: '10px', fontFamily: 'monospace', color: C.textMuted }}
                         >
                           {item.sku}
                         </div>
@@ -637,10 +622,10 @@ export function InventoryViewClient() {
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            border: '1px solid #d6d3d1',
-                            borderRadius: '6px',
+                            border: `1px solid ${C.borderInput}`,
+                            borderRadius: '8px',
                             overflow: 'hidden',
-                            background: '#fff',
+                            background: C.inputBg,
                           }}
                         >
                           <button
@@ -648,8 +633,8 @@ export function InventoryViewClient() {
                               handleStockChange(item.productId, item.variantIndex, currentStock - 1)
                             }
                             style={{
-                              width: '28px',
-                              height: '28px',
+                              width: '30px',
+                              height: '30px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -658,7 +643,7 @@ export function InventoryViewClient() {
                               cursor: 'pointer',
                               fontSize: '16px',
                               fontWeight: 700,
-                              color: '#44403c',
+                              color: C.textPrimary,
                             }}
                           >
                             −
@@ -682,7 +667,7 @@ export function InventoryViewClient() {
                               border: 'none',
                               outline: 'none',
                               background: 'transparent',
-                              color: '#1c1917',
+                              color: C.textPrimary,
                             }}
                           />
                           <button
@@ -690,8 +675,8 @@ export function InventoryViewClient() {
                               handleStockChange(item.productId, item.variantIndex, currentStock + 1)
                             }
                             style={{
-                              width: '28px',
-                              height: '28px',
+                              width: '30px',
+                              height: '30px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -700,7 +685,7 @@ export function InventoryViewClient() {
                               cursor: 'pointer',
                               fontSize: '16px',
                               fontWeight: 700,
-                              color: '#44403c',
+                              color: C.textPrimary,
                             }}
                           >
                             +
@@ -710,14 +695,18 @@ export function InventoryViewClient() {
                       <td style={{ ...TD, textAlign: 'right' }}>
                         {isDirty ? (
                           <button
-                            style={btn('primary')}
+                            style={{
+                              ...btnPrimary,
+                              padding: '6px 14px',
+                              fontSize: '11px',
+                            }}
                             onClick={() => handleSaveSingle(item)}
                             disabled={isSavingThis}
                           >
                             {isSavingThis ? 'Saving…' : '💾 Save'}
                           </button>
                         ) : (
-                          <span style={{ fontSize: '11px', color: '#a8a29e', fontStyle: 'italic' }}>
+                          <span style={{ fontSize: '11px', color: C.textMuted, fontStyle: 'italic' }}>
                             Saved
                           </span>
                         )}
@@ -731,7 +720,7 @@ export function InventoryViewClient() {
         )}
       </div>
 
-      <div style={{ marginTop: '12px', fontSize: '11px', color: '#a8a29e', textAlign: 'right' }}>
+      <div style={{ marginTop: '16px', fontSize: '12px', color: C.textMuted, textAlign: 'right' }}>
         Showing {filteredInventory.length} of {stats.totalVariants} variants
       </div>
     </div>
