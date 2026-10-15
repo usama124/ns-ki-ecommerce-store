@@ -1,4 +1,3 @@
-import { CategoryTabs } from '@/components/CategoryTabs'
 import { HomepageHero } from '@/components/HomepageHero'
 import { ProductGrid } from '@/components/products/ProductGrid'
 import { ShoppableVideos } from '@/components/ShoppableVideos'
@@ -10,7 +9,7 @@ import { getPayload } from 'payload'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: "LUJAIN | Pakistani Luxury Fashion",
+  title: "Siblings By N's KI | Pakistani Luxury Fashion",
   description:
     'Experience premier Pakistani unstitched and pret collections. Handcrafted luxury, pure fabrics, and timeless design.',
 }

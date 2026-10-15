@@ -37,14 +37,14 @@ export async function generateMetadata({ params, searchParams }: Args): Promise<
     })
 
     const cat = categoryResult.docs?.[0]
-    if (!cat) return { title: "Collection | LUJAIN" }
+    if (!cat) return { title: "Collection | Siblings By N's KI" }
 
     return {
-      title: `${cat.name} Collection | LUJAIN Pakistani Luxury Fashion`,
-      description: `Shop luxury ${cat.name} from LUJAIN Pakistani Luxury Fashion with express nationwide delivery.`,
+      title: `${cat.name} Collection | Siblings By N's KI`,
+      description: `Shop luxury ${cat.name} from Siblings By N's KI with express nationwide delivery.`,
     }
   } catch {
-    return { title: "Collection | LUJAIN" }
+    return { title: "Collection | Siblings By N's KI" }
   }
 }
 

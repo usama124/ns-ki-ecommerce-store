@@ -13,13 +13,15 @@ export async function generateMetadata(): Promise<Metadata> {
     })
 
     return {
-      title: saleSettings?.title ? `${saleSettings.title} | LUJAIN` : 'Flash Sale | LUJAIN',
+      title: saleSettings?.title
+        ? `${saleSettings.title} | Siblings By N's KI`
+        : "Flash Sale | Siblings By N's KI",
       description:
         saleSettings?.announcementText || 'Limited-time exclusive luxury flash sale offers.',
     }
   } catch {
     return {
-      title: 'Flash Sale | LUJAIN',
+      title: "Flash Sale | Siblings By N's KI",
       description: 'Limited-time exclusive luxury flash sale offers.',
     }
   }

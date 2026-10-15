@@ -8,7 +8,7 @@ import { getPayload } from 'payload'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: "All Products | LUJAIN Pakistani Luxury Fashion",
+  title: "All Products | Siblings By N's KI",
   description:
     'Browse all luxury Pakistani unstitched and pret collections with express nationwide delivery.',
 }
@@ -129,10 +129,7 @@ export default async function ShopPage({ searchParams }: Args) {
       </div>
 
       <div className="w-full max-w-7xl mx-auto pt-6">
-        <ProductGrid
-          products={products}
-          emptyMessage="No products found in the catalog yet."
-        />
+        <ProductGrid products={products} emptyMessage="No products found in the catalog yet." />
       </div>
     </div>
   )
