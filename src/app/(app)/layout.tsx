@@ -54,6 +54,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
         <link href="/favicon.ico" rel="icon" sizes="32x32" />
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
+        <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
       </head>
       <body suppressHydrationWarning>
         <Providers>
