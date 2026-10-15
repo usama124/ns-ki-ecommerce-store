@@ -16,18 +16,19 @@ export default function AdminLogo() {
       <span
         style={{
           fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-          fontSize: '22px',
+          fontSize: '18px',
           fontWeight: 700,
-          letterSpacing: '0.35em',
+          letterSpacing: '0.12em',
           background: 'linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 45%, #94A3B8 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
           textTransform: 'uppercase',
           lineHeight: 1.1,
+          whiteSpace: 'nowrap',
         }}
       >
-        LUJAIN
+        Siblings By N&apos;s KI
       </span>
       {/* Sub-badge */}
       <span

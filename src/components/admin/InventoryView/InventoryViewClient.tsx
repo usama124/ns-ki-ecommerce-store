@@ -264,7 +264,7 @@ export function InventoryViewClient() {
                 color: C.gold,
               }}
             >
-              LUJAIN Stock Hub
+              Siblings By N&apos;s KI Stock Hub
             </p>
           </div>
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.02em' }}>
@@ -549,7 +549,9 @@ export function InventoryViewClient() {
                                 }}
                               />
                             ) : (
-                              <span style={{ fontSize: '9px', color: C.textMuted }}>LUJAIN</span>
+                              <span style={{ fontSize: '9px', color: C.textMuted }}>
+                                Siblings By N&apos;s KI
+                              </span>
                             )}
                           </div>
                           <div>
