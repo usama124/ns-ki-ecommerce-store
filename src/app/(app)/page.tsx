@@ -9,7 +9,7 @@ import { getPayload } from 'payload'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: "Siblings By N's KI | Pakistani Luxury Fashion",
+  title: 'Siblings by N’s KI | Discover the Art of Unstitched',
   description:
     'Experience premier Pakistani unstitched and pret collections. Handcrafted luxury, pure fabrics, and timeless design.',
 }

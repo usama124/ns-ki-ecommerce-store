@@ -37,14 +37,14 @@ export async function generateMetadata({ params, searchParams }: Args): Promise<
     })
 
     const cat = categoryResult.docs?.[0]
-    if (!cat) return { title: "Collection | Siblings By N's KI" }
+    if (!cat) return { title: 'Collection | Siblings by N’s KI' }
 
     return {
-      title: `${cat.name} Collection | Siblings By N's KI`,
-      description: `Shop luxury ${cat.name} from Siblings By N's KI with express nationwide delivery.`,
+      title: `${cat.name} Collection | Siblings by N’s KI`,
+      description: `Shop luxury ${cat.name} from Siblings by N’s KI with express nationwide delivery.`,
     }
   } catch {
-    return { title: "Collection | Siblings By N's KI" }
+    return { title: 'Collection | Siblings by N’s KI' }
   }
 }
 

@@ -8,7 +8,7 @@ import { getPayload } from 'payload'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: "All Products | Siblings By N's KI",
+  title: 'All Products | Siblings by N’s KI',
   description:
     'Browse all luxury Pakistani unstitched and pret collections with express nationwide delivery.',
 }

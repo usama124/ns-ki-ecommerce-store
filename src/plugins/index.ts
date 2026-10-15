@@ -10,7 +10,9 @@ import { getServerSideURL } from '@/utilities/getURL'
 type DocWithTitle = { title?: string; slug?: string }
 
 const generateTitle: GenerateTitle<DocWithTitle> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | Siblings By N's KI` : "Siblings By N's KI — Pakistani Luxury Fashion"
+  return doc?.title
+    ? `${doc.title} | Siblings by N’s KI`
+    : 'Siblings by N’s KI | Discover the Art of Unstitched'
 }
 
 const generateURL: GenerateURL<DocWithTitle> = ({ doc }) => {

@@ -14,14 +14,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
     return {
       title: saleSettings?.title
-        ? `${saleSettings.title} | Siblings By N's KI`
-        : "Flash Sale | Siblings By N's KI",
+        ? `${saleSettings.title} | Siblings by N’s KI`
+        : "Flash Sale | Siblings by N’s KI",
       description:
         saleSettings?.announcementText || 'Limited-time exclusive luxury flash sale offers.',
     }
   } catch {
     return {
-      title: "Flash Sale | Siblings By N's KI",
+      title: "Flash Sale | Siblings by N’s KI",
       description: 'Limited-time exclusive luxury flash sale offers.',
     }
   }
