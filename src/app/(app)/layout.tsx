@@ -46,6 +46,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-PRKY09PGEB" />
+        <script
+          id="google-analytics"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-PRKY09PGEB');
+            `,
+          }}
+        />
         <script
           id="theme-script"
           dangerouslySetInnerHTML={{
