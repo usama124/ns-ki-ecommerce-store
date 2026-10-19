@@ -44,10 +44,10 @@ export function HeroSlider({ slides = [] }: Props) {
       <div className="relative h-[70vh] min-h-[500px] w-full bg-neutral-900 flex items-center justify-center text-white">
         <div className="text-center px-4">
           <h1 className="font-serif text-4xl sm:text-6xl font-bold tracking-[0.2em] uppercase mb-4">
-            N's KI
+            Siblings By N's KI
           </h1>
           <p className="text-sm uppercase tracking-[0.3em] font-light mb-8">
-            Pakistani Luxury Fashion
+            Yesterday, Today, Tomorrow
           </p>
           <Link
             href="/shop"
