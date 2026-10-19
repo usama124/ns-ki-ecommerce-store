@@ -4,6 +4,7 @@ import { Cart } from '@/components/Cart'
 import { LogoIcon } from '@/components/icons/logo'
 import { BottomMobileNav } from '@/components/navigation/BottomMobileNav'
 import { SearchOverlay } from '@/components/navigation/SearchOverlay'
+import { useAuth } from '@/providers/Auth'
 import { ChevronDown, Menu, Search, User, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -43,6 +44,7 @@ export function HeaderClient({
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { user } = useAuth()
   const { isVisible } = useScrollDirection()
 
   useEffect(() => {
@@ -278,10 +280,10 @@ export function HeaderClient({
                   <Search className="h-5 w-5" />
                 </button>
                 <Link
-                  href="/find-order"
-                  aria-label="Account & Orders"
+                  href={user ? '/account' : '/login'}
+                  aria-label={user ? 'My account' : 'Member login or sign up'}
                   className="text-[#03171E] dark:text-[#CBCCC7] hover:text-[#648698] dark:hover:text-white transition-colors p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  title="Member / Orders"
+                  title={user ? 'My Account' : 'Member Login / Sign Up'}
                 >
                   <User className="h-5 w-5" />
                 </Link>

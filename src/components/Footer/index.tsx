@@ -71,6 +71,40 @@ export async function Footer() {
   const social = footer.socialLinks || {}
   const columns = footer.columns || []
 
+  const whatsappValue = String((social as any).whatsapp || '').trim()
+  const whatsappHref = whatsappValue
+    ? whatsappValue.startsWith('http')
+      ? whatsappValue
+      : `https://wa.me/${whatsappValue.replace(/\D/g, '')}`
+    : ''
+
+  const configuredSocialLinks = [
+    ...((social as any).instagram
+      ? [{ label: 'Instagram', href: (social as any).instagram, icon: <InstagramIcon /> }]
+      : []),
+    ...((social as any).facebook
+      ? [{ label: 'Facebook', href: (social as any).facebook, icon: <FacebookIcon /> }]
+      : []),
+    ...((social as any).tiktok
+      ? [{ label: 'TikTok', href: (social as any).tiktok, icon: <TikTokIcon /> }]
+      : []),
+    ...((social as any).youtube
+      ? [{ label: 'YouTube', href: (social as any).youtube, icon: <YouTubeIcon /> }]
+      : []),
+    ...(whatsappHref
+      ? [{ label: 'WhatsApp', href: whatsappHref, icon: <WhatsAppIcon /> }]
+      : []),
+  ]
+
+  const socialLinks =
+    configuredSocialLinks.length > 0
+      ? configuredSocialLinks
+      : [
+          { label: 'Instagram', href: 'https://instagram.com', icon: <InstagramIcon /> },
+          { label: 'Facebook', href: 'https://facebook.com', icon: <FacebookIcon /> },
+          { label: 'TikTok', href: 'https://tiktok.com', icon: <TikTokIcon /> },
+        ]
+
   // Hardcoded fallback columns if DB is empty
   const defaultColumns = [
     {
@@ -124,96 +158,20 @@ export async function Footer() {
             )}
 
             {/* Social links */}
-            <div className="flex items-center justify-center sm:justify-start gap-3 mt-2">
-              {(social as any).instagram && (
+            <div className="mt-3 grid grid-flow-col auto-cols-[2.75rem] items-center justify-center gap-2.5 sm:justify-start">
+              {socialLinks.map(({ label, href, icon }) => (
                 <a
-                  href={(social as any).instagram}
+                  key={label}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="text-[#648698] hover:text-white transition-colors"
+                  aria-label={label}
+                  title={label}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#648698]/40 bg-[#07242e]/70 text-[#7f9fad] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#CBCCC7]/70 hover:bg-[#648698]/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CBCCC7] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03171E]"
                 >
-                  <InstagramIcon />
+                  {icon}
                 </a>
-              )}
-              {(social as any).facebook && (
-                <a
-                  href={(social as any).facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="text-[#648698] hover:text-white transition-colors"
-                >
-                  <FacebookIcon />
-                </a>
-              )}
-              {(social as any).tiktok && (
-                <a
-                  href={(social as any).tiktok}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="TikTok"
-                  className="text-[#648698] hover:text-white transition-colors"
-                >
-                  <TikTokIcon />
-                </a>
-              )}
-              {(social as any).youtube && (
-                <a
-                  href={(social as any).youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="YouTube"
-                  className="text-[#648698] hover:text-white transition-colors"
-                >
-                  <YouTubeIcon />
-                </a>
-              )}
-              {(social as any).whatsapp && (
-                <a
-                  href={`https://wa.me/${(social as any).whatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="WhatsApp"
-                  className="text-[#648698] hover:text-white transition-colors"
-                >
-                  <WhatsAppIcon />
-                </a>
-              )}
-              {/* Default socials when nothing configured */}
-              {!(social as any).instagram &&
-                !(social as any).facebook &&
-                !(social as any).tiktok && (
-                  <>
-                    <a
-                      href="https://instagram.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Instagram"
-                      className="text-[#648698] hover:text-white transition-colors"
-                    >
-                      <InstagramIcon />
-                    </a>
-                    <a
-                      href="https://facebook.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Facebook"
-                      className="text-[#648698] hover:text-white transition-colors"
-                    >
-                      <FacebookIcon />
-                    </a>
-                    <a
-                      href="https://tiktok.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="TikTok"
-                      className="text-[#648698] hover:text-white transition-colors"
-                    >
-                      <TikTokIcon />
-                    </a>
-                  </>
-                )}
+              ))}
             </div>
           </div>
 
