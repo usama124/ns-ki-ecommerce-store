@@ -351,6 +351,23 @@ select option {
   background-color: #bdbab9;
 }
 
+/* Keep browser-saved credentials readable against the active theme. */
+input:autofill {
+  color: var(--foreground);
+  background-color: var(--background);
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset;
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+}
+
 [data-theme='dark'] select option {
   color: #f0f3f4;
   background-color: #03171e;

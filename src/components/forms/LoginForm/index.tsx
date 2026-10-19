@@ -53,6 +53,7 @@ export const LoginForm: React.FC = () => {
           <Input
             id="email"
             type="email"
+            autoComplete="username"
             {...register('email', { required: 'Email is required.' })}
           />
           {errors.email && <FormError message={errors.email.message} />}
@@ -63,6 +64,7 @@ export const LoginForm: React.FC = () => {
           <Input
             id="password"
             type="password"
+            autoComplete="current-password"
             {...register('password', { required: 'Please provide a password.' })}
           />
           {errors.password && <FormError message={errors.password.message} />}
