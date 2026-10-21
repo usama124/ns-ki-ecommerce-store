@@ -99,7 +99,6 @@ function HeroCarousel({ slides }: Props) {
                     loop
                     muted
                     playsInline
-                    controls
                     preload="metadata"
                     aria-label={slide.heading || "N's KI Banner Video"}
                     className="absolute inset-0 w-full h-full object-cover"
