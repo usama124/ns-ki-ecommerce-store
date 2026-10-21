@@ -99,10 +99,10 @@ export default async function ProductPage({ params }: Args) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left Column: Gallery & Video */}
-          <div className="lg:col-span-7 flex flex-col gap-8">
+          <div className="lg:col-span-6 min-w-0 flex flex-col gap-8">
             <Suspense
               fallback={
-                <div className="relative aspect-[3/4] w-full bg-[#648698]/20 animate-pulse rounded-xl" />
+                <div className="relative mx-auto aspect-[2/3] w-[min(100%,440px,48svh)] bg-[#648698]/20 animate-pulse rounded-xl" />
               }
             >
               {Boolean(gallery?.length) && <Gallery gallery={gallery} />}
@@ -130,7 +130,7 @@ export default async function ProductPage({ params }: Args) {
           </div>
 
           {/* Right Column: Sticky Product Description & Size Selector */}
-          <div className="lg:col-span-5 lg:sticky lg:top-24">
+          <div className="lg:col-span-6 min-w-0 lg:sticky lg:top-24">
             <ProductDescription product={product} />
           </div>
         </div>

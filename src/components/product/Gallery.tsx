@@ -111,14 +111,14 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
   )
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-[min(100%,440px,48svh)] flex-col gap-4">
       {/* Lightbox Portal */}
       {mounted && lightboxOpen && createPortal(lightboxModal, document.body)}
 
       {/* Main Preview Image */}
       <div
         onClick={() => activeUrl && setLightboxOpen(true)}
-        className="relative w-full aspect-[3/4] rounded-xl bg-[#03171E] border border-[#648698]/30 shadow-md overflow-hidden cursor-zoom-in group"
+        className="relative w-full aspect-[2/3] rounded-xl bg-[#03171E] border border-[#648698]/30 shadow-md overflow-hidden cursor-zoom-in group"
       >
         {activeUrl ? (
           <Image
@@ -126,8 +126,8 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
             alt={activeAlt}
             fill
             priority
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-contain transition-opacity duration-300 group-hover:scale-[1.02]"
+            sizes="(min-width: 640px) 440px, 100vw"
+            className="object-contain transition-opacity duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[#648698] text-xs font-serif tracking-[0.2em] uppercase">
