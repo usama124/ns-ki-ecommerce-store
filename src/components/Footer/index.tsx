@@ -242,8 +242,19 @@ export async function Footer() {
             <p>
               &copy; {currentYear} {footer.copyrightText || "N's KI. All rights reserved."}
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-2 sm:items-end">
               <span>Designed in Pakistan 🇵🇰</span>
+              <span>
+                Developed by{' '}
+                <a
+                  href="https://www.devbite.dev/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-[#CBCCC7] underline-offset-4 hover:text-white hover:underline focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CBCCC7]"
+                >
+                  DevBite
+                </a>
+              </span>
             </div>
           </div>
         </div>

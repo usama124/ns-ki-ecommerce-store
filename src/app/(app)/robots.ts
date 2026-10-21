@@ -1,16 +1,15 @@
-/* eslint-disable no-restricted-exports */
-const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-  : 'http://localhost:3000'
+import type { MetadataRoute } from 'next'
+import { SITE_ORIGIN } from '@/utilities/siteOrigin'
 
-export default function robots() {
+export default function robots(): MetadataRoute.Robots {
   return {
-    host: baseUrl,
+    host: SITE_ORIGIN,
     rules: [
       {
         userAgent: '*',
+        allow: '/',
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${SITE_ORIGIN}/sitemap.xml`,
   }
 }
