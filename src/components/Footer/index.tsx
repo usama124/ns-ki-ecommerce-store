@@ -91,9 +91,7 @@ export async function Footer() {
     ...((social as any).youtube
       ? [{ label: 'YouTube', href: (social as any).youtube, icon: <YouTubeIcon /> }]
       : []),
-    ...(whatsappHref
-      ? [{ label: 'WhatsApp', href: whatsappHref, icon: <WhatsAppIcon /> }]
-      : []),
+    ...(whatsappHref ? [{ label: 'WhatsApp', href: whatsappHref, icon: <WhatsAppIcon /> }] : []),
   ]
 
   const socialLinks =
@@ -247,7 +245,7 @@ export async function Footer() {
               <span>
                 Developed by{' '}
                 <a
-                  href="https://www.devbite.dev/"
+                  href="https://portfolio.devbite.dev/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-[#CBCCC7] underline-offset-4 hover:text-white hover:underline focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CBCCC7]"
