@@ -127,7 +127,7 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
             fill
             priority
             sizes="(min-width: 640px) 440px, 100vw"
-            className="object-contain transition-opacity duration-300"
+            className="object-cover object-center transition-opacity duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[#648698] text-xs font-serif tracking-[0.2em] uppercase">
@@ -227,7 +227,7 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
                   alt={typeof img === 'object' && img.alt ? img.alt : `Thumbnail ${i + 1}`}
                   fill
                   sizes="80px"
-                  className="object-contain"
+                  className="object-cover object-center"
                 />
               </button>
             )
