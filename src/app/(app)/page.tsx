@@ -40,48 +40,19 @@ export default async function HomePage() {
     })
     categories = categoriesResult.docs
 
-    let featuredIds: any[] = []
-    if (homepageData?.featuredProducts && Array.isArray(homepageData.featuredProducts)) {
-      featuredIds = homepageData.featuredProducts
-        .map((p: any) => (typeof p === 'object' ? p.id : p))
-        .filter(Boolean)
-    }
-
-    if (featuredIds.length > 0) {
-      const productsResult = await payload.find({
-        collection: 'products',
-        where: {
-          and: [
-            {
-              id: {
-                in: featuredIds,
-              },
-            },
-            {
-              status: {
-                equals: 'published',
-              },
-            },
-          ],
-        },
-        limit: 12,
-        depth: 1,
-      })
-      products = productsResult.docs
-    } else {
-      const productsResult = await payload.find({
-        collection: 'products',
-        where: {
-          status: {
-            equals: 'published',
-          },
-        },
-        sort: '-createdAt',
-        limit: 8,
-        depth: 1,
-      })
-      products = productsResult.docs
-    }
+    const productsResult = await payload.find({
+      collection: 'products',
+      where: {
+        and: [
+          { status: { equals: 'published' } },
+          { isFeatured: { equals: true } },
+        ],
+      },
+      sort: '-createdAt',
+      limit: 8,
+      depth: 1,
+    })
+    products = productsResult.docs
   } catch {
     // Catch connection / compilation issues during setup
   }
