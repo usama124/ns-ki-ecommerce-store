@@ -242,7 +242,7 @@ export async function Footer() {
             <p>
               &copy; {currentYear} {footer.copyrightText || "N's KI. All rights reserved."}
             </p>
-            <div className="flex flex-col items-center gap-2 sm:items-end">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end">
               <span>Designed in Pakistan 🇵🇰</span>
               <span>
                 Developed by{' '}
