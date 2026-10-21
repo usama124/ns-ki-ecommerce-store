@@ -3,7 +3,6 @@
 import useEmblaCarousel from 'embla-carousel-react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 type Slide = {
@@ -22,6 +21,38 @@ type Props = {
 }
 
 export function HeroSlider({ slides = [] }: Props) {
+  const [isMobile, setIsMobile] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const viewport = window.matchMedia('(max-width: 767px)')
+    const updateViewport = () => setIsMobile(viewport.matches)
+    updateViewport()
+    viewport.addEventListener('change', updateViewport)
+    return () => viewport.removeEventListener('change', updateViewport)
+  }, [])
+
+  if (isMobile === null) return null
+
+  const visibleSlides = slides.flatMap((slide) => {
+    const desktopUrl = getMediaUrl(slide.desktopMedia)
+    const mobileUrl = getMediaUrl(slide.mobileMedia)
+    const media = isMobile && mobileUrl ? slide.mobileMedia : slide.desktopMedia
+    if (!(isMobile ? mobileUrl || desktopUrl : desktopUrl)) return []
+    return [{ ...slide, desktopMedia: media }]
+  })
+
+  if (visibleSlides.length === 0) return null
+
+  return <HeroCarousel key={isMobile ? 'mobile' : 'desktop'} slides={visibleSlides} />
+}
+
+function getMediaUrl(media: any): string | undefined {
+  const url = typeof media === 'object' && media !== null ? media.url : media
+  // An unpopulated relationship ID is not a media URL.
+  return typeof url === 'string' && /^(https?:\/\/|\/)/.test(url) ? url : undefined
+}
+
+function HeroCarousel({ slides }: Props) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true })
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -37,46 +68,24 @@ export function HeroSlider({ slides = [] }: Props) {
     if (!emblaApi) return
     onSelect()
     emblaApi.on('select', onSelect)
+    return () => {
+      emblaApi.off('select', onSelect)
+    }
   }, [emblaApi, onSelect])
-
-  if (!slides || slides.length === 0) {
-    return (
-      <div className="relative h-[70vh] min-h-[500px] w-full bg-neutral-900 flex items-center justify-center text-white">
-        <div className="text-center px-4">
-          <h1 className="font-serif text-4xl sm:text-6xl font-bold tracking-[0.2em] uppercase mb-4">
-            Siblings By N's KI
-          </h1>
-          <p className="text-sm uppercase tracking-[0.3em] font-light mb-8">
-            Yesterday, Today, Tomorrow
-          </p>
-          <Link
-            href="/shop"
-            className="inline-block border border-white px-8 py-3 text-xs uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-colors"
-          >
-            Explore Collection
-          </Link>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="relative overflow-hidden w-full bg-black group">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {slides.map((slide, index) => {
-            const desktopUrl =
-              typeof slide.desktopMedia === 'object' ? slide.desktopMedia?.url : slide.desktopMedia
-            const mobileUrl =
-              typeof slide.mobileMedia === 'object'
-                ? slide.mobileMedia?.url
-                : slide.mobileMedia || desktopUrl
+            const desktopUrl = getMediaUrl(slide.desktopMedia)
+            const mimeType = slide.desktopMedia?.mimeType
 
             const isVideo =
-              slide.mediaType === 'video' ||
-              (typeof slide.desktopMedia === 'object' &&
-                slide.desktopMedia?.mimeType?.includes('video')) ||
-              (typeof desktopUrl === 'string' && /\.(mp4|webm|ogv|mov)$/i.test(desktopUrl))
+              typeof mimeType === 'string'
+                ? mimeType.startsWith('video/')
+                : /\.(mp4|webm|ogv|mov)(?:[?#]|$)/i.test(desktopUrl || '') ||
+                  slide.mediaType === 'video'
 
             return (
               <div
@@ -90,30 +99,21 @@ export function HeroSlider({ slides = [] }: Props) {
                     loop
                     muted
                     playsInline
+                    controls
+                    preload="metadata"
+                    aria-label={slide.heading || "N's KI Banner Video"}
                     className="absolute inset-0 w-full h-full object-cover"
                     src={desktopUrl}
                   />
                 ) : (
                   <div className="relative w-full h-full">
-                    {/* Mobile image */}
-                    {mobileUrl && (
-                      <Image
-                        src={mobileUrl}
-                        alt={slide.heading || "N's KI Banner"}
-                        fill
-                        priority={index === 0}
-                        className="object-cover md:hidden"
-                        sizes="100vw"
-                      />
-                    )}
-                    {/* Desktop image */}
                     {desktopUrl && (
                       <Image
                         src={desktopUrl}
                         alt={slide.heading || "N's KI Banner"}
                         fill
                         priority={index === 0}
-                        className="object-cover hidden md:block"
+                        className="object-cover"
                         sizes="100vw"
                       />
                     )}

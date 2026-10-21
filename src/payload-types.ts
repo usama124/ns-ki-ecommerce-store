@@ -1634,7 +1634,13 @@ export interface Homepage {
   heroSlider?:
     | {
         mediaType?: ('image' | 'video') | null;
-        desktopMedia: number | Media;
+        /**
+         * Optional. Leave blank to hide this slide on desktop (768px and wider).
+         */
+        desktopMedia?: (number | null) | Media;
+        /**
+         * Upload a mobile image or video. Mobile-only slides do not appear on desktop.
+         */
         mobileMedia?: (number | null) | Media;
         heading?: string | null;
         subheading?: string | null;

@@ -35,13 +35,18 @@ export const Homepage: GlobalConfig = {
           type: 'upload',
           relationTo: 'media',
           label: 'Desktop Image/Video',
-          required: true,
+          admin: {
+            description: 'Optional. Leave blank to hide this slide on desktop (768px and wider).',
+          },
         },
         {
           name: 'mobileMedia',
           type: 'upload',
           relationTo: 'media',
           label: 'Mobile Image/Video (optional, uses desktop if blank)',
+          admin: {
+            description: 'Upload a mobile image or video. Mobile-only slides do not appear on desktop.',
+          },
         },
         {
           name: 'heading',
