@@ -2,8 +2,10 @@
 
 import type { Media as MediaType } from '@/payload-types'
 import { X, ZoomIn } from 'lucide-react'
-import Image from 'next/image'
-import React, { useEffect, useState } from 'react'
+import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
+import { ZoomableImage } from './ZoomableImage'
+import { responsiveMedia } from '@/utilities/responsiveMedia'
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
 type GalleryItem = {
@@ -13,56 +15,64 @@ type GalleryItem = {
 type Props = {
   gallery: GalleryItem[]
 }
+const subscribe = () => () => {}
 
 export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
   const [current, setCurrent] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false)
+  const zoomButton = useRef<HTMLButtonElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+  const prev = useCallback(() => setCurrent(value => (value - 1 + gallery.length) % (gallery.length || 1)), [gallery.length])
+  const next = useCallback(() => setCurrent(value => (value + 1) % (gallery.length || 1)), [gallery.length])
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (lightboxOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    if (!lightboxOpen) return
+    const previous = document.body.style.overflow
+    const trigger = zoomButton.current
+    document.body.style.overflow = 'hidden'
+    closeButton.current?.focus()
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = previous
+      trigger?.focus()
     }
   }, [lightboxOpen])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && lightboxOpen) setLightboxOpen(false)
-      if (e.key === 'ArrowLeft') prev()
-      if (e.key === 'ArrowRight') next()
+      if (lightboxOpen && e.key === 'ArrowLeft') { e.preventDefault(); prev() }
+      if (lightboxOpen && e.key === 'ArrowRight') { e.preventDefault(); next() }
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [lightboxOpen])
+  }, [lightboxOpen, next, prev])
 
   if (!gallery || gallery.length === 0) return null
 
   const activeItem = gallery[current] || gallery[0]
   const activeImage = activeItem?.image
-  const activeUrl =
-    typeof activeImage === 'object' && activeImage?.url ? activeImage.url : undefined
+  const activeUrl = responsiveMedia(activeImage, 'original').src
   const activeAlt =
     typeof activeImage === 'object' && activeImage?.alt ? activeImage.alt : "N's KI Luxury Product"
 
-  const prev = () => setCurrent((current - 1 + gallery.length) % gallery.length)
-  const next = () => setCurrent((current + 1) % gallery.length)
-
   const lightboxModal = (
-    <div className="fixed inset-0 z-50 bg-[#03171E]/95 backdrop-blur-2xl flex flex-col justify-between items-center p-4 sm:p-8 animate-in fade-in duration-200 text-white">
+    <div role="dialog" aria-modal="true" aria-label="Product image zoom" className="fixed inset-0 z-50 bg-[#03171E]/95 backdrop-blur-2xl flex flex-col justify-between items-center p-4 sm:p-8 animate-in fade-in duration-200 text-white"
+      onKeyDown={event => {
+        if (event.key !== 'Tab') return
+        const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+      }}>
       <div className="w-full flex justify-between items-center z-10 max-w-7xl mx-auto">
         <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#648698]">
           Image {current + 1} of {gallery.length}
         </span>
         <button
+          ref={closeButton}
+          type="button"
           onClick={() => setLightboxOpen(false)}
           className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#648698] hover:text-white rounded-lg transition-colors"
           aria-label="Close Lightbox"
@@ -71,16 +81,10 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
         </button>
       </div>
 
-      <div className="relative w-full max-w-5xl aspect-[3/4] max-h-[80vh] flex items-center justify-center my-auto">
+      <p className="text-xs text-center text-white/80">Click or tap the image to zoom in/out. Move your pointer or drag your finger to inspect details.</p>
+      <div className="relative w-full max-w-5xl flex-1 min-h-0 my-4 overflow-hidden">
         {activeUrl && (
-          <Image
-            src={activeUrl}
-            alt={activeAlt}
-            fill
-            className="object-contain"
-            sizes="100vw"
-            priority
-          />
+          <ZoomableImage key={activeUrl} media={activeImage} alt={activeAlt} lightbox />
         )}
       </div>
 
@@ -121,14 +125,7 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
         className="relative w-full aspect-[2/3] rounded-xl bg-[#03171E] border border-[#648698]/30 shadow-md overflow-hidden cursor-zoom-in group"
       >
         {activeUrl ? (
-          <Image
-            src={activeUrl}
-            alt={activeAlt}
-            fill
-            priority
-            sizes="(min-width: 640px) 440px, 100vw"
-            className="object-cover object-center transition-opacity duration-300"
-          />
+          <ZoomableImage key={activeUrl} media={activeImage} alt={activeAlt} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[#648698] text-xs font-serif tracking-[0.2em] uppercase">
             N&apos;s KI
@@ -136,7 +133,9 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
         )}
 
         <button
+          ref={zoomButton}
           type="button"
+          disabled={!activeUrl}
           onClick={(e) => {
             e.stopPropagation()
             setLightboxOpen(true)
@@ -202,11 +201,13 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
         )}
       </div>
 
+      <p className="text-center text-xs text-[#648698]">Hover to zoom · Tap or click to expand</p>
+
       {gallery.length > 1 && (
         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
           {gallery.map((item, i) => {
             const img = item.image
-            const thumbUrl = typeof img === 'object' && img?.url ? img.url : undefined
+            const thumbUrl = responsiveMedia(img, 'thumbnail').src
             if (!thumbUrl) return null
             const isSelected = i === current
 
@@ -222,8 +223,9 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
                 }`}
                 aria-label={`View image ${i + 1}`}
               >
-                <Image
-                  src={thumbUrl}
+                <ResponsiveImage
+                  media={img}
+                  variant="thumbnail"
                   alt={typeof img === 'object' && img.alt ? img.alt : `Thumbnail ${i + 1}`}
                   fill
                   sizes="80px"

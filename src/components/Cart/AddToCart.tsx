@@ -2,6 +2,7 @@
 
 import { useCart } from '@/providers/Cart';
 import { useState } from 'react';
+import { responsiveMedia } from '@/utilities/responsiveMedia'
 
 // size/color can be a relationship object { id, name } or a plain string
 type RelOrString =
@@ -54,7 +55,7 @@ export function AddToCart({ product, selectedVariant, selectedQuantity = 1, clas
     : false
 
   const price = selectedVariant?.pricePKR ?? product.basePricePKR
-  const imageUrl = product.images?.[0]?.image?.url ?? undefined
+  const imageUrl = responsiveMedia(product.images?.[0]?.image, 'thumbnail').src
 
   const handleAddToCart = () => {
     if (!selectedVariant || isOutOfStock) return

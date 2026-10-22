@@ -2,7 +2,8 @@
 
 import { formatPKR } from '@/utilities/formatPKR'
 import { CheckCircle2, Clock, ExternalLink, Package, Search, Truck, XCircle } from 'lucide-react'
-import Image from 'next/image'
+import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
+import { responsiveMedia } from '@/utilities/responsiveMedia'
 import React, { useState } from 'react'
 
 type OrderStatus =
@@ -325,7 +326,7 @@ export function OrderTrackingView() {
                   {order.items?.map((item: any, idx: number) => {
                     const productObj = typeof item.product === 'object' ? item.product : null
                     const imageObj = productObj?.images?.[0]?.image
-                    const imageUrl = typeof imageObj === 'object' ? imageObj?.url : undefined
+                    const imageUrl = responsiveMedia(imageObj, 'thumbnail').src
 
                     return (
                       <div
@@ -334,8 +335,10 @@ export function OrderTrackingView() {
                       >
                         <div className="relative w-14 h-18 bg-gray-200 dark:bg-[#07242e] flex-shrink-0 rounded overflow-hidden border border-[#648698]/20">
                           {imageUrl && (
-                            <Image
-                              src={imageUrl}
+                            <ResponsiveImage
+                              media={imageObj}
+                              variant="thumbnail"
+                              sizes="56px"
                               alt={productObj?.title || 'Product'}
                               fill
                               className="object-cover"

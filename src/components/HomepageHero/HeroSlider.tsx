@@ -2,7 +2,7 @@
 
 import useEmblaCarousel from 'embla-carousel-react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import Image from 'next/image'
+import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
 import { useCallback, useEffect, useState } from 'react'
 
 type Slide = {
@@ -114,8 +114,9 @@ function HeroCarousel({ slides }: Props) {
                 ) : (
                   <div className="relative w-full h-full">
                     {desktopUrl && (
-                      <Image
-                        src={desktopUrl}
+                      <ResponsiveImage
+                        media={slide.desktopMedia}
+                        variant="hero"
                         alt={slide.heading || "N's KI Banner"}
                         fill
                         priority={index === 0}

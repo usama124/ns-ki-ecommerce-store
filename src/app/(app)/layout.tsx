@@ -66,7 +66,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             __html: themeScriptCode,
           }}
         />
-        <link href="/apple-touch-icon.png" rel="icon" type="image/png" />
+        <link href="/favicon.png?v=siblings-logo-2" rel="icon" type="image/png" sizes="64x64" />
         <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
       </head>
       <body suppressHydrationWarning>

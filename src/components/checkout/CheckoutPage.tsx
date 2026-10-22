@@ -672,7 +672,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   <div key={idx} className="flex gap-4 border-b border-border/60 pb-3">
                     <div className="relative w-14 h-[4.5rem] bg-[#648698]/20 rounded-md overflow-hidden flex-shrink-0">
                       {item.imageUrl && (
-                        <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
+                        <Image src={item.imageUrl} alt={item.title} fill sizes="56px" className="object-cover" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

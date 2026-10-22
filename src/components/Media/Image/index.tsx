@@ -4,6 +4,7 @@ import type { StaticImageData } from 'next/image'
 
 import { cn } from '@/utilities/cn'
 import NextImage from 'next/image'
+import { ResponsiveImage } from '../ResponsiveImage'
 import React from 'react'
 
 import type { Props as MediaProps } from '../types'
@@ -27,8 +28,6 @@ export const Image: React.FC<MediaProps> = (props) => {
     width: widthFromProps,
   } = props
 
-  const [isLoading, setIsLoading] = React.useState(true)
-
   let width: number | undefined | null
   let height: number | undefined | null
   let alt = altFromProps
@@ -37,7 +36,6 @@ export const Image: React.FC<MediaProps> = (props) => {
   if (!src && resource && typeof resource === 'object') {
     const {
       alt: altFromResource,
-      filename: fullFilename,
       height: fullHeight,
       url,
       width: fullWidth,
@@ -46,8 +44,6 @@ export const Image: React.FC<MediaProps> = (props) => {
     width = widthFromProps ?? fullWidth
     height = heightFromProps ?? fullHeight
     alt = altFromResource || ''
-
-    const filename = fullFilename
 
     src = url
       ? url.startsWith('http')
@@ -63,6 +59,13 @@ export const Image: React.FC<MediaProps> = (props) => {
         .map(([, value]) => `(max-width: ${value}px) ${value}px`)
         .join(', ')
 
+  if (!srcFromProps && resource && typeof resource === 'object') {
+    return <ResponsiveImage media={resource} variant="hero" alt={alt || ''} fill={fill}
+      width={width || widthFromProps || undefined} height={height || heightFromProps || undefined}
+      sizes={sizeFromProps || '100vw'} className={cn(imgClassName)} priority={priority}
+      onClick={onClick} onLoad={() => { if (onLoadFromProps) onLoadFromProps() }} />
+  }
+
   return (
     <NextImage
       alt={alt || ''}
@@ -71,7 +74,6 @@ export const Image: React.FC<MediaProps> = (props) => {
       height={!fill ? height || heightFromProps : undefined}
       onClick={onClick}
       onLoad={() => {
-        setIsLoading(false)
         if (typeof onLoadFromProps === 'function') {
           onLoadFromProps()
         }

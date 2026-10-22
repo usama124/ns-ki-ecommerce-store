@@ -3,7 +3,8 @@
 import { useCart } from '@/providers/Cart'
 import { formatPKR } from '@/utilities/formatPKR'
 import { ShoppingBag, Volume2, VolumeX, X } from 'lucide-react'
-import Image from 'next/image'
+import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
+import { responsiveMedia } from '@/utilities/responsiveMedia'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -88,12 +89,10 @@ export function ShopByVideo({ reels = [] }: ShopByVideoProps) {
                     {/* Product Thumbnail */}
                     {selectedProduct.images?.[0]?.image && (
                       <div className="relative w-24 h-32 bg-gray-100 dark:bg-[#07242e] flex-shrink-0 rounded-lg overflow-hidden border border-[#648698]/30">
-                        <Image
-                          src={
-                            typeof selectedProduct.images[0].image === 'object'
-                              ? selectedProduct.images[0].image.url
-                              : selectedProduct.images[0].image
-                          }
+                        <ResponsiveImage
+                          media={selectedProduct.images[0].image}
+                          variant="thumbnail"
+                          sizes="96px"
                           alt={selectedProduct.title}
                           fill
                           className="object-cover"
@@ -176,10 +175,7 @@ export function ShopByVideo({ reels = [] }: ShopByVideoProps) {
                     <button
                       disabled={!selectedSize}
                       onClick={() => {
-                        const imageUrl =
-                          typeof selectedProduct.images?.[0]?.image === 'object'
-                            ? selectedProduct.images[0].image.url
-                            : undefined
+                        const imageUrl = responsiveMedia(selectedProduct.images?.[0]?.image, 'thumbnail').src
 
                         addItem({
                           productId: selectedProduct.id,
@@ -227,7 +223,7 @@ function VideoCard({
   const [isMuted, setIsMuted] = useState(true)
 
   const videoUrl = typeof reel.video === 'object' ? reel.video?.url : reel.video
-  const posterUrl = typeof reel.poster === 'object' ? reel.poster?.url : reel.poster
+  const posterUrl = responsiveMedia(reel.poster, 'card').src
   const product = reel.linkedProduct
 
   // IntersectionObserver to auto-play when in view
@@ -272,7 +268,7 @@ function VideoCard({
           className="w-full h-full object-cover"
         />
       ) : posterUrl ? (
-        <Image src={posterUrl} alt={reel.title || 'Reel'} fill className="object-cover" />
+        <ResponsiveImage media={reel.poster} alt={reel.title || 'Reel'} fill sizes="(min-width: 1024px) 300px, 50vw" className="object-cover" />
       ) : null}
 
       <div className="absolute inset-0 bg-gradient-to-t from-[#03171E]/90 via-transparent to-[#03171E]/30 pointer-events-none" />

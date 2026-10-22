@@ -2,7 +2,8 @@
 
 import { formatPKR } from '@/utilities/formatPKR'
 import { Heart } from 'lucide-react'
-import Image from 'next/image'
+import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
+import { responsiveMedia } from '@/utilities/responsiveMedia'
 import Link from 'next/link'
 import React, { useState } from 'react'
 
@@ -44,12 +45,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   // Resolve image URL
   const firstImg = images?.[0]?.image || product.media
-  const imageUrl =
-    typeof firstImg === 'object' && firstImg !== null
-      ? firstImg.url || firstImg.sizes?.card?.url || firstImg.sizes?.thumbnail?.url
-      : typeof firstImg === 'string'
-      ? firstImg
-      : null
+  const imageUrl = responsiveMedia(firstImg).src
 
   // Calculate pricing & sales
   const isOnSale = salePriceDetails?.isOnSale ?? false
@@ -76,11 +72,11 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg md:rounded-xl bg-[#0A1210]">
         <Link href={`/products/${slug || ''}`} className="block w-full h-full">
           {imageUrl ? (
-            <Image
-              src={imageUrl}
+            <ResponsiveImage
+              media={firstImg}
               alt={title || 'Product Image'}
               fill
-              sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
+              sizes="(min-width: 1280px) 300px, (min-width: 1024px) 33vw, 50vw"
               className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
             />
           ) : (

@@ -2,7 +2,8 @@ import { Label } from '@/components/Grid/Label'
 import { Media } from '@/components/Media'
 import type { Media as MediaType } from '@/payload-types'
 import clsx from 'clsx'
-import Image from 'next/image'
+import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
+import { responsiveMedia } from '@/utilities/responsiveMedia'
 import React from 'react'
 
 type Props = {
@@ -31,7 +32,7 @@ export const GridTileImage: React.FC<Props> = ({
   sizes,
   ...props
 }) => {
-  const imageUrl = src || (media && typeof media === 'object' ? media.url : undefined)
+  const imageUrl = responsiveMedia(src || media).src
 
   return (
     <div
@@ -45,8 +46,8 @@ export const GridTileImage: React.FC<Props> = ({
       )}
     >
       {imageUrl ? (
-        <Image
-          src={imageUrl}
+        <ResponsiveImage
+          media={src || media}
           alt={alt}
           fill={fill ?? true}
           sizes={sizes || '(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw'}
