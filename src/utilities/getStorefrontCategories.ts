@@ -2,7 +2,7 @@ import config from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 
-// Navigation only: no product stock or customer data is persisted in this cache.
+// Shared navigation/category hierarchy: no product stock or customer data is cached here.
 export const getStorefrontCategories = unstable_cache(
   async () => {
     const payload = await getPayload({ config })

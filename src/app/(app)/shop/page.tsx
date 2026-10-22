@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import { getStorefrontCategories } from '@/utilities/getStorefrontCategories'
 import { productCardSelect } from '@/utilities/productCardSelect'
+import { categoryProductFilter } from '@/utilities/categoryProductFilter'
+import { ProductPagination, productPage } from '@/components/products/ProductPagination'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,11 +22,14 @@ type Args = {
     category?: string
     sort?: string
     q?: string
+    page?: string
   }>
 }
 
 export default async function ShopPage({ searchParams }: Args) {
-  const { category: queryCategory, sort: sortQuery, q } = (await searchParams) || {}
+  const { category: queryCategory, sort: sortQuery, q, page: pageQuery } = (await searchParams) || {}
+  const page = productPage(pageQuery)
+  let totalPages = 1
   let products: any[] = []
   let mainCategories: any[] = []
   let selectedCategory: any = null
@@ -49,11 +54,7 @@ export default async function ShopPage({ searchParams }: Args) {
     const whereConditions: any[] = [{ status: { equals: 'published' } }]
     if (q?.trim()) whereConditions.push({ title: { contains: q.trim().slice(0, 100) } })
     if (selectedCategory) {
-      whereConditions.push({
-        categories: {
-          in: [selectedCategory.id],
-        },
-      })
+      whereConditions.push(categoryProductFilter(categories, selectedCategory.id))
     }
 
     const productsResult = await payload.find({
@@ -63,11 +64,14 @@ export default async function ShopPage({ searchParams }: Args) {
       },
       sort: payloadSort,
       limit: 50,
+      page,
       depth: 1,
       select: productCardSelect,
+      overrideAccess: false,
     })
 
     products = productsResult.docs
+    totalPages = productsResult.totalPages || 1
   } catch (error) {
     console.error('Shop data loading failed', error)
     throw error
@@ -125,6 +129,7 @@ export default async function ShopPage({ searchParams }: Args) {
 
       <div className="w-full max-w-7xl mx-auto pt-6">
         <ProductGrid products={products} emptyMessage="No products found in the catalog yet." />
+        <ProductPagination page={page} totalPages={totalPages} pathname="/shop" query={{ category: queryCategory, sort: sortQuery, q }} />
       </div>
     </div>
   )

@@ -7,6 +7,8 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import { getStorefrontCategories } from '@/utilities/getStorefrontCategories'
 import { productCardSelect } from '@/utilities/productCardSelect'
+import { categoryProductFilter } from '@/utilities/categoryProductFilter'
+import { ProductPagination, productPage } from '@/components/products/ProductPagination'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +20,7 @@ type Args = {
     category?: string
     sort?: string
     q?: string
+    page?: string
   }>
 }
 
@@ -42,7 +45,9 @@ export async function generateMetadata({ params, searchParams }: Args): Promise<
 
 export default async function CategoryPage({ params, searchParams }: Args) {
   const { category: categorySlug } = await params
-  const { category: queryCategory, sort: sortQuery } = (await searchParams) || {}
+  const { category: queryCategory, sort: sortQuery, q, page: pageQuery } = (await searchParams) || {}
+  const page = productPage(pageQuery)
+  let totalPages = 1
   const activeCategoryIdentifier = queryCategory || categorySlug
 
   let targetCategory: any = null
@@ -65,20 +70,19 @@ export default async function CategoryPage({ params, searchParams }: Args) {
         where: {
           and: [
             { status: { equals: 'published' } },
-            {
-              categories: {
-                in: [targetCategory.id],
-              },
-            },
+            categoryProductFilter(categories, targetCategory.id),
           ],
         },
         sort: payloadSort,
         limit: 50,
+        page,
         depth: 1,
         select: productCardSelect,
+        overrideAccess: false,
       })
 
       products = productsResult.docs
+      totalPages = productsResult.totalPages || 1
     }
   } catch (error) {
     console.error('Category lookup failed', error)
@@ -131,6 +135,7 @@ export default async function CategoryPage({ params, searchParams }: Args) {
         ) : (
           <ProductGrid products={products} />
         )}
+        <ProductPagination page={page} totalPages={totalPages} pathname={`/shop/${encodeURIComponent(categorySlug)}`} query={{ category: queryCategory, sort: sortQuery, q }} />
       </div>
     </div>
   )
