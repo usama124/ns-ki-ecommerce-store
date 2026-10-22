@@ -66,6 +66,13 @@ export const Media: CollectionConfig = {
   },
   fields: [
     {
+      name: 'imageOptimizer',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/admin/ImageOptimizer#ImageOptimizer' },
+      },
+    },
+    {
       name: 'alt',
       type: 'text',
     },
