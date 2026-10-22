@@ -1,10 +1,40 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { assertEditableImage, encodeImage, formatImageBytes, FULL_CROP, imageGeometry, loadEditableImage, type ImageSettings } from '@/utilities/adminImageOptimizer'
+import { assertEditableImage, encodeImage, fitAspectCrop, moveImageCrop, resizeImageCrop, scaleImageCrop, formatImageBytes, FULL_CROP, imageGeometry, loadEditableImage, type ImageSettings } from '@/utilities/adminImageOptimizer'
 
 const settings: ImageSettings = { crop: FULL_CROP, maxWidth: 1600, maxHeight: 2400, quality: 85 }
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('Image optimizer geometry', () => {
+  it.each([[2000, 2000], [4000, 2000], [1000, 3000]])('tightens a portrait crop on a %sx%s source without changing 2:3', (width, height) => {
+    const fitted = fitAspectCrop(width, height, 2 / 3)
+    const tight = scaleImageCrop(fitted, 0.5)
+    expect(tight.width).toBeCloseTo(fitted.width / 2)
+    expect(tight.height).toBeCloseTo(fitted.height / 2)
+    expect(width * tight.width / (height * tight.height)).toBeCloseTo(2 / 3)
+    const output = imageGeometry(width, height, { ...settings, crop: tight, aspectRatio: 'portrait' })
+    expect(output.width * 3).toBe(output.height * 2)
+    expect(output.sw * 3).toBe(output.sh * 2)
+  })
+  it.each(['nw', 'ne', 'sw', 'se'])('resizes using the %s corner and clamps movement inside the image', corner => {
+    const crop = scaleImageCrop(fitAspectCrop(2000, 3000, 2 / 3), 0.6)
+    for (const delta of [-1000, -15, 15, 1000]) {
+      const resized = resizeImageCrop(crop, delta, delta, corner)
+      expect(resized.width / resized.height).toBeCloseTo(crop.width / crop.height)
+      expect(resized.x).toBeGreaterThanOrEqual(-1e-10)
+      expect(resized.y).toBeGreaterThanOrEqual(-1e-10)
+      expect(resized.x + resized.width).toBeLessThanOrEqual(100 + 1e-10)
+      expect(resized.y + resized.height).toBeLessThanOrEqual(100 + 1e-10)
+      expect(resized.width).toBeGreaterThan(0)
+      expect(() => imageGeometry(2000, 3000, { ...settings, crop: resized, aspectRatio: 'portrait' })).not.toThrow()
+    }
+    expect(moveImageCrop(crop, 1000, -1000).x).toBeCloseTo(40)
+    expect(moveImageCrop(crop, 1000, -1000).y).toBe(0)
+  })
+  it('keeps exact 2:3 output with odd dimensions, and rejects bounds too small for portrait pixels', () => {
+    const output = imageGeometry(1001, 1501, { ...settings, crop: fitAspectCrop(1001, 1501, 2 / 3), maxWidth: 501, maxHeight: 751, aspectRatio: 'portrait' })
+    expect(output).toMatchObject({ width: 500, height: 750 })
+    expect(() => imageGeometry(100, 100, { ...settings, maxWidth: 1, aspectRatio: 'portrait' })).toThrow('too small')
+  })
   it('fits landscape and portrait originals without stretching', () => {
     expect(imageGeometry(4000, 2000, settings)).toMatchObject({ width: 1600, height: 800 })
     expect(imageGeometry(2000, 4000, settings)).toMatchObject({ width: 1200, height: 2400 })

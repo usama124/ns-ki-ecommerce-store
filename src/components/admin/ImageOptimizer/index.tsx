@@ -4,9 +4,11 @@ import { useDocumentInfo, useField, useForm, useUploadEdits } from '@payloadcms/
 import { useEffect, useRef, useState } from 'react'
 import {
   encodeImage, formatImageBytes, FULL_CROP, loadEditableImage,
+  fitAspectCrop, moveImageCrop, scaleImageCrop,
   type ImageCrop, type ImageSettings,
 } from '@/utilities/adminImageOptimizer'
 import './index.scss'
+import { CropSelection } from './CropSelection'
 
 type Source = { file: File; image: HTMLImageElement; url: string }
 type Preview = Awaited<ReturnType<typeof encodeImage>> & { url: string; settings: ImageSettings }
@@ -91,17 +93,19 @@ export function ImageOptimizer() {
     setLoading(false)
     setError('')
   }
-  const changeCrop = (key: keyof ImageCrop, next: number) => setSettings(current => ({ ...current, crop: { ...current.crop, [key]: next } }))
+  const changeCrop = (key: keyof ImageCrop, next: number) => setSettings(current => {
+    if (current.aspectRatio && Number.isFinite(next)) {
+      const crop = key === 'x' || key === 'y'
+        ? moveImageCrop(current.crop, key === 'x' ? next - current.crop.x : 0, key === 'y' ? next - current.crop.y : 0)
+        : scaleImageCrop(current.crop, next / current.crop[key])
+      return { ...current, crop }
+    }
+    return { ...current, crop: { ...current.crop, [key]: next } }
+  })
   const preset = (ratio: number | null) => {
     if (!source) return
-    let width = 100
-    let height = 100
-    if (ratio) {
-      const originalRatio = source.image.naturalWidth / source.image.naturalHeight
-      if (originalRatio > ratio) width = 100 * ratio / originalRatio
-      else height = 100 * originalRatio / ratio
-    }
-    setSettings(current => ({ ...current, crop: { x: (100 - width) / 2, y: (100 - height) / 2, width, height } }))
+    const crop = ratio ? fitAspectCrop(source.image.naturalWidth, source.image.naturalHeight, ratio) : { ...FULL_CROP }
+    setSettings(current => ({ ...current, crop, aspectRatio: ratio === 2 / 3 ? 'portrait' : ratio === 1 ? 'square' : null }))
   }
   const ready = preview && preview.settings === settings && !formProcessing
   const mimeType = value instanceof File ? value.type : value === null ? '' : data?.mimeType
@@ -117,20 +121,28 @@ export function ImageOptimizer() {
     {!source && <button type="button" disabled={loading || formProcessing} onClick={() => void begin()}>{loading ? 'Loading image…' : 'Edit, crop & compress image'}</button>}
     {loading && <button type="button" onClick={cancel}>Cancel</button>}
     {source && <>
-      <div className="admin-image-optimizer__original" style={{ width: Math.min(500, 350 * source.image.naturalWidth / source.image.naturalHeight) }}>
-        {/* Local decoded source; intentionally not a Next Image remote optimization request. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={source.url} alt="Original image with crop boundary" />
-        <span className="admin-image-optimizer__crop" style={{ left: `${settings.crop.x}%`, top: `${settings.crop.y}%`, width: `${settings.crop.width}%`, height: `${settings.crop.height}%` }} />
-      </div>
+      <CropSelection url={source.url} width={source.image.naturalWidth} height={source.image.naturalHeight}
+        crop={settings.crop} disabled={formProcessing}
+        onChange={crop => setSettings(current => ({ ...current, crop }))} />
       <p>Original: <strong>{formatImageBytes(source.file.size)}</strong> · {source.image.naturalWidth} × {source.image.naturalHeight} px</p>
       <fieldset disabled={formProcessing}>
         <legend>Crop</legend>
         <div className="admin-image-optimizer__actions">
           <button type="button" onClick={() => preset(null)}>Full image</button>
-          <button type="button" onClick={() => preset(2 / 3)}>Product portrait (2:3)</button>
-          <button type="button" onClick={() => preset(1)}>Square (1:1)</button>
+          <button type="button" aria-pressed={settings.aspectRatio === 'portrait'} onClick={() => preset(2 / 3)}>Product portrait (2:3)</button>
+          <button type="button" aria-pressed={settings.aspectRatio === 'square'} onClick={() => preset(1)}>Square (1:1)</button>
         </div>
+        <p>{settings.aspectRatio === 'portrait' ? '2:3 portrait locked. ' : settings.aspectRatio === 'square' ? '1:1 square locked. ' : ''}Drag inside the selection to position it over the model. Drag a corner inward to remove blank space. Only the selected area is kept.</p>
+        <p>Keyboard: focus the crop and use arrow keys to move; + / − to resize. Numeric crop dimensions also keep the selected ratio locked.</p>
+        <label>Crop area size (%)
+          <input type="range" min={5} max={100} step={0.1}
+            value={Math.min(100, settings.crop.width / (settings.aspectRatio ? fitAspectCrop(source.image.naturalWidth, source.image.naturalHeight, settings.aspectRatio === 'portrait' ? 2 / 3 : 1).width : 100) * 100)}
+            onChange={event => {
+              const base = settings.aspectRatio ? fitAspectCrop(source.image.naturalWidth, source.image.naturalHeight, settings.aspectRatio === 'portrait' ? 2 / 3 : 1).width : 100
+              const percent = event.target.valueAsNumber
+              setSettings(current => ({ ...current, crop: scaleImageCrop(current.crop, base * percent / 100 / current.crop.width) }))
+            }} />
+        </label>
         <div className="admin-image-optimizer__fields">
           {(['x', 'y', 'width', 'height'] as const).map(key => <label key={key}>Crop {key} (%)
             <input type="number" min={key === 'x' || key === 'y' ? 0 : 0.1} max={100} step="any" value={Number.isNaN(settings.crop[key]) ? '' : settings.crop[key]} onChange={event => changeCrop(key, event.target.valueAsNumber)} />

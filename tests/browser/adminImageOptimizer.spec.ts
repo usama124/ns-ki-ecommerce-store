@@ -7,6 +7,33 @@ const source = fs.readFileSync(new URL('../../src/utilities/adminImageOptimizer.
 const javascript = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
 const moduleURL = `data:text/javascript;base64,${Buffer.from(javascript).toString('base64')}`
 
+test('tight portrait crop removes the blank area and keeps exact 2:3 pixels', async ({ page }) => {
+  const result = await page.evaluate(async moduleURL => {
+    const optimizer = await import(moduleURL) as typeof import('../../src/utilities/adminImageOptimizer')
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = 1200
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, 1200, 1200)
+    ctx.fillStyle = '#008000'
+    ctx.fillRect(400, 300, 400, 600)
+    const blob = await new Promise<Blob>(resolve => canvas.toBlob(blob => resolve(blob!), 'image/png'))
+    const image = await optimizer.loadEditableImage(new File([blob], 'product.png', { type: 'image/png' }))
+    const crop = optimizer.scaleImageCrop(optimizer.fitAspectCrop(1200, 1200, 2 / 3), 0.5)
+    const output = await optimizer.encodeImage(image, 'product.png', { crop, maxWidth: 1600, maxHeight: 2400, quality: 85, aspectRatio: 'portrait' })
+    const decoded = await optimizer.loadEditableImage(output.file)
+    canvas.width = output.width
+    canvas.height = output.height
+    ctx.drawImage(decoded, 0, 0)
+    return { width: output.width, height: output.height, corner: [...ctx.getImageData(5, 5, 1, 1).data] }
+  }, moduleURL)
+  expect(result).toMatchObject({ width: 400, height: 600 })
+  expect(result.corner[0]).toBeLessThan(10)
+  expect(result.corner[1]).toBeGreaterThan(110)
+  expect(result.corner[1]).toBeLessThan(145)
+  expect(result.corner[3]).toBe(255)
+})
+
 test('real browser WebP encoding: crop, dimensions, transparency and measured bytes', async ({ page }) => {
   const result = await page.evaluate(async moduleURL => {
     const optimizer = await import(moduleURL) as typeof import('../../src/utilities/adminImageOptimizer')

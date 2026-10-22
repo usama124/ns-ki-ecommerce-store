@@ -83,6 +83,53 @@ describe('Admin image optimizer integration', () => {
     expect(state.encode.mock.lastCall?.[2].crop).toMatchObject({ y: 0, height: 100 })
     expect(state.encode.mock.lastCall?.[2].crop.width).toBeCloseTo(66.6667, 3)
   })
+  it('can tighten and reposition a selected portrait area with its ratio locked', async () => {
+    state.load.mockResolvedValueOnce({ naturalWidth: 2000, naturalHeight: 2000 })
+    await click('Edit, crop')
+    await click('Product portrait')
+    const selection = container.querySelector('[aria-label="Selected crop area"]')!
+    await act(async () => {
+      selection.dispatchEvent(new KeyboardEvent('keydown', { key: '-', bubbles: true }))
+    })
+    await act(async () => {
+      selection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    })
+    await preview()
+    const settings = state.encode.mock.lastCall?.[2]
+    expect(settings.aspectRatio).toBe('portrait')
+    expect(settings.crop.width).toBeCloseTo(66.6666667 * 0.95)
+    expect(settings.crop.height).toBeCloseTo(95)
+    expect(settings.crop.y).toBeCloseTo(3.5)
+    expect(container.textContent).toContain('2:3 portrait locked')
+  })
+  it('supports pointer dragging a crop corner inward and then moving the selection', async () => {
+    await click('Edit, crop')
+    await click('Product portrait')
+    const frame = container.querySelector('.admin-image-optimizer__original')! as HTMLDivElement
+    frame.setPointerCapture = vi.fn()
+    vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue({ width: 200, height: 300 } as DOMRect)
+    const pointer = (target: Element, type: string, x: number, y: number) => {
+      const event = new MouseEvent(type, { clientX: x, clientY: y, button: 0, bubbles: true })
+      Object.defineProperty(event, 'pointerId', { value: 1 })
+      target.dispatchEvent(event)
+    }
+    await act(async () => {
+      pointer(container.querySelector('[data-corner="se"]')!, 'pointerdown', 200, 300)
+      pointer(frame, 'pointermove', 120, 180)
+      pointer(frame, 'pointerup', 120, 180)
+    })
+    await act(async () => {
+      pointer(container.querySelector('[aria-label="Selected crop area"]')!, 'pointerdown', 60, 90)
+      pointer(frame, 'pointermove', 80, 120)
+      pointer(frame, 'pointerup', 80, 120)
+    })
+    await preview()
+    for (const [key, value] of Object.entries({ x: 10, y: 10, width: 60, height: 60 })) {
+      expect(state.encode.mock.lastCall?.[2].crop[key]).toBeCloseTo(value)
+    }
+    expect(state.encode.mock.lastCall?.[2].aspectRatio).toBe('portrait')
+    expect(state.setValue).not.toHaveBeenCalled()
+  })
   it('preserves normal uploads on load/animation errors', async () => {
     state.load.mockRejectedValueOnce(new Error('Animated images are preserved.'))
     await click('Edit, crop')
