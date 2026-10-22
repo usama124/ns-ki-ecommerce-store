@@ -26,9 +26,9 @@ type Props = {
   mainCategories: Category[]
   subcategories: Category[]
   announcementBar?: {
-    isActive?: boolean
-    text?: string
-    link?: string
+    isActive?: boolean | null
+    text?: string | null
+    link?: string | null
   }
 }
 
@@ -42,22 +42,12 @@ export function HeaderClient({
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { user } = useAuth()
   const { isVisible } = useScrollDirection()
 
   useEffect(() => {
     setMounted(true)
-  }, [])
-
-  // Track scroll position for styling
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   // Automatically close open navigation drawers when header hides during downward scrolling
@@ -294,6 +284,7 @@ export function HeaderClient({
             <div className="flex justify-center items-center w-1/3 min-w-0">
               <Link href="/" className="flex items-center justify-center group py-1 min-w-0">
                 <LogoIcon
+                  priority
                   width={240}
                   height={80}
                   className="h-12 sm:h-14 md:h-18 max-h-20 w-auto max-w-[140px] sm:max-w-[180px] md:max-w-[240px] object-contain transition-transform group-hover:scale-[1.02]"

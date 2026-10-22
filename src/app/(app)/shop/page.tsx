@@ -4,6 +4,8 @@ import { Sparkles } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPayload } from 'payload'
+import { getStorefrontCategories } from '@/utilities/getStorefrontCategories'
+import { productCardSelect } from '@/utilities/productCardSelect'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +24,7 @@ type Args = {
 }
 
 export default async function ShopPage({ searchParams }: Args) {
-  const { category: queryCategory, sort: sortQuery } = (await searchParams) || {}
+  const { category: queryCategory, sort: sortQuery, q } = (await searchParams) || {}
   let products: any[] = []
   let mainCategories: any[] = []
   let selectedCategory: any = null
@@ -30,23 +32,13 @@ export default async function ShopPage({ searchParams }: Args) {
   try {
     const payload = await getPayload({ config: configPromise })
 
-    const categoriesResult = await payload.find({
-      collection: 'categories',
-      where: { type: { equals: 'main' } },
-      limit: 20,
-    })
-    mainCategories = categoriesResult.docs
+    const categories = await getStorefrontCategories()
+    mainCategories = categories.filter((category) => category.type === 'main')
 
     if (queryCategory) {
-      const isNumeric = /^\d+$/.test(queryCategory)
-      const catResult = await payload.find({
-        collection: 'categories',
-        where: isNumeric
-          ? { id: { equals: Number(queryCategory) } }
-          : { slug: { equals: queryCategory } },
-        limit: 1,
-      })
-      selectedCategory = catResult.docs?.[0] || null
+      selectedCategory = categories.find((category) =>
+        String(category.id) === queryCategory || category.slug === queryCategory,
+      ) || null
     }
 
     let payloadSort = 'title'
@@ -55,6 +47,7 @@ export default async function ShopPage({ searchParams }: Args) {
     else if (sortQuery === '-priceInUSD') payloadSort = '-basePricePKR'
 
     const whereConditions: any[] = [{ status: { equals: 'published' } }]
+    if (q?.trim()) whereConditions.push({ title: { contains: q.trim().slice(0, 100) } })
     if (selectedCategory) {
       whereConditions.push({
         categories: {
@@ -71,11 +64,13 @@ export default async function ShopPage({ searchParams }: Args) {
       sort: payloadSort,
       limit: 50,
       depth: 1,
+      select: productCardSelect,
     })
 
     products = productsResult.docs
-  } catch {
-    // Database connection catch
+  } catch (error) {
+    console.error('Shop data loading failed', error)
+    throw error
   }
 
   const pageTitle = selectedCategory ? selectedCategory.name : 'All Collections'

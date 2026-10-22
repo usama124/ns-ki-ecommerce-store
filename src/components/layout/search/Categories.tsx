@@ -1,17 +1,11 @@
-import configPromise from '@payload-config'
+import { getStorefrontCategories } from '@/utilities/getStorefrontCategories'
 import clsx from 'clsx'
-import { getPayload } from 'payload'
 import { Suspense } from 'react'
 
 import { CategoryItem } from './Categories.client'
 
 async function CategoryList() {
-  const payload = await getPayload({ config: configPromise })
-
-  const categories = await payload.find({
-    collection: 'categories',
-    sort: 'title',
-  })
+  const categories = await getStorefrontCategories()
 
   return (
     <div>
@@ -20,7 +14,7 @@ async function CategoryList() {
       </h3>
 
       <ul>
-        {categories.docs.map((category) => {
+        {categories.map((category) => {
           return (
             <li key={category.id}>
               <CategoryItem category={category} />

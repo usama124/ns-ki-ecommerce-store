@@ -6,7 +6,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { draftMode } from 'next/headers'
 import { homeStaticData } from '@/endpoints/seed/home-static'
-import React from 'react'
+import React, { cache } from 'react'
 import type { Page } from '@/payload-types'
 import { notFound } from 'next/navigation'
 
@@ -43,9 +43,7 @@ type Args = {
 export default async function Page({ params }: Args) {
   const { slug = 'home' } = await params
 
-  let page = await queryPageBySlug({
-    slug,
-  })
+  let page = await queryPageBySlug(slug)
 
   if (!page && slug === 'home') {
     page = homeStaticData() as Page
@@ -68,14 +66,12 @@ export default async function Page({ params }: Args) {
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const { slug = 'home' } = await params
 
-  const page = await queryPageBySlug({
-    slug,
-  })
+  const page = await queryPageBySlug(slug)
 
   return generateMeta({ doc: page })
 }
 
-const queryPageBySlug = async ({ slug }: { slug: string }) => {
+const queryPageBySlug = cache(async (slug: string) => {
   try {
     const { isEnabled: draft } = await draftMode()
     const payload = await getPayload({ config: configPromise })
@@ -99,7 +95,8 @@ const queryPageBySlug = async ({ slug }: { slug: string }) => {
     })
 
     return result.docs?.[0] || null
-  } catch {
-    return null
+  } catch (error) {
+    console.error('Page lookup failed', error)
+    throw error
   }
-}
+})

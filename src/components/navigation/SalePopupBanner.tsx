@@ -3,17 +3,10 @@
 import { Clock, Sparkles, X } from 'lucide-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
+import type { SaleSetting } from '@/payload-types'
 
 type Props = {
-  saleSettings: {
-    isActive?: boolean
-    title?: string
-    startDate?: string
-    endDate?: string
-    discountPercentage?: number
-    announcementText?: string
-    enablePopup?: boolean
-  } | null
+  saleSettings: SaleSetting | null
 }
 
 export function SalePopupBanner({ saleSettings }: Props) {

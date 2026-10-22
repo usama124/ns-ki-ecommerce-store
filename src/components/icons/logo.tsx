@@ -4,10 +4,12 @@ export function LogoIcon({
   className,
   width = 280,
   height = 80,
+  priority = false,
 }: {
   className?: string
   width?: number
   height?: number
+  priority?: boolean
 }) {
   return (
     <Image
@@ -16,8 +18,8 @@ export function LogoIcon({
       width={width}
       height={height}
       className={className}
-      priority
-      unoptimized
+      priority={priority}
+      sizes="(min-width: 768px) 240px, 180px"
     />
   )
 }

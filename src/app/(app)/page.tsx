@@ -5,6 +5,7 @@ import configPromise from '@payload-config'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPayload } from 'payload'
+import { productCardSelect } from '@/utilities/productCardSelect'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,44 +18,32 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   let homepageData: any = null
   let products: any[] = []
-  let categories: any[] = []
 
   try {
     const payload = await getPayload({ config: configPromise })
 
-    const homepageResult = await payload.findGlobal({
-      slug: 'homepage',
-      depth: 2,
-    })
-    homepageData = homepageResult
-
-    const categoriesResult = await payload.find({
-      collection: 'categories',
-      where: {
-        type: {
-          equals: 'main',
+    const [homepageResult, productsResult] = await Promise.all([
+      payload.findGlobal({
+        slug: 'homepage',
+        depth: 2,
+        populate: { products: { ...productCardSelect, variants: true, color: true } },
+      }),
+      payload.find({
+        collection: 'products',
+        where: {
+          and: [{ status: { equals: 'published' } }, { isFeatured: { equals: true } }],
         },
-      },
-      limit: 12,
-      depth: 1,
-    })
-    categories = categoriesResult.docs
-
-    const productsResult = await payload.find({
-      collection: 'products',
-      where: {
-        and: [
-          { status: { equals: 'published' } },
-          { isFeatured: { equals: true } },
-        ],
-      },
-      sort: '-createdAt',
-      limit: 8,
-      depth: 1,
-    })
+        sort: '-createdAt',
+        limit: 8,
+        depth: 1,
+        select: productCardSelect,
+      }),
+    ])
+    homepageData = homepageResult
     products = productsResult.docs
-  } catch {
-    // Catch connection / compilation issues during setup
+  } catch (error) {
+    console.error('Homepage data loading failed', error)
+    throw error
   }
 
   return (

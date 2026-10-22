@@ -31,7 +31,14 @@ export function HeroSlider({ slides = [] }: Props) {
     return () => viewport.removeEventListener('change', updateViewport)
   }, [])
 
-  if (isMobile === null) return null
+  if (isMobile === null) {
+    const hasDesktop = slides.some((slide) => getMediaUrl(slide.desktopMedia))
+    const hasMobile = hasDesktop || slides.some((slide) => getMediaUrl(slide.mobileMedia))
+    if (!hasMobile) return null
+    // Reserve the final height during hydration so the catalog does not jump
+    // downwards when a mobile-only hero appears.
+    return <div aria-hidden="true" className={`h-[55vh] sm:h-[70vh] lg:h-[75vh] max-h-[850px] bg-black ${hasDesktop ? '' : 'md:hidden'}`} />
+  }
 
   const visibleSlides = slides.flatMap((slide) => {
     const desktopUrl = getMediaUrl(slide.desktopMedia)

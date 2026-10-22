@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   redirects,
   experimental: {
+    globalNotFound: true,
     // Raise the body-size limit to 50 MB for local-dev uploads.
     // On Vercel, serverless functions have a hard 4.5 MB limit regardless of this setting;
     // large video uploads bypass it via clientUploads (direct browser → R2 signed-URL upload).

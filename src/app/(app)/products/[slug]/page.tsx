@@ -9,7 +9,7 @@ import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
-import { Suspense } from 'react'
+import { cache, Suspense } from 'react'
 
 type Args = {
   params: Promise<{
@@ -19,7 +19,7 @@ type Args = {
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const { slug } = await params
-  const product = await queryProductBySlug({ slug })
+  const product = await queryProductBySlug(slug)
 
   if (!product) return { title: "N's KI Product" }
 
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Args) {
   const { slug } = await params
-  const product = await queryProductBySlug({ slug })
+  const product = await queryProductBySlug(slug)
 
   if (!product) return notFound()
 
@@ -139,7 +139,7 @@ export default async function ProductPage({ params }: Args) {
   )
 }
 
-const queryProductBySlug = async ({ slug }: { slug: string }) => {
+const queryProductBySlug = cache(async (slug: string) => {
   try {
     const { isEnabled: draft } = await draftMode()
     const payload = await getPayload({ config: configPromise })
@@ -164,7 +164,8 @@ const queryProductBySlug = async ({ slug }: { slug: string }) => {
     })
 
     return result.docs?.[0] || null
-  } catch {
-    return null
+  } catch (error) {
+    console.error('Product lookup failed', error)
+    throw error
   }
-}
+})

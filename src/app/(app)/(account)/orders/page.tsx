@@ -13,16 +13,14 @@ export const dynamic = 'force-dynamic'
 
 export default async function Orders() {
   const headers = await getHeaders()
+  const payload = await getPayload({ config: configPromise })
+  const { user } = await payload.auth({ headers })
+  if (!user) {
+    redirect(`/login?warning=${encodeURIComponent('Please login to access your orders.')}`)
+  }
   let orders: Order[] | null = null
 
   try {
-    const payload = await getPayload({ config: configPromise })
-    const { user } = await payload.auth({ headers })
-
-    if (!user) {
-      redirect(`/login?warning=${encodeURIComponent('Please login to access your orders.')}`)
-    }
-
     const ordersResult = await payload.find({
       collection: 'orders',
       limit: 0,

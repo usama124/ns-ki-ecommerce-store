@@ -13,6 +13,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import path from 'path'
+import sharp from 'sharp'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
@@ -29,12 +30,14 @@ import { Homepage } from '@/globals/Homepage'
 import { SaleSettings } from '@/globals/SaleSettings'
 import { SiteSettings } from '@/globals/SiteSettings'
 import { plugins } from './plugins'
+import { getDatabaseOptions } from '@/utilities/databaseOptions'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const dbAdapterType = (process.env.DB_ADAPTER || '').toLowerCase()
 const shouldPushSchema = process.env.DB_PUSH !== 'false'
+const databaseOptions = getDatabaseOptions(process.env)
 
 const mongoUrl =
   process.env.MONGODB_URI || process.env.MONGODB_URL || process.env.DATABASE_URL || ''
@@ -47,6 +50,7 @@ const isMongo =
 const db = isMongo
   ? mongooseAdapter({
       url: mongoUrl,
+      connectOptions: databaseOptions.mongo,
     })
   : dbAdapterType === 'turso' || dbAdapterType === 'sqlite' || dbAdapterType === 'libsql'
     ? sqliteAdapter({
@@ -59,6 +63,7 @@ const db = isMongo
     : postgresAdapter({
         pool: {
           connectionString: process.env.DATABASE_URL || '',
+          ...databaseOptions.postgres,
         },
         push: shouldPushSchema,
       })
@@ -141,5 +146,5 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  sharp: undefined,
+  sharp,
 })

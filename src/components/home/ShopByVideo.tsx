@@ -264,6 +264,7 @@ function VideoCard({
         <video
           ref={videoRef}
           src={videoUrl}
+          preload="none"
           poster={posterUrl}
           muted={isMuted}
           loop

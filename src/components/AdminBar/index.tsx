@@ -2,11 +2,12 @@
 
 import type { PayloadAdminBarProps } from '@payloadcms/admin-bar'
 
-import { User } from '@/payload-types'
-import { cn } from '@/utilities/cn'
-import { PayloadAdminBar } from '@payloadcms/admin-bar'
+import { useAuth } from '@/providers/Auth'
+import dynamic from 'next/dynamic'
 import { useSelectedLayoutSegments } from 'next/navigation'
-import React, { useState } from 'react'
+import React from 'react'
+
+const PayloadAdminBar = dynamic(() => import('@payloadcms/admin-bar').then((mod) => mod.PayloadAdminBar), { ssr: false })
 
 const collectionLabels = {
   pages: {
@@ -30,24 +31,17 @@ export const AdminBar: React.FC<{
 }> = (props) => {
   const { adminBarProps } = props || {}
   const segments = useSelectedLayoutSegments()
-  const [show, setShow] = useState(false)
+  const { user } = useAuth()
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore - todo fix, not sure why this is erroring
   const collection = collectionLabels?.[segments?.[1]] ? segments?.[1] : 'pages'
 
-  const onAuthChange = React.useCallback((user: User) => {
-    const canSeeAdmin = user?.roles && Array.isArray(user?.roles) && user?.roles?.includes('admin')
-
-    setShow(Boolean(canSeeAdmin))
-  }, [])
+  // Reuse the storefront auth lookup. Guests do not mount a second auth client
+  // or download the admin toolbar bundle.
+  if (!user?.roles?.includes('admin')) return null
 
   return (
-    <div
-      className={cn('py-2 bg-black text-white', {
-        block: show,
-        hidden: !show,
-      })}
-    >
+    <div className="py-2 bg-black text-white">
       <div className="container">
         <PayloadAdminBar
           {...adminBarProps}
@@ -68,9 +62,6 @@ export const AdminBar: React.FC<{
             singular: collectionLabels[collection]?.singular || 'Page',
           }}
           logo={<Title />}
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore - todo fix, not sure why this is erroring
-          onAuthChange={onAuthChange}
           style={{
             backgroundColor: 'transparent',
             padding: 0,

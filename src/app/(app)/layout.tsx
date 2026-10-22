@@ -9,6 +9,7 @@ import { themeScriptCode } from '@/providers/Theme/InitTheme'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import './globals.css'
+import { draftMode } from 'next/headers'
 
 /* const { SITE_NAME, TWITTER_CREATOR, TWITTER_SITE } = process.env
 const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
@@ -38,6 +39,7 @@ const twitterSite = TWITTER_SITE ? ensureStartsWith(TWITTER_SITE, 'https://') : 
 } */
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  const { isEnabled: isPreview } = await draftMode()
   return (
     <html
       className={[GeistSans.variable, GeistMono.variable].filter(Boolean).join(' ')}
@@ -70,7 +72,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body suppressHydrationWarning>
         <Providers>
           <AdminBar />
-          <LivePreviewListener />
+          {isPreview && <LivePreviewListener />}
 
           <Header />
           <main>{children}</main>

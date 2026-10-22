@@ -5,6 +5,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
+import { getStorefrontCategories } from '@/utilities/getStorefrontCategories'
+import { productCardSelect } from '@/utilities/productCardSelect'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,20 +25,10 @@ export async function generateMetadata({ params, searchParams }: Args): Promise<
   const { category: categorySlug } = await params
   const { category: queryCategory } = (await searchParams) || {}
   const activeCategoryIdentifier = queryCategory || categorySlug
-  const isNumeric = /^\d+$/.test(activeCategoryIdentifier)
 
   try {
-    const payload = await getPayload({ config: configPromise })
-
-    const categoryResult = await payload.find({
-      collection: 'categories',
-      where: isNumeric
-        ? { id: { equals: Number(activeCategoryIdentifier) } }
-        : { slug: { equals: activeCategoryIdentifier } },
-      limit: 1,
-    })
-
-    const cat = categoryResult.docs?.[0]
+    const categories = await getStorefrontCategories()
+    const cat = categories.find((category) => String(category.id) === activeCategoryIdentifier || category.slug === activeCategoryIdentifier)
     if (!cat) return { title: 'Collection | Siblings by N’s KI' }
 
     return {
@@ -52,7 +44,6 @@ export default async function CategoryPage({ params, searchParams }: Args) {
   const { category: categorySlug } = await params
   const { category: queryCategory, sort: sortQuery } = (await searchParams) || {}
   const activeCategoryIdentifier = queryCategory || categorySlug
-  const isNumeric = /^\d+$/.test(activeCategoryIdentifier)
 
   let targetCategory: any = null
   let products: any[] = []
@@ -60,15 +51,8 @@ export default async function CategoryPage({ params, searchParams }: Args) {
   try {
     const payload = await getPayload({ config: configPromise })
 
-    const categoryResult = await payload.find({
-      collection: 'categories',
-      where: isNumeric
-        ? { id: { equals: Number(activeCategoryIdentifier) } }
-        : { slug: { equals: activeCategoryIdentifier } },
-      limit: 1,
-    })
-
-    targetCategory = categoryResult.docs?.[0]
+    const categories = await getStorefrontCategories()
+    targetCategory = categories.find((category) => String(category.id) === activeCategoryIdentifier || category.slug === activeCategoryIdentifier)
 
     let payloadSort = 'title'
     if (sortQuery === '-createdAt') payloadSort = '-createdAt'
@@ -91,12 +75,14 @@ export default async function CategoryPage({ params, searchParams }: Args) {
         sort: payloadSort,
         limit: 50,
         depth: 1,
+        select: productCardSelect,
       })
 
       products = productsResult.docs
     }
-  } catch {
-    // Database connection catch
+  } catch (error) {
+    console.error('Category lookup failed', error)
+    throw error
   }
 
   if (!targetCategory) return notFound()
@@ -133,7 +119,7 @@ export default async function CategoryPage({ params, searchParams }: Args) {
         {products.length === 0 ? (
           <div className="text-center py-20 px-4 glass-card border border-dashed border-border rounded-xl shadow-xs max-w-2xl mx-auto">
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-6">
-              No products currently available in the "{targetCategory.name}" collection.
+              No products currently available in the &quot;{targetCategory.name}&quot; collection.
             </p>
             <Link
               href="/shop"

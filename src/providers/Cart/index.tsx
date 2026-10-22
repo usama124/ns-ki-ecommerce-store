@@ -172,6 +172,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ items }),
       })
       const data = await res.json()
+      if (!res.ok) throw new Error('Stock validation failed')
 
       if (!data.valid && Array.isArray(data.adjustments) && data.adjustments.length > 0) {
         const adjustmentMap = new Map<string, number>()
@@ -202,7 +203,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       return { valid: true, adjustments: [] }
     } catch {
-      return { valid: true, adjustments: [] }
+      toast.error('Unable to check current stock. Please try again before checking out.')
+      return { valid: false, adjustments: [] }
     }
   }, [items])
 

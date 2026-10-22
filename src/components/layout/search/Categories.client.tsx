@@ -6,7 +6,7 @@ import clsx from 'clsx'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 type Props = {
-  category: Category
+  category: Pick<Category, 'id' | 'name' | 'slug'>
 }
 
 export const CategoryItem: React.FC<Props> = ({ category }) => {

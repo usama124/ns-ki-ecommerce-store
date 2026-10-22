@@ -11,7 +11,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ valid: true, adjustments: [] })
     }
 
+    if (items.length > 100 || items.some((item) => !item?.productId || !Number.isSafeInteger(item.quantity) || item.quantity < 1)) {
+      return NextResponse.json({ valid: false, adjustments: [], error: 'Invalid cart items.' }, { status: 400 })
+    }
+
     const payload = await getPayload({ config: configPromise })
+    const productIds = [...new Set(items.map((item) => item.productId))]
+    // One product query for the cart, rather than one network round-trip per line.
+    const result = await payload.find({
+      collection: 'products',
+      where: { and: [{ id: { in: productIds } }, { status: { equals: 'published' } }] },
+      depth: 1,
+      pagination: false,
+      overrideAccess: false,
+      select: { title: true, variants: true },
+    })
+    const products = new Map(result.docs.map((product) => [String(product.id), product]))
     const adjustments: Array<{
       productId: string
       variantSize: string
@@ -26,16 +41,9 @@ export async function POST(req: Request) {
       const { productId, variantSize, variantColor, quantity } = item
       if (!productId) continue
 
-      const product = await payload.findByID({
-        collection: 'products',
-        id: productId,
-        depth: 1,
-        overrideAccess: true,
-      }).catch(() => null)
+      const product = products.get(String(productId))
 
-      if (!product || !Array.isArray(product.variants)) continue
-
-      const matchingVariant = product.variants.find((v: any) => {
+      const matchingVariant = product?.variants?.find((v: any) => {
         const rawSize = v.size
         const sizeName =
           typeof rawSize === 'object' && rawSize !== null
@@ -45,17 +53,15 @@ export async function POST(req: Request) {
         return sizeName === String(variantSize || '').trim().toLowerCase()
       })
 
-      if (!matchingVariant) continue
-
-      const availableStock = typeof matchingVariant.stock === 'number' ? matchingVariant.stock : 0
-      const allowBackorder = Boolean(matchingVariant.allowBackorder)
+      const availableStock = typeof matchingVariant?.stock === 'number' ? matchingVariant.stock : 0
+      const allowBackorder = Boolean(matchingVariant?.allowBackorder)
 
       if (!allowBackorder && availableStock < quantity) {
         adjustments.push({
           productId,
           variantSize,
           variantColor,
-          title: product.title,
+          title: product?.title || 'Unavailable product',
           availableStock: Math.max(0, availableStock),
           requestedQuantity: quantity,
           outOfStock: availableStock <= 0,
@@ -69,7 +75,7 @@ export async function POST(req: Request) {
     })
   } catch (error: any) {
     console.error('Error validating cart stock:', error)
-    return NextResponse.json({ valid: true, adjustments: [] })
+    return NextResponse.json({ valid: false, adjustments: [], error: 'Stock validation is temporarily unavailable. Please retry.' }, { status: 503 })
   }
 }
 

@@ -58,7 +58,7 @@ describe('Order Email Templates & Generation', () => {
     expect(html).toContain('#NKI-889900')
     expect(html).toContain('Fatima Khan')
     expect(html).toContain('Rs. 24,350')
-    expect(html).toContain('/admin/orders-dashboard')
+    expect(html).toContain('/store-admin/orders-dashboard')
   })
 
   it('generates payment confirmed customer email HTML correctly', () => {

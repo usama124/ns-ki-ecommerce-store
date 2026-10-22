@@ -6,6 +6,7 @@ import { Plugin } from 'payload'
 
 import { isAdmin } from '@/access/isAdmin'
 import { getServerSideURL } from '@/utilities/getURL'
+import { storefrontCachePlugin } from './storefrontCache'
 
 type DocWithTitle = { title?: string; slug?: string }
 
@@ -31,6 +32,7 @@ const r2PublicDomain = (process.env.R2_PUBLIC_DOMAIN || '').replace(/\/$/, '')
 const isR2Configured = Boolean(r2Bucket && r2AccessKeyId && r2SecretAccessKey && r2Endpoint)
 
 export const plugins: Plugin[] = [
+  storefrontCachePlugin,
   seoPlugin({
     generateTitle,
     generateURL,

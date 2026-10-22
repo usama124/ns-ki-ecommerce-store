@@ -1,50 +1,19 @@
 import { SalePopupBanner } from '@/components/navigation/SalePopupBanner'
 import { getCachedGlobal } from '@/utilities/getGlobals'
-import configPromise from '@payload-config'
-import { getPayload } from 'payload'
+import { getStorefrontCategories } from '@/utilities/getStorefrontCategories'
 
 import { HeaderClient } from './index.client'
 import './index.css'
 
 export async function Header() {
-  const header = await getCachedGlobal('header', 1)()
-
-  // Fetch main categories with their subcategories for the mega-menu
-  const payload = await getPayload({ config: configPromise })
-  const categoriesResult = await payload.find({
-    collection: 'categories',
-    where: { type: { equals: 'main' } },
-    sort: 'name',
-    limit: 20,
-    depth: 0,
-  })
-
-  const subcategoriesResult = await payload.find({
-    collection: 'categories',
-    where: { type: { equals: 'subcategory' } },
-    sort: 'name',
-    limit: 100,
-    depth: 1,
-  })
-
-  // Fetch site settings for announcement bar
-  let siteSettings: any = null
-  try {
-    siteSettings = await getCachedGlobal('site-settings', 1)()
-  } catch {
-    // site-settings global may not exist yet
-  }
-
-  // Fetch sale settings for storefront sale popup banner
-  let saleSettings: any = null
-  try {
-    saleSettings = await getCachedGlobal('sale-settings' as any, 1)()
-  } catch {
-    // sale-settings global may not exist yet
-  }
-
-  const mainCategories = categoriesResult.docs
-  const subcategories = subcategoriesResult.docs
+  const [header, categories, siteSettings, saleSettings] = await Promise.all([
+    getCachedGlobal('header', 1)(),
+    getStorefrontCategories(),
+    getCachedGlobal('site-settings', 0)().catch(() => null),
+    getCachedGlobal('sale-settings', 0)().catch(() => null),
+  ])
+  const mainCategories = categories.filter((category) => category.type === 'main')
+  const subcategories = categories.filter((category) => category.type === 'subcategory')
 
   return (
     <>

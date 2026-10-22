@@ -2,26 +2,27 @@ import { getSalePriceDetails } from '@/utilities/getSalePrice'
 import config from '@payload-config'
 import type { Metadata } from 'next'
 import { getPayload } from 'payload'
+import { getCachedGlobal } from '@/utilities/getGlobals'
+import { productCardSelect } from '@/utilities/productCardSelect'
 
 import { SalePageClient } from './SalePageClient'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const payload = await getPayload({ config })
-    const saleSettings: any = await payload.findGlobal({
-      slug: 'sale-settings' as any,
-    })
+    const saleSettings = await getCachedGlobal('sale-settings', 0)()
 
     return {
       title: saleSettings?.title
         ? `${saleSettings.title} | Siblings by N’s KI`
-        : "Flash Sale | Siblings by N’s KI",
+        : 'Flash Sale | Siblings by N’s KI',
       description:
         saleSettings?.announcementText || 'Limited-time exclusive luxury flash sale offers.',
     }
   } catch {
     return {
-      title: "Flash Sale | Siblings by N’s KI",
+      title: 'Flash Sale | Siblings by N’s KI',
       description: 'Limited-time exclusive luxury flash sale offers.',
     }
   }
@@ -32,25 +33,39 @@ export default async function SalePage() {
 
   let saleSettings: any = null
   try {
-    saleSettings = await payload.findGlobal({
-      slug: 'sale-settings' as any,
-      depth: 2,
-    })
+    saleSettings = await getCachedGlobal('sale-settings', 0)()
   } catch (e: any) {
     console.warn('sale-settings table not yet initialized:', e?.message || e)
   }
 
   let productsDocs: any[] = []
+  // Request-time campaign bounds must not be frozen into a static build.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now()
+  const start = saleSettings?.startDate ? new Date(saleSettings.startDate).getTime() : 0
+  const end = saleSettings?.endDate ? new Date(saleSettings.endDate).getTime() : Infinity
+  const isLive = Boolean(saleSettings?.isActive && now >= start && now <= end)
   try {
-    const productsRes = await payload.find({
-      collection: 'products',
-      where: {
-        status: { equals: 'published' },
-      },
-      limit: 200,
-      depth: 2,
-    })
-    productsDocs = productsRes.docs
+    if (isLive && saleSettings?.targetedCategories?.length) {
+      const productsRes = await payload.find({
+        collection: 'products',
+        where: {
+          and: [
+            { status: { equals: 'published' } },
+            {
+              or: [
+                { primaryCategory: { in: saleSettings.targetedCategories } },
+                { categories: { in: saleSettings.targetedCategories } },
+              ],
+            },
+          ],
+        },
+        limit: 200,
+        depth: 1,
+        select: productCardSelect,
+      })
+      productsDocs = productsRes.docs
+    }
   } catch (e: any) {
     console.warn('Could not fetch products for sale page:', e?.message || e)
   }
@@ -79,11 +94,6 @@ export default async function SalePage() {
   }
 
   const subcategories = Array.from(subcategoryMap.values())
-
-  const now = Date.now()
-  const start = saleSettings?.startDate ? new Date(saleSettings.startDate).getTime() : 0
-  const end = saleSettings?.endDate ? new Date(saleSettings.endDate).getTime() : Infinity
-  const isLive = Boolean(saleSettings?.isActive && now >= start && now <= end)
 
   return (
     <SalePageClient
