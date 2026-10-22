@@ -8,10 +8,10 @@ export function CollectionLayout({ search, filters, children }: { search: ReactN
   const id = useId()
   return <div className="grid grid-cols-1 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[200px_minmax(0,1fr)] gap-4 md:gap-6 items-start">
     <div className="flex gap-3 items-center md:col-span-2">
-      <div className="flex-1 md:max-w-md">{search}</div>
+      <div className="min-w-0 flex-1">{search}</div>
       <button type="button" aria-controls={id} aria-expanded={open} onClick={() => setOpen(value => !value)}
         className="md:hidden shrink-0 min-h-11 px-3 flex items-center gap-2 rounded-lg border border-[#648698]/40 text-xs font-medium text-foreground">
-        {open ? <X className="w-4 h-4" /> : <SlidersHorizontal className="w-4 h-4" />} Filters & sort
+        {open ? <X className="w-4 h-4" /> : <SlidersHorizontal className="w-4 h-4" />} <span className="sr-only sm:not-sr-only">Filters & sort</span>
       </button>
     </div>
     <aside id={id} aria-label="Collection filters" onClick={event => { if ((event.target as HTMLElement).closest('a[href], [data-collection-choice]')) setOpen(false) }} className={`${open ? 'block' : 'hidden'} md:block md:sticky md:top-36 md:max-h-[calc(100svh-10rem)] md:overflow-y-auto`}>

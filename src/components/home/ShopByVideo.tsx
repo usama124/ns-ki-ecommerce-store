@@ -36,9 +36,9 @@ export function ShopByVideo({ reels = [] }: ShopByVideoProps) {
   if (!reels || reels.length === 0) return null
 
   return (
-    <section className="py-14 sm:py-20 bg-transparent overflow-hidden">
+    <section className="pt-4 sm:pt-6 pb-4 sm:pb-6 bg-transparent overflow-hidden">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-5 sm:mb-6">
           <span className="text-xs uppercase tracking-[0.3em] font-semibold text-[#648698] block mb-2">
             Interactive Experience
           </span>
@@ -48,22 +48,24 @@ export function ShopByVideo({ reels = [] }: ShopByVideoProps) {
         </div>
 
         {/* Horizontal Reels Container: Sized to match 2-col mobile, 3-col tablet, 4-col desktop product cards */}
-        <ReelCarousel count={reels.length}>
-          {reels.map((reel, index) => (
-            <VideoCard
-              key={reel.id || index}
-              reel={reel}
-              onQuickShop={(product) => {
-                setSelectedProduct(product)
-                if (product?.variants?.length > 0) {
-                  const firstInStock = product.variants.find((v: any) => v.stock > 0)
-                  const firstVariant = firstInStock || product.variants[0]
-                  setSelectedSize(resolveSizeName(firstVariant?.size))
-                }
-              }}
-            />
-          ))}
-        </ReelCarousel>
+        <div className="px-3 sm:px-6">
+          <ReelCarousel count={reels.length}>
+            {reels.map((reel, index) => (
+              <VideoCard
+                key={reel.id || index}
+                reel={reel}
+                onQuickShop={(product) => {
+                  setSelectedProduct(product)
+                  if (product?.variants?.length > 0) {
+                    const firstInStock = product.variants.find((v: any) => v.stock > 0)
+                    const firstVariant = firstInStock || product.variants[0]
+                    setSelectedSize(resolveSizeName(firstVariant?.size))
+                  }
+                }}
+              />
+            ))}
+          </ReelCarousel>
+        </div>
       </div>
 
       {/* Quick Shop Drawer Modal */}
@@ -256,7 +258,7 @@ function VideoCard({
   }
 
   return (
-    <div className="relative flex-none w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-1.125rem)] min-w-[160px] sm:min-w-[220px] lg:min-w-[280px] max-w-[320px] aspect-[9/16] bg-[#03171E] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl snap-start group border border-[#648698]/30">
+    <div className="relative flex-none w-[calc((100%_-_0.75rem)/2)] sm:w-[calc((100%_-_2rem)/3)] md:w-[calc((100%_-_3rem)/3)] lg:w-[calc((100%_-_4.5rem)/4)] aspect-[3/4] bg-[#03171E] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl snap-start group border border-[#648698]/30">
       {videoUrl ? (
         <video
           ref={videoRef}
@@ -292,7 +294,7 @@ function VideoCard({
       {/* Bottom Quick Shop Bar */}
       {product && (
         <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-3.5 sm:left-3.5 sm:right-3.5 z-10">
-          <div className="bg-[#03171E]/95 backdrop-blur-xl p-2.5 sm:p-3 rounded-xl border border-[#648698]/30 shadow-xl flex items-center justify-between gap-2">
+          <div className="bg-[#03171E]/95 backdrop-blur-xl p-2.5 sm:p-3 rounded-xl border border-[#648698]/30 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             {/* Left title & price */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <h4 className="text-[10px] sm:text-xs font-bold text-[#CBCCC7] truncate uppercase tracking-wider leading-tight">

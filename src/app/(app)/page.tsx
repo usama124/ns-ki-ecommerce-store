@@ -48,13 +48,13 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="pb-24 sm:pb-12">
+    <div className="pb-8 sm:pb-10">
       {/* Dynamic Homepage Hero Slider */}
       <HomepageHero heroSlider={homepageData?.heroSlider || []} />
 
       {/* Featured Collection Section */}
-      <section className="py-14 sm:py-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 border-b border-border/60 pb-4 px-1 sm:px-0">
+      <section className="pt-8 sm:pt-10 pb-4 sm:pb-6 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-5 sm:mb-6 border-b border-border/60 pb-4 px-1 sm:px-0">
           <div>
             <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground font-medium block mb-2">
               Curated Elegance
