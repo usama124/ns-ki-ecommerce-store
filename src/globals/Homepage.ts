@@ -77,7 +77,7 @@ export const Homepage: GlobalConfig = {
       type: 'array',
       label: 'Shop by Video Reels',
       admin: {
-        description: '9:16 vertical video reels for the shoppable video section.',
+        description: '9:16 vertical reels. Linked products appear only when published and their Show video in homepage Shop by Video checkbox is enabled. Standalone reels are explicitly curated here.',
       },
       fields: [
         {

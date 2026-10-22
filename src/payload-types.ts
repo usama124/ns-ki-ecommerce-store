@@ -514,6 +514,10 @@ export interface Product {
     | null;
   productVideo?: (number | null) | Media;
   /**
+   * Opt in explicitly to feature this product video on the homepage. Leave off to keep the video on the product page only.
+   */
+  showInShopByVideo?: boolean | null;
+  /**
    * Add sizes for this product here. Click "Add Variant" to create a unique size variant with stock count and price overrides.
    */
   variants?:
@@ -1219,6 +1223,7 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   productVideo?: T;
+  showInShopByVideo?: T;
   variants?:
     | T
     | {

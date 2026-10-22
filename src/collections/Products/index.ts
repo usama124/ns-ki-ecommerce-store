@@ -202,6 +202,15 @@ export const Products: CollectionConfig = {
               relationTo: 'media',
               label: 'Product Video (9:16 vertical MP4, optional)',
             },
+            {
+              name: 'showInShopByVideo',
+              type: 'checkbox',
+              label: 'Show video in homepage Shop by Video',
+              defaultValue: false,
+              admin: {
+                description: 'Opt in explicitly to feature this product video on the homepage. Leave off to keep the video on the product page only.',
+              },
+            },
           ],
         },
         {

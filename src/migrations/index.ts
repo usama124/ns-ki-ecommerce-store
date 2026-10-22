@@ -10,6 +10,7 @@ import * as migration_20260916_000000_media_prefix from './20260916_000000_media
 import * as migration_20260916_010000_media_sizes from './20260916_010000_media_sizes'
 import * as migration_20260917_000000_cancellation_reason from './20260917_000000_cancellation_reason'
 import * as migration_20260918_180000_trx_security from './20260918_180000_trx_security'
+import * as migration_20261022_000000_shop_by_video_opt_in from './20261022_000000_shop_by_video_opt_in'
 
 export const migrations = [
   {
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20260918_180000_trx_security.up,
     down: migration_20260918_180000_trx_security.down,
     name: '20260918_180000_trx_security',
+  },
+  {
+    up: migration_20261022_000000_shop_by_video_opt_in.up,
+    down: migration_20261022_000000_shop_by_video_opt_in.down,
+    name: '20261022_000000_shop_by_video_opt_in',
   },
 ]

@@ -78,6 +78,7 @@ export function AddToCart({ product, selectedVariant, selectedQuantity = 1, clas
 
   return (
     <button
+      data-product-purchase
       className={`w-full py-4 px-8 text-xs font-bold tracking-[0.2em] uppercase rounded-lg transition-all ${
         isOutOfStock || !selectedVariant
           ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'

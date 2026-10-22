@@ -1,7 +1,7 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
 export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, req }) => {
-  if (req?.context?.skipShoppableVideoSync) return
+  if (req?.context?.skipShoppableVideoSync) return doc
 
   try {
     const videoMediaId =
@@ -15,19 +15,20 @@ export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, r
         : doc.images[0].image
       : null
 
-    const isPublished = doc?._status === 'published' || doc?.status === 'published'
+    const isPublished = doc?._status ? doc._status === 'published' : doc?.status === 'published'
     const hasVideo = Boolean(videoMediaId)
 
     const homepage = await req.payload.findGlobal({
       slug: 'homepage',
       depth: 0,
+      req,
     })
 
     const currentReels = Array.isArray(homepage?.shoppableVideos)
       ? [...homepage.shoppableVideos]
       : []
 
-    const existingIndex = currentReels.findIndex((item: any) => {
+    const existingIndex = currentReels.findIndex((item) => {
       const linkedId =
         typeof item?.linkedProduct === 'object' && item.linkedProduct !== null
           ? item.linkedProduct.id
@@ -37,7 +38,7 @@ export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, r
 
     let modified = false
 
-    if (isPublished && hasVideo) {
+    if (isPublished && hasVideo && doc.showInShopByVideo === true) {
       if (existingIndex > -1) {
         currentReels[existingIndex] = {
           ...currentReels[existingIndex],
@@ -57,9 +58,10 @@ export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, r
         modified = true
       }
     } else {
-      if (existingIndex > -1) {
-        currentReels.splice(existingIndex, 1)
-        modified = true
+      for (let index = currentReels.length - 1; index >= 0; index--) {
+        const linked = currentReels[index].linkedProduct
+        const linkedId = typeof linked === 'object' && linked !== null ? linked.id : linked
+        if (String(linkedId) === String(doc.id)) { currentReels.splice(index, 1); modified = true }
       }
     }
 
@@ -69,6 +71,7 @@ export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, r
         data: {
           shoppableVideos: currentReels,
         },
+        req,
       })
     }
   } catch (error) {
@@ -77,6 +80,7 @@ export const autoSyncShoppableVideo: CollectionAfterChangeHook = async ({ doc, r
       err: error,
     })
   }
+  return doc
 }
 
 export const removeShoppableVideoOnDelete: CollectionAfterDeleteHook = async ({ id, req }) => {
@@ -84,12 +88,13 @@ export const removeShoppableVideoOnDelete: CollectionAfterDeleteHook = async ({ 
     const homepage = await req.payload.findGlobal({
       slug: 'homepage',
       depth: 0,
+      req,
     })
 
     if (!Array.isArray(homepage?.shoppableVideos)) return
 
     const initialLength = homepage.shoppableVideos.length
-    const updatedReels = homepage.shoppableVideos.filter((item: any) => {
+    const updatedReels = homepage.shoppableVideos.filter((item) => {
       const linkedId =
         typeof item?.linkedProduct === 'object' && item.linkedProduct !== null
           ? item.linkedProduct.id
@@ -103,6 +108,7 @@ export const removeShoppableVideoOnDelete: CollectionAfterDeleteHook = async ({ 
         data: {
           shoppableVideos: updatedReels,
         },
+        req,
       })
     }
   } catch (error) {

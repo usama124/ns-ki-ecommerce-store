@@ -4,17 +4,19 @@ import { Suspense } from 'react'
 
 import { CategoryItem } from './Categories.client'
 
-async function CategoryList() {
+export async function CategoryList() {
   const categories = await getStorefrontCategories()
+  const mainCategories = categories.filter(category => category.type === 'main')
+  const subcategories = categories.filter(category => category.type === 'subcategory')
 
   return (
     <div>
       <h3 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 px-1">
-        Category
+        Main Categories
       </h3>
 
       <ul>
-        {categories.map((category) => {
+        {mainCategories.map((category) => {
           return (
             <li key={category.id}>
               <CategoryItem category={category} />
@@ -22,6 +24,17 @@ async function CategoryList() {
           )
         })}
       </ul>
+      {subcategories.length > 0 && <section className="mt-6" aria-label="Subcategories">
+        <h3 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 px-1">Subcategories</h3>
+        <ul>{subcategories.map(category => {
+          const parentId = typeof category.parent === 'object' ? category.parent?.id : category.parent
+          const parent = mainCategories.find(main => String(main.id) === String(parentId))
+          return <li key={category.id}>
+            <CategoryItem category={category} />
+            {parent && <span className="block px-3 pb-2 text-[10px] text-muted-foreground">{parent.name}</span>}
+          </li>
+        })}</ul>
+      </section>}
     </div>
   )
 }

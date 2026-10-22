@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 import { productCardSelect } from '@/utilities/productCardSelect'
+import { isVisibleShoppableReel } from '@/utilities/shoppableVideoVisibility'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,7 @@ export default async function HomePage() {
       payload.findGlobal({
         slug: 'homepage',
         depth: 2,
-        populate: { products: { ...productCardSelect, variants: true, color: true } },
+        populate: { products: { ...productCardSelect, variants: true, color: true, status: true, showInShopByVideo: true, productVideo: true } },
       }),
       payload.find({
         collection: 'products',
@@ -77,7 +78,7 @@ export default async function HomePage() {
       </section>
 
       {homepageData?.shoppableVideos && homepageData.shoppableVideos.length > 0 && (
-        <ShoppableVideos reels={homepageData.shoppableVideos} />
+        <ShoppableVideos reels={homepageData.shoppableVideos.filter(isVisibleShoppableReel)} />
       )}
     </div>
   )

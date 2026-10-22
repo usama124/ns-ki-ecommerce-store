@@ -1,4 +1,6 @@
 import { Gallery } from '@/components/product/Gallery'
+import { FloatingProductVideo } from '@/components/product/FloatingProductVideo'
+import { responsiveMedia } from '@/utilities/responsiveMedia'
 import { ProductDescription } from '@/components/product/ProductDescription'
 import { Button } from '@/components/ui/button'
 import type { Media } from '@/payload-types'
@@ -58,6 +60,8 @@ export default async function ProductPage({ params }: Args) {
 
   return (
     <div className="min-h-screen pb-20">
+      {videoUrl && <FloatingProductVideo key={`${product.id}-${videoUrl}`} src={videoUrl}
+        poster={responsiveMedia(product.images?.[0]?.image, 'card').src} title={product.title} />}
       {/* Top Breadcrumb Navigation */}
       <div className="glass-card rounded-xl border border-[#648698]/30 shadow-xs mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
@@ -109,7 +113,7 @@ export default async function ProductPage({ params }: Args) {
             </Suspense>
 
             {videoUrl && (
-              <div className="glass-card p-6 rounded-xl shadow-sm">
+              <div data-product-reel-inline className="glass-card p-6 rounded-xl shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Play className="w-4 h-4 text-secondary" />
                   <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-foreground">
@@ -119,6 +123,7 @@ export default async function ProductPage({ params }: Args) {
                 <div className="relative max-w-xs sm:max-w-sm aspect-[9/16] bg-[#03171E] rounded-lg overflow-hidden shadow-lg mx-auto border border-border">
                   <video
                     src={videoUrl}
+                    preload="none"
                     controls
                     loop
                     playsInline
