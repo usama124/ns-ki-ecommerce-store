@@ -44,6 +44,7 @@ const button = (label: string) => container.querySelector<HTMLButtonElement>(`[a
 describe('Discoverable reel navigation', () => {
   it('shows arrows and a range before hover, moves forward/back and disables end controls', () => {
     const { scroll } = mountReels()
+    expect(container.querySelector('[aria-roledescription="carousel"]')?.className).toContain('scrollbar-none')
     expect(container.textContent).toContain('see more')
     expect(container.textContent).toContain('Reels 1–4 of 6')
     expect(button('Previous reels').disabled).toBe(true)

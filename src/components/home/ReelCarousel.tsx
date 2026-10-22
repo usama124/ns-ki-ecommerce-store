@@ -53,8 +53,7 @@ export function ReelCarousel({ count, children }: { count: number; children?: Re
     </div>
     <div className="relative">
       <div id={id} ref={track} role="region" aria-roledescription="carousel" aria-label="Shop by Video reels" tabIndex={0}
-        className="relative flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto pb-3 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#648698]"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: '#648698 #07242e' }}
+        className="relative flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#648698]"
         onKeyDown={event => {
           if (event.target !== event.currentTarget) return
           if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); scroll(event.key === 'ArrowRight' ? 1 : -1) }
