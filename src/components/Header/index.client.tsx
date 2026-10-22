@@ -39,7 +39,6 @@ export function HeaderClient({
   announcementBar,
 }: Props) {
   const pathname = usePathname()
-  const compact = pathname !== '/'
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
@@ -225,7 +224,7 @@ export function HeaderClient({
       >
         {/* High-Contrast Brand Announcement Bar */}
         {showAnnouncement && (
-          <div className={`bg-[#03171E] text-[#CBCCC7] border-b border-[#648698]/30 text-center px-4 font-semibold uppercase flex items-center justify-center ${compact ? 'py-1 text-[10px] tracking-wide' : 'py-2 text-xs tracking-widest'}`}>
+          <div className="bg-[#03171E] text-[#CBCCC7] border-b border-[#648698]/30 text-center px-4 font-semibold uppercase flex items-center justify-center py-1 text-[10px] tracking-wide">
             {announcementBar.link ? (
               <Link
                 href={announcementBar.link}
@@ -242,7 +241,7 @@ export function HeaderClient({
         {/* 2-Row Luxury Header Container */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* ROW 1: Action Icons Left Corner | Centered Logo | Cart Right Corner */}
-          <div className={`flex items-center justify-between border-b border-[#648698]/15 md:border-b-0 ${compact ? 'py-1' : 'py-3'}`}>
+          <div className="flex items-center justify-between border-b border-[#648698]/15 md:border-b-0 py-1">
             {/* Left Action Icons */}
             <div className="flex items-center gap-2 sm:gap-4 w-1/3 justify-start">
               <button
@@ -288,7 +287,7 @@ export function HeaderClient({
                   priority
                   width={240}
                   height={80}
-                  className={`${compact ? 'h-9 sm:h-10 md:h-11 max-w-[120px] md:max-w-[160px]' : 'h-12 sm:h-14 md:h-18 max-h-20 max-w-[140px] sm:max-w-[180px] md:max-w-[240px]'} w-auto object-contain transition-transform group-hover:scale-[1.02]`}
+                  className="h-9 sm:h-10 md:h-11 max-w-[120px] md:max-w-[160px] w-auto object-contain transition-transform group-hover:scale-[1.02]"
                 />
               </Link>
             </div>
@@ -300,7 +299,7 @@ export function HeaderClient({
           </div>
 
           {/* ROW 2: Centered Category Navigation (Desktop only) */}
-          <nav className={`hidden md:flex items-center justify-center border-t border-[#648698]/15 ${compact ? 'flex-wrap gap-x-4 gap-y-0 py-1' : 'space-x-8 py-3'}`}>
+          <nav className="hidden md:flex items-center justify-center border-t border-[#648698]/15 flex-wrap gap-x-4 gap-y-0 py-1">
             <Link
               href="/"
               className={`text-xs font-medium uppercase tracking-[0.18em] hover:text-[#648698] transition-colors py-1 ${
