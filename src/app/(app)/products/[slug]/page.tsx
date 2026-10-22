@@ -63,9 +63,9 @@ export default async function ProductPage({ params }: Args) {
       {videoUrl && <FloatingProductVideo key={`${product.id}-${videoUrl}`} src={videoUrl}
         poster={responsiveMedia(product.images?.[0]?.image, 'card').src} title={product.title} />}
       {/* Top Breadcrumb Navigation */}
-      <div className="glass-card rounded-xl border border-[#648698]/30 shadow-xs mb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+      <div className="border-b border-[#648698]/20 mb-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0 text-xs text-muted-foreground font-medium">
             <Link href="/" className="hover:text-foreground transition-colors">
               Home
             </Link>
@@ -78,7 +78,7 @@ export default async function ProductPage({ params }: Args) {
                 <span>/</span>
                 <Link
                   href={`/shop/${primaryCategory?.slug || ''}`}
-                  className="text-secondary font-semibold hover:underline transition-colors"
+                  className="text-secondary font-semibold hover:underline transition-colors truncate"
                 >
                   {primaryCategoryName}
                 </Link>
@@ -90,7 +90,7 @@ export default async function ProductPage({ params }: Args) {
             asChild
             variant="ghost"
             size="sm"
-            className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-[#648698]/20"
+            className="hidden sm:inline-flex text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-[#648698]/20"
           >
             <Link href="/shop">
               <ChevronLeft className="h-4 w-4 mr-1" />
@@ -101,41 +101,34 @@ export default async function ProductPage({ params }: Args) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
           {/* Left Column: Gallery & Video */}
-          <div className="lg:col-span-6 min-w-0 flex flex-col gap-8">
+          <div className="contents lg:col-span-6 lg:flex lg:flex-col lg:gap-8 lg:order-1 min-w-0">
             <Suspense
               fallback={
-                <div className="relative mx-auto aspect-[2/3] w-[min(100%,440px,48svh)] bg-[#648698]/20 animate-pulse rounded-xl" />
+                <div className="relative mx-auto aspect-[2/3] w-[min(100%,440px,38svh)] sm:w-[min(100%,440px,48svh)] bg-[#648698]/20 animate-pulse rounded-xl" />
               }
             >
               {Boolean(gallery?.length) && <Gallery gallery={gallery} />}
             </Suspense>
 
             {videoUrl && (
-              <div data-product-reel-inline className="glass-card p-6 rounded-xl shadow-sm">
+              <div data-product-reel-inline className="order-3 lg:order-none glass-card p-4 sm:p-6 rounded-xl shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Play className="w-4 h-4 text-secondary" />
                   <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-foreground">
                     Product Reel & Fabric Movement
                   </h3>
                 </div>
-                <div className="relative max-w-xs sm:max-w-sm aspect-[9/16] bg-[#03171E] rounded-lg overflow-hidden shadow-lg mx-auto border border-border">
-                  <video
-                    src={videoUrl}
-                    preload="none"
-                    controls
-                    loop
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
+                <div data-product-reel-slot className="relative max-w-xs sm:max-w-sm aspect-[9/16] bg-[#03171E] rounded-lg overflow-hidden shadow-lg mx-auto border border-border">
+                  <noscript><video src={videoUrl} preload="none" controls loop playsInline className="w-full h-full object-cover" /></noscript>
                 </div>
               </div>
             )}
           </div>
 
           {/* Right Column: Sticky Product Description & Size Selector */}
-          <div className="lg:col-span-6 min-w-0 lg:sticky lg:top-24">
+          <div className="order-2 lg:col-span-6 min-w-0 lg:sticky lg:top-24">
             <ProductDescription product={product} />
           </div>
         </div>

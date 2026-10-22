@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export default async function Login() {
   return (
     <div className="container">
-      <div className="max-w-xl mx-auto my-12">
+      <div className="max-w-xl mx-auto my-6 sm:my-8">
         <RenderParams />
         <h1 className="mb-4 text-[1.8rem]">Log in</h1>
         <p className="mb-8">{`Manage your N's KI customer account and view past orders.`}</p>

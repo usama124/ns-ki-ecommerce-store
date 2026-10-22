@@ -73,7 +73,7 @@ describe('Stored responsive media', () => {
     expect(images[0].getAttribute('srcset')).toContain('/hero.webp 1600w')
     expect(images[0].getAttribute('loading')).toBe('eager')
     expect(images[1].getAttribute('src')).toBe('/thumbnail.webp')
-    expect(images[1].getAttribute('sizes')).toBe('80px')
+    expect(images[1].getAttribute('sizes')).toBe('(min-width: 640px) 80px, 64px')
     expect(images[1].getAttribute('loading')).toBe('lazy')
   })
 })

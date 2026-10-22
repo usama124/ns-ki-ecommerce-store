@@ -40,6 +40,7 @@ export const CategoryItem: React.FC<Props> = ({ category }) => {
   return (
     <button
       type="button"
+      data-collection-choice
       aria-pressed={isActive}
       onClick={() => setQuery()}
       className={clsx(

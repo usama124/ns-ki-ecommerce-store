@@ -14,9 +14,11 @@ Main Categories and Subcategories have separate lists. Subcategory entries show 
 
 ## Product page floating reel
 
-For products with a video, a compact bottom-left reel attempts muted inline playback on arrival. Controls provide play/pause, sound, expand/minimize and close. Close dismisses it for the current product view; the original inline reel remains available with native controls and `preload="none"`. There is no floating player when the product has no video.
+For products with a video, a compact bottom-left reel attempts muted playback on arrival and loops automatically. When at least 15% of the inline video slot enters the viewport, the same video docks into that slot and continues playing. Leaving the slot brings it back into the floating position. A stable portal host preserves the video element, playback position, sound setting and buffered media rather than running two players or restarting the video. The slot reserves its space to prevent layout jumps.
 
-The player sits below modal/header layers and above the mobile bottom navigation, including safe-area spacing. It pauses/hides while a modal/scroll lock is active, while the page is hidden, while the inline reel is visible/playing, and on mobile while the purchase button is visible. It does not compete with the inline player. Reduced-motion and data-saving preferences disable automatic playback/preloading until the user explicitly plays. Autoplay rejection leaves a manual play button; video failure removes the floating player without breaking shopping or the inline fallback. Browsers may still prevent autoplay.
+Controls provide play/pause and sound in both positions, plus expand/minimize and close while floating. An explicit pause is preserved across scrolling. Close dismisses the floating view for the current product, but the video still plays in its inline section when visible. Without JavaScript, a native-control inline video remains available. There is no floating player when the product has no video.
+
+The player sits below modal/header layers and above the mobile bottom navigation, including safe-area spacing. It pauses/hides while a modal/scroll lock is active or the page is hidden. On mobile, only the floating view hides while the purchase button is visible. Reduced-motion and data-saving preferences disable automatic playback/preloading until the user explicitly plays. Autoplay rejection leaves a manual play button; video failure removes the player and displays an inline unavailable message without breaking shopping. Browsers may still prevent autoplay.
 
 The Nureh reference URL could not be accessed by the available browsing tools; this is an implementation of the requested behavior, not a verified pixel-identical recreation.
 

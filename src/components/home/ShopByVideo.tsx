@@ -7,6 +7,7 @@ import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
 import { responsiveMedia } from '@/utilities/responsiveMedia'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
+import { ReelCarousel } from './ReelCarousel'
 
 export type Reel = {
   id?: string
@@ -47,7 +48,7 @@ export function ShopByVideo({ reels = [] }: ShopByVideoProps) {
         </div>
 
         {/* Horizontal Reels Container: Sized to match 2-col mobile, 3-col tablet, 4-col desktop product cards */}
-        <div className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-none">
+        <ReelCarousel count={reels.length}>
           {reels.map((reel, index) => (
             <VideoCard
               key={reel.id || index}
@@ -62,7 +63,7 @@ export function ShopByVideo({ reels = [] }: ShopByVideoProps) {
               }}
             />
           ))}
-        </div>
+        </ReelCarousel>
       </div>
 
       {/* Quick Shop Drawer Modal */}

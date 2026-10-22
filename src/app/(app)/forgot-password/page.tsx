@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function ForgotPasswordPage() {
   return (
-    <div className="container py-16">
+    <div className="container py-6 sm:py-8">
       <ForgotPasswordForm />
     </div>
   )

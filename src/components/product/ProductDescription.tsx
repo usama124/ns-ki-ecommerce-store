@@ -14,9 +14,6 @@ type Props = {
 
 export function ProductDescription({ product }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<Variant | undefined>()
-  const primaryCategory =
-    typeof product.primaryCategory === 'object' ? product.primaryCategory : null
-  const categoryName = primaryCategory?.name
   const categoriesList = Array.isArray(product.categories)
     ? product.categories.filter((cat: any) => typeof cat === 'object')
     : []
@@ -25,18 +22,10 @@ export function ProductDescription({ product }: Props) {
   return (
     <>
       <StickyMobileAddToCart product={product} selectedVariant={selectedVariant} />
-      <div className="flex flex-col gap-6 glass-card p-6 sm:p-8 rounded-xl shadow-sm">
+      <div className="flex flex-col gap-4 glass-card p-4 sm:p-5 rounded-xl shadow-sm">
         {/* Category & Title */}
         <div>
-          {categoryName && (
-            <Link
-              href={`/shop/${primaryCategory?.slug || ''}`}
-              className="text-xs uppercase tracking-[0.3em] font-semibold text-secondary hover:underline block mb-2"
-            >
-              {categoryName}
-            </Link>
-          )}
-          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-[0.1em] uppercase text-foreground leading-tight">
+          <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl font-normal tracking-[0.08em] uppercase text-foreground leading-tight">
             {product.title}
           </h1>
           {categoriesList.length > 0 && (
@@ -60,7 +49,7 @@ export function ProductDescription({ product }: Props) {
         </div>
 
         {/* PKR Pricing */}
-        <div className="border-y border-border py-4 flex items-center justify-between bg-[#BDBAB9]/25 dark:bg-[#648698]/10 px-4 rounded-lg">
+        <div className="border-y border-border py-3 flex items-center justify-between bg-[#BDBAB9]/25 dark:bg-[#648698]/10 px-4 rounded-lg">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-semibold">
               Price (PKR)

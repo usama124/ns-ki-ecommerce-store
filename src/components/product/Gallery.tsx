@@ -115,7 +115,7 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
   )
 
   return (
-    <div className="mx-auto flex w-[min(100%,440px,48svh)] flex-col gap-4">
+    <div className="mx-auto flex w-[min(100%,440px,38svh)] sm:w-[min(100%,440px,48svh)] flex-col gap-2 sm:gap-4">
       {/* Lightbox Portal */}
       {mounted && lightboxOpen && createPortal(lightboxModal, document.body)}
 
@@ -216,7 +216,7 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
                 key={i}
                 type="button"
                 onClick={() => setCurrent(i)}
-                className={`relative w-20 flex-none aspect-[3/4] overflow-hidden rounded-lg border-2 bg-[#03171E] transition-all duration-200 min-h-[44px] ${
+                className={`relative w-16 sm:w-20 flex-none aspect-[3/4] overflow-hidden rounded-lg border-2 bg-[#03171E] transition-all duration-200 min-h-[44px] ${
                   isSelected
                     ? 'border-[#648698] shadow-md opacity-100 scale-[0.97]'
                     : 'border-transparent opacity-50 hover:opacity-85 hover:border-[#648698]/50'
@@ -228,7 +228,7 @@ export const Gallery: React.FC<Props> = ({ gallery = [] }) => {
                   variant="thumbnail"
                   alt={typeof img === 'object' && img.alt ? img.alt : `Thumbnail ${i + 1}`}
                   fill
-                  sizes="80px"
+                  sizes="(min-width: 640px) 80px, 64px"
                   className="object-cover object-center"
                 />
               </button>

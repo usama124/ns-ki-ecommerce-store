@@ -122,25 +122,25 @@ export function SalePageClient({
   return (
     <div className="min-h-screen bg-[#03171E] text-[#CBCCC7] pb-24 sm:pb-12">
       {/* HERO SECTION */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#800020]/40 via-[#03171E] to-[#03171E] border-b border-white/10 px-4 py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto text-center space-y-6">
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#800020]/40 via-[#03171E] to-[#03171E] border-b border-white/10 px-4 py-4 sm:py-5">
+        <div className="max-w-7xl mx-auto text-center space-y-2">
           <div className="inline-flex items-center gap-2 bg-[#dc2626]/20 border border-[#dc2626]/50 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-[#FFD700] animate-pulse" />
             <span>FLAT {discount}% OFF</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-serif text-white tracking-tight">
             {saleSettings?.title || 'Exclusive Flash Sale'}
           </h1>
 
-          <p className="max-w-2xl mx-auto text-sm sm:text-base text-[#CBCCC7]/90 leading-relaxed">
+          <p className="max-w-2xl mx-auto text-xs text-[#CBCCC7]/90 leading-relaxed">
             {saleSettings?.announcementText ||
               'Explore handpicked luxury unstitched and ready-to-wear collections at exclusive discounted prices.'}
           </p>
 
           {/* COUNTDOWN TIMER */}
           {saleSettings?.endDate && (
-            <div className="pt-2 flex flex-col items-center gap-2">
+            <div className="pt-1 flex flex-wrap justify-center items-center gap-3">
               <span className="text-xs uppercase tracking-widest font-semibold text-[#CBCCC7]/70 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-[#dc2626]" /> Sale Ends In
               </span>
@@ -172,10 +172,10 @@ export function SalePageClient({
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         {/* SUBCATEGORY QUICK-FILTER BAR */}
         {subcategories.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none border-b border-white/10 mb-8">
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 border-b border-white/10 mb-4">
             <span className="text-xs uppercase font-bold text-[#CBCCC7]/60 flex items-center gap-1 shrink-0 mr-2">
               <Filter className="w-3.5 h-3.5" /> Filter:
             </span>

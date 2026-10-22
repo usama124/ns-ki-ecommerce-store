@@ -26,7 +26,7 @@ export function ZoomableImage({ media, alt, lightbox = false }: { media: unknown
   const fit = lightbox ? 'object-contain' : 'object-cover'
   const image = <>
     <ResponsiveImage media={media} alt={alt} fill priority variant={lightbox ? 'original' : 'card'}
-      sizes={lightbox ? '100vw' : 'min(100vw, 440px, 48svh)'} className={`${fit} object-center`} />
+      sizes={lightbox ? '100vw' : '(min-width: 640px) min(100vw, 440px, 48svh), min(100vw, 440px, 38svh)'} className={`${fit} object-center`} />
     {zoomed && source && <div data-testid="image-magnifier" aria-hidden="true"
       className="absolute inset-0 pointer-events-none"
       style={{ transform: 'scale(2.5)', transformOrigin: 'var(--zoom-x, 50%) var(--zoom-y, 50%)', opacity: loaded ? 1 : 0 }}>

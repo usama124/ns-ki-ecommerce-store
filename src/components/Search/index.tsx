@@ -20,6 +20,7 @@ export const Search: React.FC<Props> = ({ className }) => {
     const val = e.target as HTMLFormElement
     const search = val.search as HTMLInputElement
     const newParams = new URLSearchParams(searchParams.toString())
+    newParams.delete('page')
 
     if (search.value) {
       newParams.set('q', search.value)
@@ -33,6 +34,7 @@ export const Search: React.FC<Props> = ({ className }) => {
   return (
     <form className={cn('relative w-full', className)} onSubmit={onSubmit}>
       <input
+        aria-label="Search products"
         autoComplete="off"
         className="w-full rounded-xl border border-[#648698]/30 bg-white/80 dark:bg-[#03171E]/80 px-4 py-2.5 text-sm text-[#03171E] dark:text-[#f0f3f4] placeholder:text-[#648698] backdrop-blur-md focus:border-[#648698] focus:ring-2 focus:ring-[#648698]/30 outline-hidden transition-all shadow-sm"
         defaultValue={searchParams?.get('q') || ''}

@@ -22,9 +22,9 @@ async function click(label: string) {
   expect(button).toBeTruthy()
   await act(async () => button.click())
 }
-function visibility(selector: string, visible: boolean) {
+function visibility(selector: string, visible: boolean, ratio = visible ? 1 : 0) {
   const target = document.querySelector(selector)!
-  act(() => observerCallback([{ target, isIntersecting: visible } as IntersectionObserverEntry], {} as IntersectionObserver))
+  act(() => observerCallback([{ target, isIntersecting: visible, intersectionRatio: ratio } as IntersectionObserverEntry], {} as IntersectionObserver))
 }
 beforeEach(() => {
   small = false
@@ -40,7 +40,7 @@ beforeEach(() => {
     return Promise.resolve()
   })
   pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(function (this: HTMLMediaElement) { this.dispatchEvent(new Event('pause')) })
-  document.body.innerHTML = '<section data-product-reel-inline><video></video></section><button data-product-purchase>Buy</button>'
+  document.body.innerHTML = '<section data-product-reel-inline><div data-product-reel-slot></div></section><button data-product-purchase>Buy</button>'
 })
 afterEach(async () => {
   await act(async () => root?.unmount())
@@ -66,8 +66,12 @@ describe('Floating product reel UX', () => {
     await click('Minimize product reel')
     expect(document.querySelector('aside')?.getAttribute('style')).toContain('160px')
     await click('Close product reel')
-    expect(document.querySelector('aside')).toBeNull()
+    expect(document.querySelector('[data-player-mode="floating"]')).toBeNull()
     expect(document.querySelector('[data-product-reel-inline] video')).not.toBeNull()
+    visibility('[data-product-reel-slot]', true)
+    expect(document.querySelector('button[aria-label="Pause product reel"]')).not.toBeNull()
+    visibility('[data-product-reel-slot]', false)
+    expect(document.querySelector('[data-player-mode="floating"]')).toBeNull()
   })
   it('does not autoplay with reduced motion, but permits explicit play', async () => {
     reduced = true
@@ -106,14 +110,53 @@ describe('Floating product reel UX', () => {
     visibility('[data-product-purchase]', true)
     expect(document.querySelector('aside')?.hidden).toBe(false)
   })
-  it('pauses/hides while the inline reel is visible or playing, avoiding two simultaneous players', () => {
+  it('docks the same looping video into its section and floats it again without losing playback position', async () => {
     mount()
-    visibility('[data-product-reel-inline]', true)
-    expect(document.querySelector('aside')?.hidden).toBe(true)
-    act(() => document.querySelector('[data-product-reel-inline] video')!.dispatchEvent(new Event('play')))
-    visibility('[data-product-reel-inline]', false)
-    expect(document.querySelector('aside')?.hidden).toBe(true)
-    act(() => document.querySelector('[data-product-reel-inline] video')!.dispatchEvent(new Event('pause')))
+    const original = player()
+    original.currentTime = 12
+    await click('Unmute product reel')
+    visibility('[data-product-reel-slot]', true, 0.05)
+    expect(document.querySelector('[data-player-mode="floating"]')).not.toBeNull()
+    for (let i = 0; i < 3; i++) {
+      play.mockClear()
+      visibility('[data-product-reel-slot]', true)
+      expect(document.querySelector('[data-product-reel-slot] video')).toBe(original)
+      expect(document.querySelector('[data-player-mode="floating"]')).toBeNull()
+      expect(play).toHaveBeenCalled()
+      visibility('[data-product-reel-slot]', false)
+      expect(document.querySelector('[data-player-mode="floating"] video')).toBe(original)
+      expect(original.currentTime).toBe(12)
+      expect(original.muted).toBe(false)
+      expect(original.loop).toBe(true)
+      expect(document.querySelectorAll('video')).toHaveLength(1)
+    }
+  })
+  it('retains an explicit pause across docking and resumes with the inline play control', async () => {
+    mount()
+    await click('Pause product reel')
+    play.mockClear()
+    visibility('[data-product-reel-slot]', true)
+    expect(play).not.toHaveBeenCalled()
+    await click('Play product reel')
+    expect(play).toHaveBeenCalled()
+    visibility('[data-product-reel-slot]', false)
+    expect(document.querySelector('button[aria-label="Pause product reel"]')).not.toBeNull()
+  })
+  it('does not bypass reduced-motion preference when docking, but preserves manual playback after handoff', async () => {
+    reduced = true
+    mount()
+    visibility('[data-product-reel-slot]', true)
+    expect(play).not.toHaveBeenCalled()
+    await click('Play product reel')
+    play.mockClear()
+    visibility('[data-product-reel-slot]', false)
+    expect(play).toHaveBeenCalled()
+  })
+  it('shows the inline player even when mobile purchase controls are visible', () => {
+    small = true
+    mount()
+    visibility('[data-product-purchase]', true)
+    visibility('[data-product-reel-slot]', true)
     expect(document.querySelector('aside')?.hidden).toBe(false)
   })
   it('stays behind lightboxes/cart and pauses while the page is scroll-locked', async () => {
@@ -123,10 +166,10 @@ describe('Floating product reel UX', () => {
     await act(async () => { document.body.style.overflow = '' })
     expect(document.querySelector('aside')?.hidden).toBe(false)
   })
-  it('removes a failed floating player while preserving the inline fallback', async () => {
+  it('removes a failed floating player and displays an inline error without breaking shopping', async () => {
     mount()
     await act(async () => { player().dispatchEvent(new Event('error')) })
     expect(document.querySelector('aside')).toBeNull()
-    expect(document.querySelector('[data-product-reel-inline]')).not.toBeNull()
+    expect(document.querySelector('[data-product-reel-slot] [role="status"]')?.textContent).toContain('unavailable')
   })
 })
