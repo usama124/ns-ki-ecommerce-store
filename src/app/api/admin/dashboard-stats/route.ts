@@ -1,24 +1,28 @@
-import config from '@payload-config'
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import { privateJSON, requestError, requireAdmin } from '@/utilities/apiSecurity'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const payload = await getPayload({ config })
+    const { payload, user, overrideAccess } = await requireAdmin(req)
 
     const [ordersResult, productsResult, usersResult] = await Promise.allSettled([
       payload.find({
         collection: 'orders' as any,
+        user,
+        overrideAccess,
         limit: 0,
         depth: 0,
       }),
       payload.find({
         collection: 'products',
+        user,
+        overrideAccess,
         limit: 0,
         depth: 0,
       }),
       payload.find({
         collection: 'users',
+        user,
+        overrideAccess,
         limit: 0,
         depth: 0,
       }),
@@ -36,12 +40,9 @@ export async function GET() {
       }, 0)
     }
 
-    return NextResponse.json({ totalOrders, totalProducts, totalUsers, revenue })
+    if ([ordersResult, productsResult, usersResult].some(result => result.status === 'rejected')) throw new Error('Report unavailable')
+    return privateJSON({ totalOrders, totalProducts, totalUsers, revenue })
   } catch (error) {
-    console.error('Dashboard stats error:', error)
-    return NextResponse.json(
-      { totalOrders: 0, totalProducts: 0, totalUsers: 0, revenue: 0 },
-      { status: 200 },
-    )
+    return requestError(error)
   }
 }

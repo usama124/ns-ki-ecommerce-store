@@ -1,22 +1,22 @@
-import configPromise from '@payload-config'
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import { privateJSON, requestError, requireAdmin } from '@/utilities/apiSecurity'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const payload = await getPayload({ config: configPromise })
+    const { payload, user, overrideAccess } = await requireAdmin(req)
 
     const productsResult = await payload.find({
       collection: 'products',
       limit: 300,
       depth: 2,
-      overrideAccess: true,
+      user,
+      overrideAccess,
     })
 
     const categoriesResult = await payload.find({
       collection: 'categories',
       limit: 100,
-      overrideAccess: true,
+      user,
+      overrideAccess,
     })
 
     const inventoryItems: any[] = []
@@ -56,18 +56,14 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
       totalProducts: productsResult.totalDocs,
       totalVariants: inventoryItems.length,
       categories: categoriesResult.docs.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })),
       inventory: inventoryItems,
     })
-  } catch (error: any) {
-    console.error('Error fetching inventory data:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch inventory data.' },
-      { status: 500 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }

@@ -12,16 +12,24 @@ import { ProductItem } from '@/components/ProductItem'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { OrderStatus } from '@/components/OrderStatus'
+import { headers } from 'next/headers'
+import { verifyOrderAccess } from '@/utilities/orderAccess'
+import { PrivateReceipt } from '@/components/orders/PrivateReceipt'
 
 export const dynamic = 'force-dynamic'
 
 type PageProps = {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ token?: string }>
 }
 
-export default async function OrderPage({ params }: PageProps) {
+export default async function OrderPage({ params, searchParams }: PageProps) {
   const payload = await getPayload({ config: configPromise })
   const { id } = await params
+  const { token } = await searchParams
+  const { user } = await payload.auth({ headers: await headers() })
+  const guestAccess = verifyOrderAccess(id, token, payload.config.secret)
+  if (!guestAccess && !user) return notFound()
 
   let order: Order | null = null
 
@@ -30,14 +38,16 @@ export default async function OrderPage({ params }: PageProps) {
       collection: 'orders',
       id,
       depth: 2,
-      overrideAccess: true,
+      user,
+      overrideAccess: guestAccess,
+      select: { orderNumber: true, status: true, createdAt: true, updatedAt: true, customer: true, items: true, totalAmount: true, subtotal: true, shippingFee: true, paymentMethod: true },
     })
 
     if (orderResult) {
       order = orderResult
     }
-  } catch (error) {
-    console.error(error)
+  } catch {
+    // Missing, forbidden and invalid IDs share the same not-found response.
   }
 
   if (!order) {
@@ -90,6 +100,8 @@ export default async function OrderPage({ params }: PageProps) {
           )}
         </div>
 
+        {order.paymentMethod !== 'cod' && <PrivateReceipt key={order.id} orderId={order.id} token={guestAccess ? token : undefined} />}
+
         {/* Customer Information */}
         {order.customer && (
           <div className="border-b pb-6">
@@ -135,6 +147,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params
 
   return {
+    robots: { index: false, follow: false },
     description: `Order details for order ${id}.`,
     openGraph: mergeOpenGraph({
       title: `Order ${id}`,

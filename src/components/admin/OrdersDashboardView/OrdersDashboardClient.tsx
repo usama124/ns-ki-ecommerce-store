@@ -1,4 +1,5 @@
 'use client'
+import { PrivateReceipt } from '@/components/orders/PrivateReceipt'
 
 import { toast } from '@payloadcms/ui'
 import React, { useEffect, useState } from 'react'
@@ -920,10 +921,11 @@ export function OrdersDashboardClient() {
             </div>
 
             {/* Screenshot Viewer */}
+            <PrivateReceipt orderId={quickVerifyOrder.id} readOnly />
             {getMediaUrl(quickVerifyOrder.paymentProof?.screenshot) ? (
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ fontSize: '12px', color: C.textSecondary, fontWeight: 700, marginBottom: '8px' }}>
-                  Payment Proof Screenshot (Click to enlarge):
+                  Legacy Payment Proof Screenshot (Click to enlarge):
                 </div>
                 <img
                   src={getMediaUrl(quickVerifyOrder.paymentProof?.screenshot)!}
@@ -954,7 +956,7 @@ export function OrdersDashboardClient() {
                   fontSize: '13px',
                 }}
               >
-                ⚠️ No screenshot image uploaded by customer.
+                No legacy public-media screenshot. New private receipts are shown above.
               </div>
             )}
 
@@ -1262,10 +1264,11 @@ export function OrdersDashboardClient() {
                     </div>
 
                     {/* Lightbox Trigger */}
+                    <PrivateReceipt orderId={activeDetailOrder.id} readOnly />
                     {getMediaUrl(activeDetailOrder.paymentProof?.screenshot) ? (
                       <div>
                         <div style={{ fontSize: '11px', fontWeight: 700, color: C.textSecondary, marginBottom: '6px' }}>
-                          Proof Screenshot (Click to enlarge):
+                          Legacy Proof Screenshot (Click to enlarge):
                         </div>
                         <img
                           src={getMediaUrl(activeDetailOrder.paymentProof?.screenshot)!}
@@ -1293,7 +1296,7 @@ export function OrdersDashboardClient() {
                           fontWeight: 700,
                         }}
                       >
-                        ⚠️ No screenshot attached.
+                        No legacy screenshot. New private receipts are shown above.
                       </div>
                     )}
 

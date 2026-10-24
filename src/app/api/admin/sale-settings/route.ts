@@ -1,16 +1,16 @@
 import { getSalePriceDetails } from '@/utilities/getSalePrice'
-import config from '@payload-config'
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import { privateJSON, readJSON, RequestError, requestError, requireAdmin } from '@/utilities/apiSecurity'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const payload = await getPayload({ config })
+    const { payload, user, overrideAccess } = await requireAdmin(req)
 
     let saleSettings: any = null
     try {
       saleSettings = await payload.findGlobal({
         slug: 'sale-settings' as any,
+        user,
+        overrideAccess,
         depth: 2,
       })
     } catch (dbErr: any) {
@@ -34,6 +34,8 @@ export async function GET() {
     try {
       const categoriesRes = await payload.find({
         collection: 'categories',
+        user,
+        overrideAccess,
         limit: 100,
         depth: 1,
       })
@@ -53,6 +55,8 @@ export async function GET() {
       try {
         const productsRes = await payload.find({
           collection: 'products',
+          user,
+          overrideAccess,
           limit: 200,
           depth: 2,
         })
@@ -87,47 +91,36 @@ export async function GET() {
     const end = saleSettings?.endDate ? new Date(saleSettings.endDate).getTime() : Infinity
     const isLive = Boolean(saleSettings?.isActive && now >= start && now <= end)
 
-    return NextResponse.json({
+    return privateJSON({
       saleSettings,
       categories,
       activeProducts,
       isLive,
     })
-  } catch (error: any) {
-    console.error('Error fetching sale settings:', error)
-    return NextResponse.json(
-      {
-        saleSettings: {
-          isActive: false,
-          title: 'Flash Sale',
-          discountPercentage: 20,
-          targetedCategories: [],
-          announcementText: '',
-          enablePopup: true,
-        },
-        categories: [],
-        activeProducts: [],
-        isLive: false,
-        error: error.message || 'Database initializing',
-      },
-      { status: 200 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const payload = await getPayload({ config })
-    const body = await req.json()
+    const { payload, user, overrideAccess } = await requireAdmin(req)
+    const body = await readJSON(req)
+    if (body.discountPercentage !== undefined && (typeof body.discountPercentage !== 'number' || !Number.isFinite(body.discountPercentage) || body.discountPercentage < 1 || body.discountPercentage > 99)) {
+      throw new RequestError('Discount must be between 1 and 99 percent.')
+    }
+    if (body.targetedCategories !== undefined && (!Array.isArray(body.targetedCategories) || body.targetedCategories.length > 100)) throw new RequestError('Invalid target categories.')
 
     if (body.action === 'end_immediately') {
       const updated = await payload.updateGlobal({
         slug: 'sale-settings' as any,
+        user,
+        overrideAccess,
         data: {
           isActive: false,
         } as any,
       })
-      return NextResponse.json({
+      return privateJSON({
         success: true,
         message: 'Sale ended immediately',
         saleSettings: updated,
@@ -147,6 +140,8 @@ export async function POST(req: Request) {
 
     const updated = await payload.updateGlobal({
       slug: 'sale-settings' as any,
+      user,
+      overrideAccess,
       data: {
         isActive: Boolean(isActive),
         title: title || 'Flash Sale',
@@ -159,12 +154,8 @@ export async function POST(req: Request) {
       } as any,
     })
 
-    return NextResponse.json({ success: true, saleSettings: updated })
-  } catch (error: any) {
-    console.error('Error updating sale settings:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to update sale settings' },
-      { status: 500 },
-    )
+    return privateJSON({ success: true, saleSettings: updated })
+  } catch (error) {
+    return requestError(error)
   }
 }

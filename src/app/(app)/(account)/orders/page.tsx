@@ -23,13 +23,14 @@ export default async function Orders() {
   try {
     const ordersResult = await payload.find({
       collection: 'orders',
-      limit: 0,
-      pagination: false,
+      limit: 50,
+      depth: 1,
+      sort: '-createdAt',
       user,
       overrideAccess: false,
       where: {
-        'customer.email': {
-          equals: user?.email,
+        customerAccount: {
+          equals: user.id,
         },
       },
     })

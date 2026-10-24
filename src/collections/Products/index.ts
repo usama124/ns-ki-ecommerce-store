@@ -31,7 +31,7 @@ export const Products: CollectionConfig = {
   access: {
     create: adminOnly,
     delete: adminOnly,
-    read: () => true,
+    read: ({ req: { user } }) => user?.roles?.includes('admin') ? true : { status: { equals: 'published' } },
     update: adminOnly,
   },
   admin: {

@@ -1,28 +1,30 @@
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
+import { privateJSON, readJSON, RequestError, requestError, requireAdmin, validDocumentID } from '@/utilities/apiSecurity'
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
+    const { payload, user, overrideAccess } = await requireAdmin(req)
+    const body = await readJSON(req)
     const { orderIds, status, courierName, trackingNumber, trackingUrl, notes } = body
 
-    const targetIds: string[] = Array.isArray(orderIds)
+    const targetIds: Array<string | number> = Array.isArray(orderIds)
       ? orderIds
       : typeof orderIds === 'string' && orderIds
       ? [orderIds]
       : []
 
-    if (targetIds.length === 0) {
-      return NextResponse.json({ error: 'No order IDs provided.' }, { status: 400 })
+    if (targetIds.length === 0 || targetIds.length > 100 || targetIds.some(id => !validDocumentID(id))) {
+      throw new RequestError('Provide 1–100 valid order IDs.')
     }
 
     const validStatuses = ['pending_verification', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
-    if (!status || !validStatuses.includes(status)) {
-      return NextResponse.json({ error: 'Invalid order status provided.' }, { status: 400 })
+    if (typeof status !== 'string' || !validStatuses.includes(status)) {
+      throw new RequestError('Invalid order status provided.')
     }
-
-    const payload = await getPayload({ config: configPromise })
+    if (notes !== undefined && (typeof notes !== 'string' || notes.length > 5000)) throw new RequestError('Invalid notes.')
+    for (const value of [courierName, trackingNumber, trackingUrl]) {
+      if (value !== undefined && (typeof value !== 'string' || value.length > 1000)) throw new RequestError('Invalid fulfillment details.')
+    }
+    if (trackingUrl && (typeof trackingUrl !== 'string' || !/^https:\/\//i.test(trackingUrl))) throw new RequestError('Tracking URL must use HTTPS.')
     const updatedOrders = []
 
     for (const id of targetIds) {
@@ -30,7 +32,8 @@ export async function POST(req: Request) {
         collection: 'orders',
         id,
         depth: 0,
-        overrideAccess: true,
+        user,
+        overrideAccess,
       })
 
       if (!existingOrder) continue
@@ -57,23 +60,20 @@ export async function POST(req: Request) {
         collection: 'orders',
         id,
         data: updateData,
-        overrideAccess: true,
+        user,
+        overrideAccess,
       })
 
       updatedOrders.push(updated)
     }
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
       updatedCount: updatedOrders.length,
       orders: updatedOrders,
     })
-  } catch (error: any) {
-    console.error('Error updating order status:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to update order status.' },
-      { status: 500 }
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }
 

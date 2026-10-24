@@ -21,10 +21,12 @@ export const Media: CollectionConfig = {
     group: 'Content',
   },
   access: {
-    // Allow public uploads for payment proof screenshots & product media
-    create: () => true,
+    // Catalog uploads are administrative. Receipts must not enter public media.
+    create: adminOnly,
     delete: adminOnly,
-    read: () => true,
+    read: ({ req: { user } }) => user?.roles?.includes('admin') ? true : {
+      or: [{ alt: { exists: false } }, { alt: { not_like: 'Payment proof from' } }],
+    },
     update: adminOnly,
   },
   hooks: {

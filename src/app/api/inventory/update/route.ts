@@ -1,22 +1,20 @@
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
+import { privateJSON, readJSON, RequestError, requestError, requireAdmin, validDocumentID } from '@/utilities/apiSecurity'
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const payload = await getPayload({ config: configPromise })
+    const { payload, user, overrideAccess } = await requireAdmin(req)
+    const body = await readJSON(req)
 
     // Support single item or batch items update
-    const updates: Array<{ productId: string; variantIndex: number; stock: number }> =
+    const updates = (
       Array.isArray(body.updates)
         ? body.updates
         : body.productId !== undefined
           ? [{ productId: body.productId, variantIndex: body.variantIndex ?? 0, stock: body.stock }]
-          : []
+          : []) as Array<{ productId: string | number; variantIndex: number; stock: number }>
 
-    if (updates.length === 0) {
-      return NextResponse.json({ error: 'No valid inventory updates provided.' }, { status: 400 })
+    if (updates.length === 0 || updates.length > 100 || updates.some(update => !update || !validDocumentID(update.productId) || !Number.isSafeInteger(update.variantIndex) || update.variantIndex < 0 || !Number.isSafeInteger(update.stock) || update.stock < 0 || update.stock > 1_000_000)) {
+      throw new RequestError('Provide 1–100 valid inventory updates with integer stock and variant indexes.')
     }
 
     const results = []
@@ -31,7 +29,8 @@ export async function POST(req: Request) {
         collection: 'products',
         id: productId,
         depth: 0,
-        overrideAccess: true,
+        user,
+        overrideAccess,
       })
 
       if (!product || !Array.isArray(product.variants)) {
@@ -57,7 +56,8 @@ export async function POST(req: Request) {
             size: typeof v.size === 'object' && v.size !== null ? (v.size.id ?? v.size) : v.size,
           })),
         },
-        overrideAccess: true,
+        user,
+        overrideAccess,
       })
 
       results.push({
@@ -67,16 +67,12 @@ export async function POST(req: Request) {
       })
     }
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
       updatedCount: results.length,
       results,
     })
-  } catch (error: any) {
-    console.error('Error updating inventory stock:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to update inventory stock.' },
-      { status: 500 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }

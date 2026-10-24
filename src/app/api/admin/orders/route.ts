@@ -1,21 +1,19 @@
-import configPromise from '@payload-config'
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import { privateJSON, requestError, requireAdmin } from '@/utilities/apiSecurity'
 
 export async function GET(req: Request) {
   try {
+    const { payload, user, overrideAccess } = await requireAdmin(req)
     const { searchParams } = new URL(req.url)
     const statusFilter = searchParams.get('status') || 'all'
     const searchQuery = searchParams.get('q')?.trim() || ''
-
-    const payload = await getPayload({ config: configPromise })
 
     // Fetch all orders for metrics and filtering
     const allOrdersRes = await payload.find({
       collection: 'orders',
       depth: 2,
       limit: 500,
-      overrideAccess: true,
+      user,
+      overrideAccess,
       sort: '-createdAt',
     })
 
@@ -74,7 +72,7 @@ export async function GET(req: Request) {
       })
     }
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
       stats: {
         totalOrders,
@@ -88,11 +86,7 @@ export async function GET(req: Request) {
       },
       orders: filteredOrders,
     })
-  } catch (error: any) {
-    console.error('Error fetching admin orders:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch admin orders.' },
-      { status: 500 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }

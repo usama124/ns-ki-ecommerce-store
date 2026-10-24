@@ -104,7 +104,7 @@ export const plugins: Plugin[] = [
             },
             // clientUploads: browser requests a pre-signed R2 URL and uploads the file directly,
             // bypassing the Next.js server entirely (essential for Vercel 4.5 MB limit).
-            clientUploads: true,
+            clientUploads: { access: ({ req }) => Boolean(req.user?.roles?.includes('admin')) },
             bucket: r2Bucket,
             config: {
               credentials: {

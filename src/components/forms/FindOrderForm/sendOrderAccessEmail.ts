@@ -3,6 +3,7 @@
 import { getServerSideURL } from '@/utilities/getURL'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+import { signOrderAccess } from '@/utilities/orderAccess'
 
 type SendOrderAccessEmailArgs = {
   email: string
@@ -18,6 +19,7 @@ export async function sendOrderAccessEmail({
   email,
   orderID,
 }: SendOrderAccessEmailArgs): Promise<SendOrderAccessEmailResult> {
+  if (typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof orderID !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(orderID)) return { success: true }
   const payload = await getPayload({ config: configPromise })
 
   try {
@@ -38,7 +40,7 @@ export async function sendOrderAccessEmail({
     }
 
     const serverURL = getServerSideURL()
-    const orderURL = `${serverURL}/orders/${order.id}`
+    const orderURL = `${serverURL}/orders/${encodeURIComponent(order.id)}?token=${signOrderAccess(order.id, payload.config.secret)}`
 
     const emailBody = `
         <h1>View Your N's KI Order</h1>

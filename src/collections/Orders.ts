@@ -1,4 +1,6 @@
 import { adminOnly } from '@/access/adminOnly'
+import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { orderOwner } from '@/access/orderOwner'
 import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
 import {
     sendAdminOrderPlacedAlert,
@@ -26,10 +28,9 @@ export const Orders: CollectionConfig = {
     ],
   },
   access: {
-    // Anyone can create orders (guest checkout)
-    create: () => true,
-    // Only admins can read/update/delete
-    read: adminOnly,
+    // Guest checkout uses the validated server command, never generic GraphQL create.
+    create: adminOnly,
+    read: orderOwner,
     update: adminOnly,
     delete: adminOnly,
   },
@@ -42,7 +43,7 @@ export const Orders: CollectionConfig = {
         const isDigital = paymentMethod && paymentMethod !== 'cod'
 
         // Extract raw trxId from data.trxId OR data.paymentProof?.transactionId
-        let rawTrxId = data.trxId || data.paymentProof?.transactionId
+        const rawTrxId = data.trxId || data.paymentProof?.transactionId
 
         if (isDigital && rawTrxId) {
           // 1. Sanitize input: Strip whitespace, dashes, special characters, convert to UPPERCASE
@@ -69,7 +70,7 @@ export const Orders: CollectionConfig = {
           }
 
           // 2. Compute compositeTrxKey
-          const todayDate = new Date().toISOString().slice(0, 10)
+          const todayDate = new Date(originalDoc?.createdAt || Date.now()).toISOString().slice(0, 10)
           const compositeTrxKey = `${paymentMethod}-${todayDate}-${cleanTrxId}`
           data.compositeTrxKey = compositeTrxKey
 
@@ -220,6 +221,14 @@ export const Orders: CollectionConfig = {
   },
   fields: [
     {
+      name: 'customerAccount',
+      type: 'relationship',
+      relationTo: 'users',
+      index: true,
+      admin: { readOnly: true, position: 'sidebar' },
+      access: { create: adminOnlyFieldAccess, update: () => false },
+    },
+    {
       name: 'orderNumber',
       type: 'text',
       required: true,
@@ -311,6 +320,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'paymentProof',
       type: 'group',
+      access: { read: adminOnlyFieldAccess },
       label: 'Payment Proof (Digital Payments)',
       admin: {
         condition: (data) => data?.paymentMethod !== 'cod',
@@ -326,6 +336,13 @@ export const Orders: CollectionConfig = {
           type: 'upload',
           relationTo: 'media',
           label: 'Payment Proof Screenshot',
+          access: { create: () => false, update: () => false },
+          admin: { readOnly: true, description: 'Legacy public-media receipts only. New receipts are stored separately in the private bucket.' },
+        },
+        {
+          name: 'privateReceipt',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/OrderReceipt#OrderReceipt' } },
         },
       ],
     },
@@ -396,6 +413,8 @@ export const Orders: CollectionConfig = {
           type: 'number',
           required: true,
           min: 1,
+          max: 99,
+          validate: (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 99 || 'Quantity must be a whole number between 1 and 99.',
         },
         {
           name: 'unitPrice',
@@ -460,6 +479,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'paymentProofHash',
       type: 'text',
+      access: { read: adminOnlyFieldAccess },
       index: true,
       admin: {
         readOnly: true,
@@ -469,6 +489,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'notes',
       type: 'textarea',
+      access: { read: adminOnlyFieldAccess },
       label: 'Order Notes (Admin)',
     },
   ],

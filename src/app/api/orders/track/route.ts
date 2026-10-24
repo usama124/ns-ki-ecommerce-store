@@ -1,5 +1,5 @@
 import configPromise from '@payload-config'
-import { NextResponse } from 'next/server'
+import { privateJSON, RequestError, requestError } from '@/utilities/apiSecurity'
 import { getPayload } from 'payload'
 
 export async function GET(req: Request) {
@@ -8,12 +8,9 @@ export async function GET(req: Request) {
     const orderNumQuery = searchParams.get('orderNumber')?.trim() || ''
     const contactQuery = searchParams.get('contact')?.trim() || ''
 
-    if (!orderNumQuery || !contactQuery) {
-      return NextResponse.json(
-        { error: 'Please provide both Order Number and Phone or Email.' },
-        { status: 400 },
-      )
-    }
+    if (!/^(?:#?(?:NKI|LUJ)-)?\d{6}$/i.test(orderNumQuery) || contactQuery.length > 254) throw new RequestError('Enter a valid six-digit order number and full phone number or email.')
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactQuery)
+    if (!isEmail && (!/^\+?\d[\d ()-]{8,19}$/.test(contactQuery) || !/^\d{10,15}$/.test(contactQuery.replace(/\D/g, '')))) throw new RequestError('Enter your full registered phone number or email.')
 
     // Normalize order number formatting (e.g. 920182 -> #NKI-920182)
     const cleanNumberStr = orderNumQuery.replace(/[^0-9]/g, '')
@@ -25,25 +22,20 @@ export async function GET(req: Request) {
     // Find order matching number AND contact phone or email
     const result = await payload.find({
       collection: 'orders',
-      depth: 2,
+      depth: 0,
       limit: 1,
+      pagination: false,
+      select: { orderNumber: true, status: true, createdAt: true, fulfillment: true },
       overrideAccess: true,
       where: {
         and: [
           {
             or: [
-              { orderNumber: { equals: orderNumQuery } },
               { orderNumber: { equals: formattedNkiNum } },
               { orderNumber: { equals: formattedLujNum } },
-              { orderNumber: { contains: cleanNumberStr } },
             ],
           },
-          {
-            or: [
-              { 'customer.phone': { contains: contactQuery } },
-              { 'customer.email': { equals: contactQuery } },
-            ],
-          },
+          isEmail ? { 'customer.email': { equals: contactQuery.toLowerCase() } } : { 'customer.phone': { equals: contactQuery } },
         ],
       },
     })
@@ -51,24 +43,27 @@ export async function GET(req: Request) {
     const order = result.docs?.[0]
 
     if (!order) {
-      return NextResponse.json(
+      return privateJSON(
         {
           error:
             'No matching order found. Please verify your order number and contact information.',
         },
-        { status: 404 },
+        404,
       )
     }
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
-      order,
+      order: {
+        orderNumber: order.orderNumber, status: order.status, createdAt: order.createdAt,
+        fulfillment: order.fulfillment ? {
+          courierName: order.fulfillment.courierName,
+          trackingNumber: order.fulfillment.trackingNumber,
+          trackingUrl: /^https:\/\//i.test(order.fulfillment.trackingUrl || '') ? order.fulfillment.trackingUrl : undefined,
+        } : undefined,
+      },
     })
-  } catch (error: any) {
-    console.error('Error tracking order:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to search order tracking details.' },
-      { status: 500 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }

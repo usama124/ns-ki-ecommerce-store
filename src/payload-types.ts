@@ -825,6 +825,7 @@ export interface Form {
  */
 export interface Order {
   id: number;
+  customerAccount?: (number | null) | User;
   orderNumber: string;
   status?: ('pending_verification' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled') | null;
   paymentMethod: 'cod' | 'bank_transfer' | 'jazzcash' | 'easypaisa';
@@ -1297,6 +1298,7 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  customerAccount?: T;
   orderNumber?: T;
   status?: T;
   paymentMethod?: T;
@@ -1655,7 +1657,7 @@ export interface Homepage {
       }[]
     | null;
   /**
-   * 9:16 vertical video reels for the shoppable video section.
+   * 9:16 vertical reels. Linked products appear only when published and their Show video in homepage Shop by Video checkbox is enabled. Standalone reels are explicitly curated here.
    */
   shoppableVideos?:
     | {
