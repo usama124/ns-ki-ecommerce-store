@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { parseStoredCart } from '@/utilities/cartStorage'
 
 export type CartItem = {
   productId: string
@@ -43,7 +44,7 @@ function loadCart(): CartItem[] {
   try {
     const stored =
       localStorage.getItem(CART_STORAGE_KEY) || localStorage.getItem(LEGACY_CART_STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
+    return parseStoredCart(stored)
   } catch {
     return []
   }
@@ -210,7 +211,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([])
-    if (typeof window !== 'undefined') localStorage.removeItem(CART_STORAGE_KEY)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(CART_STORAGE_KEY)
+        localStorage.removeItem(LEGACY_CART_STORAGE_KEY)
+      } catch { /* Storage restrictions must not break a completed checkout. */ }
+    }
   }, [])
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)

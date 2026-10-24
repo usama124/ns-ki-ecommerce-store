@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mock = vi.hoisted(() => ({
+  db: { name: 'test' },
   getPayload: vi.fn(),
   auth: vi.fn(),
   find: vi.fn(),
@@ -63,6 +64,24 @@ beforeEach(() => {
   mock.updateGlobal.mockResolvedValue({ isActive: false })
 })
 describe('Custom admin API boundaries', () => {
+  it('queries older order pages and filters in the database rather than the first 500 orders', async () => {
+    const user = { id: 'admin', roles: ['admin'] }
+    mock.auth.mockResolvedValue({ user })
+    mock.find.mockResolvedValue({ docs: [], totalDocs: 501, totalPages: 11, page: 11, hasPrevPage: true })
+    const result = await orders(new Request('https://store.example/api/admin/orders?page=11&q=oldest&status=confirmed'))
+    expect(result.status).toBe(200)
+    expect(mock.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'orders', limit: 50, page: 11, user, overrideAccess: false, where: { and: [{ status: { in: ['confirmed'] } }, { or: expect.arrayContaining([{ orderNumber: { contains: 'oldest' } }]) }] } }))
+    expect((await result.json()).pagination).toMatchObject({ page: 11, totalPages: 11, totalDocs: 501 })
+  })
+  it('makes products beyond the old 300-product inventory cap reachable with explicit scope', async () => {
+    mock.auth.mockResolvedValue({ user: { id: 'admin', roles: ['admin'] } })
+    mock.find.mockResolvedValue({ docs: [], totalDocs: 301, totalPages: 7, page: 7 })
+    const result = await inventory(new Request('https://store.example/api/inventory?page=7'))
+    expect(result.status).toBe(200)
+    expect(mock.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'products', page: 7, limit: 50, overrideAccess: false }))
+    expect(mock.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'categories', pagination: false, overrideAccess: false }))
+    expect(await result.json()).toMatchObject({ totalProducts: 301, variantsScope: 'current_product_page', pagination: { page: 7, totalPages: 7 } })
+  })
   for (const route of routes) {
     for (const user of [null, { id: 'customer', roles: ['customer'] }]) {
       it(`${route.name} denies ${user ? 'customers' : 'guests'} before sensitive reads/writes`, async () => {

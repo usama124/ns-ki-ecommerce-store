@@ -1,4 +1,5 @@
 import { privateJSON, requestError, requireAdmin } from '@/utilities/apiSecurity'
+import { reportPage } from '@/utilities/orderReport'
 
 export async function GET(req: Request) {
   try {
@@ -6,7 +7,9 @@ export async function GET(req: Request) {
 
     const productsResult = await payload.find({
       collection: 'products',
-      limit: 300,
+      limit: 50,
+      page: reportPage(new URL(req.url).searchParams),
+      sort: 'id',
       depth: 2,
       user,
       overrideAccess,
@@ -14,7 +17,9 @@ export async function GET(req: Request) {
 
     const categoriesResult = await payload.find({
       collection: 'categories',
-      limit: 100,
+      pagination: false,
+      depth: 0,
+      select: { name: true, slug: true },
       user,
       overrideAccess,
     })
@@ -60,6 +65,8 @@ export async function GET(req: Request) {
       success: true,
       totalProducts: productsResult.totalDocs,
       totalVariants: inventoryItems.length,
+      variantsScope: 'current_product_page',
+      pagination: { page: productsResult.page || 1, totalPages: productsResult.totalPages || 1, totalDocs: productsResult.totalDocs },
       categories: categoriesResult.docs.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })),
       inventory: inventoryItems,
     })

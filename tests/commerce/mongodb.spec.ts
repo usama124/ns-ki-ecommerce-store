@@ -91,6 +91,18 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
       vi.unstubAllEnvs()
     })
     afterEach(() => vi.unstubAllGlobals())
+    it('aggregates every order beyond the old reporting cap and exposes later pages', async () => {
+      const { db, adapter } = commerce.mongoCommerce(payload)
+      // Minimal synthetic report fixtures, only in this disposable database.
+      await db.collection(adapter.collections.orders.collection.collectionName).insertMany(
+        Array.from({ length: 501 }, (_, index) => ({ orderNumber: `QA-REPORT-${index}`, status: index === 500 ? 'cancelled' : 'confirmed', totalAmount: 1000, createdAt: new Date(1700000000000 + index), updatedAt: new Date() })),
+      )
+      const { getOrderStats } = await import('@/utilities/orderReport')
+      expect(await getOrderStats(payload, admin)).toMatchObject({ totalOrders: 501, confirmed: 500, cancelled: 1, totalRevenue: 500000 })
+      const page = await payload.find({ collection: 'orders', user: admin, overrideAccess: false, limit: 50, page: 11, depth: 0, sort: 'createdAt' })
+      expect(page.totalDocs).toBe(501)
+      expect(page.docs).toHaveLength(1)
+    })
     const product = (stock = 1, allowBackorder = false) =>
       payload.create({
         collection: 'products',
@@ -220,8 +232,33 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         }),
       )
       expect(await stock(item.id)).toBe(2)
+      const edited = await payload.findByID({ collection: 'orders', id: result.orderId, depth: 0 })
+      expect(edited.subtotal).toBe(3000)
+      expect(edited.totalAmount).toBe(3350)
       await status(result.orderId, 'cancelled')
       expect(await stock(item.id)).toBe(5)
+    })
+    it('derives required totals before validating an administrator-created order', async () => {
+      const item = await product(5)
+      const saved = await commerce.commerceTransaction(payload, admin, req => payload.create({
+        collection: 'orders', user: admin, overrideAccess: false, req,
+        data: { customer: input(item.id).customer, items: [{ product: item.id, variantSize: 'M', quantity: 2, unitPrice: 1000 }], shippingFee: 250, codFee: 100, paymentMethod: 'cod' } as never,
+      }))
+      expect(saved.subtotal).toBe(2000)
+      expect(saved.totalAmount).toBe(2350)
+      expect(await stock(item.id)).toBe(3)
+    })
+    it('rejects invalid financial edits without changing order or stock', async () => {
+      const item = await product(5)
+      const result = await purchase(input(item.id))
+      if (!('orderId' in result)) throw new Error('missing order')
+      await expect(commerce.commerceTransaction(payload, admin, req => payload.update({ collection: 'orders', id: result.orderId, user: admin, overrideAccess: false, req,
+        data: { items: [{ product: item.id, variantSize: 'M', quantity: 3, unitPrice: -1 }] },
+      }))).rejects.toThrow()
+      expect(await stock(item.id)).toBe(4)
+      const saved = await payload.findByID({ collection: 'orders', id: result.orderId, depth: 0 })
+      expect(saved.totalAmount).toBe(1350)
+      expect(saved.items[0].quantity).toBe(1)
     })
     it('distributed counters reject excess attempts atomically without storing raw contacts', async () => {
       const results = await Promise.allSettled(

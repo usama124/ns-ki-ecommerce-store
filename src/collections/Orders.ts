@@ -5,6 +5,7 @@ import { reconcileOrderInventory, recordInventoryMovement } from '@/utilities/or
 import { enqueueOrderEmails } from '@/utilities/orderOutbox'
 import { RequestError } from '@/utilities/apiSecurity'
 import { requireCommerceReady } from '@/utilities/commerceDatabase'
+import { orderAmounts } from '@/utilities/orderAmounts'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -36,6 +37,12 @@ export const Orders: CollectionConfig = {
     beforeValidate: [
       async ({ data, req, originalDoc }) => {
         if (!data) return data
+
+        // Supply derived required fields before Payload validates an admin-created
+        // order; read-only subtotal/total inputs must never need manual entry.
+        if (!originalDoc || ['items', 'shippingFee', 'codFee', 'paymentMethod', 'subtotal', 'totalAmount'].some(key => Object.hasOwn(data, key))) {
+          Object.assign(data, orderAmounts(data, originalDoc))
+        }
 
         const paymentMethod = data.paymentMethod || originalDoc?.paymentMethod
         const isDigital = paymentMethod && paymentMethod !== 'cod'
@@ -172,6 +179,11 @@ export const Orders: CollectionConfig = {
             data.status = 'pending_verification'
           }
 
+        }
+        // Derive totals before inventory writes in the same transaction. Status-only
+        // updates preserve historical amounts; explicit edits use accepted price/fee snapshots.
+        if (operation === 'create' || ['items', 'shippingFee', 'codFee', 'paymentMethod', 'subtotal', 'totalAmount'].some(key => Object.hasOwn(data, key))) {
+          Object.assign(data, orderAmounts(data, originalDoc))
         }
         // Never accept a supplied allocation ledger from REST/GraphQL/admin forms.
         data.inventoryState = await reconcileOrderInventory(data, operation === 'create' ? undefined : originalDoc, req)
@@ -404,6 +416,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       label: 'Subtotal (PKR)',
+      admin: { readOnly: true, description: 'Calculated from order item quantities and accepted unit prices.' },
     },
     {
       name: 'shippingFee',
@@ -422,6 +435,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       label: 'Total Amount (PKR)',
+      admin: { readOnly: true, description: 'Calculated from subtotal, shipping and COD fees.' },
     },
     {
       name: 'cancellationReason',

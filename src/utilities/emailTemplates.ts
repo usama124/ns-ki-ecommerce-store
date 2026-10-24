@@ -295,6 +295,7 @@ export function getNewOrderAdminAlertEmailHtml(order: OrderData, siteUrl: string
   3. PAYMENT CONFIRMED / PROCESSING EMAIL
  */
 export function getPaymentConfirmedCustomerEmailHtml(order: OrderData, siteUrl: string): string {
+  const isCOD = order.paymentMethod === 'cod'
   const customerName = order.customer?.name || 'Valued Customer'
   const trackingLink = `${siteUrl.replace(/\/$/, '')}/track-order?orderNumber=${encodeURIComponent(
     order.orderNumber || '',
@@ -305,7 +306,7 @@ export function getPaymentConfirmedCustomerEmailHtml(order: OrderData, siteUrl: 
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Payment Confirmed - N's KI</title>
+      <title>${isCOD ? 'Order Confirmed' : 'Payment Confirmed'} - N's KI</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; padding: 40px 16px;">
@@ -314,7 +315,7 @@ export function getPaymentConfirmedCustomerEmailHtml(order: OrderData, siteUrl: 
             <table width="100%" maxWidth="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
               
               <td style="background-color: #0f172a; padding: 32px 24px; text-align: center;">
-                <span style="display: inline-block; background-color: #10b981; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px;">PAYMENT VERIFIED</span>
+                <span style="display: inline-block; background-color: #10b981; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px;">${isCOD ? 'ORDER CONFIRMED' : 'PAYMENT VERIFIED'}</span>
                 <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-family: Georgia, serif;">Order ${order.orderNumber} is Confirmed</h1>
               </td>
 
@@ -322,12 +323,12 @@ export function getPaymentConfirmedCustomerEmailHtml(order: OrderData, siteUrl: 
                 <td style="padding: 32px 24px;">
                   <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #0f172a;">Good News, ${customerName}!</h2>
                   <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                    Your payment for order <strong>${order.orderNumber}</strong> has been verified. Our tailoring and fulfillment team is now processing your garments for dispatch.
+                    ${isCOD ? `Your order <strong>${order.orderNumber}</strong> is confirmed. Please pay the amount due when your order is delivered.` : `Your payment for order <strong>${order.orderNumber}</strong> has been verified.`} Our tailoring and fulfillment team is now processing your garments for dispatch.
                   </p>
 
                   <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 16px; margin-bottom: 24px; color: #065f46; font-size: 13px; line-height: 1.5;">
                     ✓ <strong>Order Status:</strong> Confirmed & In Processing<br>
-                    ✓ <strong>Total Paid:</strong> ${formatPKR(order.totalAmount || 0)}
+                    ✓ <strong>${isCOD ? 'Amount Due on Delivery:' : 'Total Paid:'}</strong> ${formatPKR(order.totalAmount || 0)}
                   </div>
 
                   <div style="text-align: center; margin-top: 28px;">

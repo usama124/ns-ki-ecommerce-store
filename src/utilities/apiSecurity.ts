@@ -36,7 +36,18 @@ export function requestError(error: unknown) {
 export function requireSameOrigin(request: Request) {
   const origin = request.headers.get('origin')
   const site = request.headers.get('sec-fetch-site')
-  if (site === 'cross-site' || (origin && origin !== new URL(request.url).origin)) {
+  // Behind Next/reverse proxies request.url can use an internal bind hostname.
+  // Trust deployment configuration, never arbitrary Host/X-Forwarded-* headers.
+  const configured = process.env.NEXT_PUBLIC_SERVER_URL || process.env.PAYLOAD_PUBLIC_SERVER_URL
+  let expected = new URL(request.url).origin
+  if (configured) {
+    try {
+      const url = new URL(configured)
+      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error()
+      expected = url.origin
+    } catch { throw new RequestError('Store origin configuration is invalid.', 503) }
+  }
+  if (site === 'cross-site' || (origin && origin !== expected)) {
     throw new RequestError('Cross-origin requests are not allowed.', 403)
   }
   // Origin may be absent for CLI/API clients. They must still pass authentication

@@ -1,7 +1,7 @@
 'use client'
 
 import { toast } from '@payloadcms/ui'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   C,
   glassCard,
@@ -68,6 +68,9 @@ export function InventoryViewClient() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [inventory, setInventory] = useState<InventoryRow[]>([])
+  const [page, setPage] = useState(1)
+  const requestSequence = useRef(0)
+  const [pagination, setPagination] = useState({ totalPages: 1, totalDocs: 0 })
   const [threshold, setThreshold] = useState<number>(5)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterTab, setFilterTab] = useState<'all' | 'low_stock' | 'out_of_stock' | 'backorder'>(
@@ -78,25 +81,29 @@ export function InventoryViewClient() {
   const [batchSaving, setBatchSaving] = useState(false)
 
   const fetchInventory = async () => {
+    const sequence = ++requestSequence.current
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/inventory')
+      const res = await fetch(`/api/inventory?page=${page}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to load inventory')
+      if (sequence !== requestSequence.current) return
       setInventory(data.inventory || [])
+      setPagination(data.pagination || { totalPages: 1, totalDocs: 0 })
       setEditedStocks({})
     } catch (err: any) {
+      if (sequence !== requestSequence.current) return
       setError(err?.message || 'Error loading inventory data')
       toast.error('Failed to load inventory')
     } finally {
-      setLoading(false)
+      if (sequence === requestSequence.current) setLoading(false)
     }
   }
 
   useEffect(() => {
     fetchInventory()
-  }, [])
+  }, [page])
 
   const stats = useMemo(() => {
     const totalVariants = inventory.length
@@ -294,11 +301,17 @@ export function InventoryViewClient() {
         </div>
       </div>
 
+      <nav aria-label="Inventory product pages" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
+        <button style={btnSecondary} disabled={loading || dirtyCount > 0 || page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+        <span>Product page {page} of {pagination.totalPages} · {pagination.totalDocs} products total.</span>
+        <button style={btnSecondary} disabled={loading || dirtyCount > 0 || page >= pagination.totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+        <span>Counts, search and stock filters below apply to this page only. Save changes before changing pages.</span>
+      </nav>
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         {[
           {
-            label: 'Total Variants',
+            label: 'Variants on Page',
             value: stats.totalVariants,
             color: C.textPrimary,
             bg: C.cardBg,
@@ -306,7 +319,7 @@ export function InventoryViewClient() {
             tab: 'all' as const,
           },
           {
-            label: 'In-Stock Units',
+            label: 'Units on Page',
             value: stats.totalUnits.toLocaleString(),
             color: C.textGoldBright,
             bg: C.cardBg,

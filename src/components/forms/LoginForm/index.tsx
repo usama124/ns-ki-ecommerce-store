@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
+import { safeRedirect } from '@/utilities/safeRedirect'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useRef } from 'react'
@@ -35,8 +36,7 @@ export const LoginForm: React.FC = () => {
     async (data: FormData) => {
       try {
         await login(data)
-        if (redirect?.current) router.push(redirect.current)
-        else router.push('/account')
+        router.push(safeRedirect(redirect.current))
       } catch (_) {
         setError('There was an error with the credentials provided. Please try again.')
       }

@@ -3,7 +3,7 @@ import { PrivateReceipt } from '@/components/orders/PrivateReceipt'
 import { CommerceOutbox } from '@/components/admin/CommerceOutbox'
 
 import { toast } from '@payloadcms/ui'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   C,
   glassCard,
@@ -230,6 +230,9 @@ export function OrdersDashboardClient() {
 
   const [activeTab, setActiveTab] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState({ totalPages: 1, totalDocs: 0 })
+  const requestSequence = useRef(0)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [updating, setUpdating] = useState(false)
 
@@ -245,15 +248,19 @@ export function OrdersDashboardClient() {
   const [trackingUrl, setTrackingUrl] = useState('')
 
   const fetchOrders = async () => {
+    const sequence = ++requestSequence.current
     setLoading(true)
     setError(null)
     try {
       const res = await fetch(
-        `/api/admin/orders?status=${activeTab}&q=${encodeURIComponent(searchQuery)}`,
+        `/api/admin/orders?status=${activeTab}&q=${encodeURIComponent(searchQuery)}&page=${page}`,
       )
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to fetch orders')
+      if (sequence !== requestSequence.current) return
       setOrders(data.orders || [])
+      setSelectedIds([])
+      setPagination(data.pagination || { totalPages: 1, totalDocs: 0 })
       setStats(
         data.stats || {
           totalOrders: 0,
@@ -267,24 +274,21 @@ export function OrdersDashboardClient() {
         },
       )
     } catch (err: any) {
+      if (sequence !== requestSequence.current) return
       setError(err?.message || 'Error loading orders')
       toast.error('Failed to load orders')
     } finally {
-      setLoading(false)
+      if (sequence === requestSequence.current) setLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchOrders()
-  }, [activeTab])
-
-  // Debounced search
+  // Debounce requests; ignore older responses arriving after newer filters/pages.
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchOrders()
     }, 300)
     return () => clearTimeout(timer)
-  }, [searchQuery])
+  }, [searchQuery, activeTab, page])
 
   // Update status function (single or batch)
   const handleUpdateStatus = async (
@@ -524,7 +528,7 @@ export function OrdersDashboardClient() {
           }}
         >
           <div style={{ fontSize: '11px', color: C.gold, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Total Revenue
+            Confirmed Order Value (All Time, Not Collected Cash)
           </div>
           <div style={{ fontSize: '20px', fontWeight: 900, marginTop: '6px', color: C.textGoldBright }}>
             Rs. {stats.totalRevenue.toLocaleString()}
@@ -552,7 +556,7 @@ export function OrdersDashboardClient() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); setPage(1); setSelectedIds([]) }}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -592,7 +596,7 @@ export function OrdersDashboardClient() {
             type="text"
             placeholder="🔍 Search Order #, Name, Phone, TRX…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); setSelectedIds([]) }}
             style={{
               ...inputStyle,
               padding: '8px 12px',
@@ -804,6 +808,11 @@ export function OrdersDashboardClient() {
         )}
       </div>
 
+      <nav aria-label="Order report pages" style={{ display: 'flex', gap: '16px', alignItems: 'center', margin: '16px 0' }}>
+        <button style={btnSecondary} disabled={loading || page <= 1} onClick={() => { setPage(p => p - 1); setSelectedIds([]) }}>Previous</button>
+        <span>Page {page} of {pagination.totalPages} · {pagination.totalDocs} matching orders. Summary cards cover all orders.</span>
+        <button style={btnSecondary} disabled={loading || page >= pagination.totalPages} onClick={() => { setPage(p => p + 1); setSelectedIds([]) }}>Next</button>
+      </nav>
       {/* QUICK PAYMENT PROOF VERIFICATION MODAL */}
       {quickVerifyOrder && (
         <div

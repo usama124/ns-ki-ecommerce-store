@@ -1,0 +1,824 @@
+{
+  "config": {
+    "configFile": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/playwright.qa.config.ts",
+    "rootDir": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nski-qa-browser-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 90000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "reports/qa/test-artifacts/restored-browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "restored-app.spec.ts",
+      "file": "restored-app.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "QA-01 public catalog hides drafts and parent category includes child products",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 209,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:56.705Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-45d4b8c8bb15cefdb6c7",
+          "file": "restored-app.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "QA-02 missing pages terminate with 404 rather than redirect loops",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 214,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:57.139Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-c54c20e7f0c7be10470f",
+          "file": "restored-app.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "QA-03 unauthenticated admin and order APIs deny access",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 125,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:57.398Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-46372a38f4f880a16203",
+          "file": "restored-app.spec.ts",
+          "line": 47,
+          "column": 1
+        },
+        {
+          "title": "QA-04 checkout reprices tampered amounts and rejects fractional quantity",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 169,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:57.551Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-bcc0d79eb18e787b6044",
+          "file": "restored-app.spec.ts",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "QA-05 COD checkout replay, ownership and cancel preserve inventory",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 995,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:57.749Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-1a4a3561ffc6d660ea6a",
+          "file": "restored-app.spec.ts",
+          "line": 58,
+          "column": 1
+        },
+        {
+          "title": "QA-06 bank_transfer creates pending verification order without sending payments",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 416,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:58.772Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-f457594c72ec3dd0afa8",
+          "file": "restored-app.spec.ts",
+          "line": 75,
+          "column": 66
+        },
+        {
+          "title": "QA-06 jazzcash creates pending verification order without sending payments",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 448,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:59.219Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-d1b8f5cb3ccd4214f0b8",
+          "file": "restored-app.spec.ts",
+          "line": 75,
+          "column": 66
+        },
+        {
+          "title": "QA-06 easypaisa creates pending verification order without sending payments",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 362,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:13:59.702Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-dcf214110b420ec2f217",
+          "file": "restored-app.spec.ts",
+          "line": 75,
+          "column": 66
+        },
+        {
+          "title": "QA-07 admin quantity edit keeps financial totals consistent",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 785,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3350\u001b[39m\nReceived: \u001b[31m1350\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3350\u001b[39m\nReceived: \u001b[31m1350\u001b[39m\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:95:31",
+                    "location": {
+                      "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                      "column": 31,
+                      "line": 95
+                    },
+                    "snippet": "  93 |     expect(changed.status()).toBe(200)\n  94 |     const saved = await (await admin.get(`/api/orders/${created.orderId}?depth=0`)).json()\n> 95 |     expect(saved.totalAmount).toBe(saved.items.reduce((sum: number, item: { quantity: number; unitPrice: number }) => sum + item.quantity * item.unitPrice, 0) + saved.shippingFee + saved.codFee)\n     |                               ^\n  96 |   } finally { await customer.dispose(); await admin.dispose() }\n  97 | })\n  98 | test.beforeEach(async ({ page }) => {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                        "column": 31,
+                        "line": 95
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3350\u001b[39m\nReceived: \u001b[31m1350\u001b[39m\n\n  93 |     expect(changed.status()).toBe(200)\n  94 |     const saved = await (await admin.get(`/api/orders/${created.orderId}?depth=0`)).json()\n> 95 |     expect(saved.totalAmount).toBe(saved.items.reduce((sum: number, item: { quantity: number; unitPrice: number }) => sum + item.quantity * item.unitPrice, 0) + saved.shippingFee + saved.codFee)\n     |                               ^\n  96 |   } finally { await customer.dispose(); await admin.dispose() }\n  97 | })\n  98 | test.beforeEach(async ({ page }) => {\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:95:31"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:00.095Z",
+                  "annotations": [],
+                  "attachments": [],
+                  "errorLocation": {
+                    "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                    "column": 31,
+                    "line": 95
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-5e338c5db2a3f53292df",
+          "file": "restored-app.spec.ts",
+          "line": 86,
+          "column": 1
+        },
+        {
+          "title": "QA-08 desktop and mobile product view display add-to-bag controls",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1086,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:02.336Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-cce58e559c3d9d7ab168",
+          "file": "restored-app.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "QA-09 corrupt cart storage does not crash storefront",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2774,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"t.reduce is not a function\",\u001b[39m\n\u001b[31m+ ]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"t.reduce is not a function\",\u001b[39m\n\u001b[31m+ ]\u001b[39m\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:116:67",
+                    "location": {
+                      "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                      "column": 67,
+                      "line": 116
+                    },
+                    "snippet": "  114 |   await page.goto('/')\n  115 |   await page.waitForTimeout(2000)\n> 116 |   expect(errors.filter(error => /reduce|map|items/i.test(error))).toEqual([])\n      |                                                                   ^\n  117 |   await expect(page.getByRole('link', { name: 'Home', exact: true }).first()).toBeVisible()\n  118 | })\n  119 | test('QA-10 selected variant survives cart refresh and checkout entry on mobile', async ({ page }) => {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                        "column": 67,
+                        "line": 116
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"t.reduce is not a function\",\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  114 |   await page.goto('/')\n  115 |   await page.waitForTimeout(2000)\n> 116 |   expect(errors.filter(error => /reduce|map|items/i.test(error))).toEqual([])\n      |                                                                   ^\n  117 |   await expect(page.getByRole('link', { name: 'Home', exact: true }).first()).toBeVisible()\n  118 | })\n  119 | test('QA-10 selected variant survives cart refresh and checkout entry on mobile', async ({ page }) => {\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:116:67"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:03.600Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nski-qa-browser-artifacts/restored-app-QA-09-corrupt-e9211-e-does-not-crash-storefront/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                    "column": 67,
+                    "line": 116
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-9b562a490fd3b4f5d2f4",
+          "file": "restored-app.spec.ts",
+          "line": 110,
+          "column": 1
+        },
+        {
+          "title": "QA-10 selected variant survives cart refresh and checkout entry on mobile",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1795,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:07.810Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-8c4584a25c69bd2f5869",
+          "file": "restored-app.spec.ts",
+          "line": 119,
+          "column": 1
+        },
+        {
+          "title": "QA-11 tracking is exact-match and returns no private customer information",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 333,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:09.801Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-54a27f8c2f29118fb096",
+          "file": "restored-app.spec.ts",
+          "line": 133,
+          "column": 1
+        },
+        {
+          "title": "QA-12 private receipts reject anonymous and foreign users; missing test storage fails closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 596,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:10.156Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-a9f5d0c7ba764fc7452e",
+          "file": "restored-app.spec.ts",
+          "line": 149,
+          "column": 1
+        },
+        {
+          "title": "QA-13 customer cannot use admin dashboards or forge a privileged role",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 520,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:10.778Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-1cb1e6ce286b68818f75",
+          "file": "restored-app.spec.ts",
+          "line": 162,
+          "column": 1
+        },
+        {
+          "title": "QA-14 login rejects an off-site redirect after valid authentication",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2365,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"https://qa-external.invalid\",\u001b[39m\n\u001b[31m+ ]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"https://qa-external.invalid\",\u001b[39m\n\u001b[31m+ ]\u001b[39m\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:186:21",
+                    "location": {
+                      "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                      "column": 21,
+                      "line": 186
+                    },
+                    "snippet": "  184 |   expect((await login).status()).toBe(200)\n  185 |   await page.waitForTimeout(1500)\n> 186 |   expect(attempted).toEqual([])\n      |                     ^\n  187 | })\n  188 | test('QA-15 COD confirmation copy does not claim payment was received', async () => {\n  189 |   const { getPaymentConfirmedCustomerEmailHtml } = await import('../../src/utilities/emailTemplates')"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                        "column": 21,
+                        "line": 186
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"https://qa-external.invalid\",\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  184 |   expect((await login).status()).toBe(200)\n  185 |   await page.waitForTimeout(1500)\n> 186 |   expect(attempted).toEqual([])\n      |                     ^\n  187 | })\n  188 | test('QA-15 COD confirmation copy does not claim payment was received', async () => {\n  189 |   const { getPaymentConfirmedCustomerEmailHtml } = await import('../../src/utilities/emailTemplates')\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:186:21"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:11.327Z",
+                  "annotations": [],
+                  "attachments": [],
+                  "errorLocation": {
+                    "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                    "column": 21,
+                    "line": 186
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-09a5dcdc1503aa2ba3b7",
+          "file": "restored-app.spec.ts",
+          "line": 176,
+          "column": 1
+        },
+        {
+          "title": "QA-15 COD confirmation copy does not claim payment was received",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 190,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mfalse\u001b[39m\nReceived: \u001b[31mtrue\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mfalse\u001b[39m\nReceived: \u001b[31mtrue\u001b[39m\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:191:45",
+                    "location": {
+                      "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                      "column": 45,
+                      "line": 191
+                    },
+                    "snippet": "  189 |   const { getPaymentConfirmedCustomerEmailHtml } = await import('../../src/utilities/emailTemplates')\n  190 |   const html = getPaymentConfirmedCustomerEmailHtml({ paymentMethod: 'cod', status: 'confirmed', orderNumber: '#NKI-000001', totalAmount: 1350, customer: { name: 'Synthetic QA' } }, baseURL)\n> 191 |   expect(html.includes('PAYMENT VERIFIED')).toBe(false)\n      |                                             ^\n  192 |   expect(html.includes('Total Paid:')).toBe(false)\n  193 | })\n  194 | test('QA-16 mobile guest completes COD checkout and sees confirmation', async ({ page }) => {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                        "column": 45,
+                        "line": 191
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mfalse\u001b[39m\nReceived: \u001b[31mtrue\u001b[39m\n\n  189 |   const { getPaymentConfirmedCustomerEmailHtml } = await import('../../src/utilities/emailTemplates')\n  190 |   const html = getPaymentConfirmedCustomerEmailHtml({ paymentMethod: 'cod', status: 'confirmed', orderNumber: '#NKI-000001', totalAmount: 1350, customer: { name: 'Synthetic QA' } }, baseURL)\n> 191 |   expect(html.includes('PAYMENT VERIFIED')).toBe(false)\n      |                                             ^\n  192 |   expect(html.includes('Total Paid:')).toBe(false)\n  193 | })\n  194 | test('QA-16 mobile guest completes COD checkout and sees confirmation', async ({ page }) => {\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:191:45"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:15.136Z",
+                  "annotations": [],
+                  "attachments": [],
+                  "errorLocation": {
+                    "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                    "column": 45,
+                    "line": 191
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-d4f3f5c3ac0735c9ddd5",
+          "file": "restored-app.spec.ts",
+          "line": 188,
+          "column": 1
+        },
+        {
+          "title": "QA-16 mobile guest completes COD checkout and sees confirmation",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1388,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m403\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m403\u001b[39m\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:207:37",
+                    "location": {
+                      "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                      "column": 37,
+                      "line": 207
+                    },
+                    "snippet": "  205 |   const response = page.waitForResponse(response => response.url().endsWith('/api/orders') && response.request().method() === 'POST')\n  206 |   await page.getByRole('button', { name: 'Complete Order' }).click()\n> 207 |   expect((await response).status()).toBe(200)\n      |                                     ^\n  208 |   await expect(page.getByRole('heading', { name: 'Thank You', exact: true })).toBeVisible()\n  209 |   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('nski_cart') || '[]').length)).toBe(0)\n  210 | })"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                        "column": 37,
+                        "line": 207
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m403\u001b[39m\n\n  205 |   const response = page.waitForResponse(response => response.url().endsWith('/api/orders') && response.request().method() === 'POST')\n  206 |   await page.getByRole('button', { name: 'Complete Order' }).click()\n> 207 |   expect((await response).status()).toBe(200)\n      |                                     ^\n  208 |   await expect(page.getByRole('heading', { name: 'Thank You', exact: true })).toBeVisible()\n  209 |   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('nski_cart') || '[]').length)).toBe(0)\n  210 | })\n    at /home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts:207:37"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T17:14:17.144Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nski-qa-browser-artifacts/restored-app-QA-16-mobile--af0e3-ckout-and-sees-confirmation/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/usama/Documents/WebsiteProjects/lujain/ns-ki-ecommerce-store/tests/qa/restored-app.spec.ts",
+                    "column": 37,
+                    "line": 207
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "cbee03931c3f6bcaba0e-61e2b2ba2bae8c8cf1ed",
+          "file": "restored-app.spec.ts",
+          "line": 194,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-24T17:13:55.201Z",
+    "duration": 23663.24,
+    "expected": 13,
+    "skipped": 0,
+    "unexpected": 5,
+    "flaky": 0
+  }
+}

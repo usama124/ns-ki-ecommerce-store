@@ -177,7 +177,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
         </h1>
 
         {errorMessage && (
-          <div className="mb-8 p-4 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-medium uppercase tracking-wider rounded-lg">
+          <div role="alert" className="mb-8 p-4 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-medium uppercase tracking-wider rounded-lg">
             {errorMessage}
           </div>
         )}
@@ -194,10 +194,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-name" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Full Name *
                   </label>
                   <input
+                    id="checkout-name"
+                    autoComplete="name"
                     type="text"
                     required
                     value={customer.name}
@@ -208,10 +210,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-phone" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Phone Number (+92) *
                   </label>
                   <input
+                    id="checkout-phone"
+                    autoComplete="tel"
                     type="text"
                     required
                     value={customer.phone}
@@ -222,10 +226,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-email" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Email Address (For Order Receipts)
                   </label>
                   <input
+                    id="checkout-email"
+                    autoComplete="email"
                     type="email"
                     value={customer.email}
                     onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
@@ -235,10 +241,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-city" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     City *
                   </label>
                   <select
+                    id="checkout-city"
+                    autoComplete="address-level2"
                     value={customer.city}
                     onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
                     className="w-full px-3 py-2.5 text-xs border border-border focus:border-[#648698] focus:outline-hidden bg-[#BDBAB9]/25 dark:bg-[#03171E]/60 text-foreground cursor-pointer rounded-lg"
@@ -262,10 +270,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-province" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Province *
                   </label>
                   <select
+                    id="checkout-province"
+                    autoComplete="address-level1"
                     value={customer.province}
                     onChange={(e) => setCustomer({ ...customer, province: e.target.value })}
                     className="w-full px-3 py-2.5 text-xs border border-border focus:border-[#648698] focus:outline-hidden bg-[#BDBAB9]/25 dark:bg-[#03171E]/60 text-foreground cursor-pointer rounded-lg"
@@ -316,10 +326,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-address" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Street Address / House # / Area *
                   </label>
                   <textarea
+                    id="checkout-address"
+                    autoComplete="street-address"
                     required
                     rows={3}
                     value={customer.address}
@@ -590,10 +602,11 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   {/* Proof Inputs */}
                   <div className="space-y-5 pt-4 border-t border-border">
                     <div>
-                      <label className="block text-xs uppercase tracking-widest font-bold text-foreground mb-1.5">
+                      <label htmlFor="checkout-reference" className="block text-xs uppercase tracking-widest font-bold text-foreground mb-1.5">
                         Transaction / Reference ID (TRX ID)
                       </label>
                       <input
+                        id="checkout-reference"
                         type="text"
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}

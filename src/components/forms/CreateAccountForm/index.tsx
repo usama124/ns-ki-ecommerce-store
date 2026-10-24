@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
+import { safeRedirect } from '@/utilities/safeRedirect'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useRef, useState } from 'react'
@@ -61,8 +62,7 @@ export const CreateAccountForm: React.FC = () => {
       try {
         await login(data)
         clearTimeout(timer)
-        if (redirect) router.push(redirect)
-        else router.push(`/account?success=${encodeURIComponent('Account created successfully')}`)
+        router.push(safeRedirect(redirect, `/account?success=${encodeURIComponent('Account created successfully')}`))
       } catch (_) {
         clearTimeout(timer)
         setError('There was an error with the credentials provided. Please try again.')
