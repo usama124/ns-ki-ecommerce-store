@@ -1,4 +1,6 @@
 import { privateJSON, readJSON, RequestError, requestError, requireAdmin, validDocumentID } from '@/utilities/apiSecurity'
+import { COMMERCE, commerceSession, commerceTransaction, mongoCommerce, type InternalRecord } from '@/utilities/commerceDatabase'
+import { randomUUID } from 'node:crypto'
 
 export async function POST(req: Request) {
   try {
@@ -20,9 +22,10 @@ export async function POST(req: Request) {
     const results = []
 
     for (const update of updates) {
+      const result = await commerceTransaction(payload, user, async transactionReq => {
       const { productId, variantIndex, stock } = update
       if (!productId || variantIndex === undefined || typeof stock !== 'number' || stock < 0) {
-        continue
+        throw new RequestError('Invalid stock update.')
       }
 
       const product = await payload.findByID({
@@ -31,15 +34,16 @@ export async function POST(req: Request) {
         depth: 0,
         user,
         overrideAccess,
+        req: transactionReq,
       })
 
       if (!product || !Array.isArray(product.variants)) {
-        continue
+        throw new RequestError('Product unavailable.', 404)
       }
 
       const updatedVariants = [...product.variants]
       if (variantIndex < 0 || variantIndex >= updatedVariants.length) {
-        continue
+        throw new RequestError('Product variant unavailable.', 404)
       }
 
       updatedVariants[variantIndex] = {
@@ -58,13 +62,22 @@ export async function POST(req: Request) {
         },
         user,
         overrideAccess,
+        req: transactionReq,
+        context: { commerceInventoryWrite: true },
       })
+      await mongoCommerce(payload).db.collection<InternalRecord>(COMMERCE.movements).insertOne({
+        _id: randomUUID(), kind: 'manual_adjustment', productId: String(product.id),
+        variantId: String(product.variants[variantIndex].id), actorId: String(user.id),
+        before: product.variants[variantIndex].stock, after: stock, createdAt: new Date(),
+      }, { session: await commerceSession(transactionReq) })
 
-      results.push({
+      return {
         productId,
         variantIndex,
         newStock: updatedVariants[variantIndex].stock,
+      }
       })
+      results.push(result)
     }
 
     return privateJSON({

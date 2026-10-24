@@ -17,7 +17,8 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
+import { getCheckoutRetryKey } from '@/utilities/checkoutRetryKey'
 import { toast } from 'sonner'
 
 export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
@@ -42,6 +43,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const [transferMode, setTransferMode] = useState<'details' | 'qr'>('details')
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const submitting = useRef(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [quote, setQuote] = useState<{ totalAmount: number; subtotal: number; shippingFee: number; codFee: number; items: Array<{ product: string | number; variantSize: string; quantity: number; unitPrice: number }> } | null>(null)
 
@@ -71,6 +73,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting.current) return
     setErrorMessage(null)
     if (!paymentConfigured(siteSettings, paymentMethod)) {
       setErrorMessage('This payment method is unavailable. Please choose another method.')
@@ -87,13 +90,16 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
       return
     }
 
+    submitting.current = true
     setIsSubmitting(true)
 
     try {
+      const retry = await getCheckoutRetryKey({ customer, items: items.map(item => ({ productId: item.productId, variantSize: item.variantSize, quantity: item.quantity })), paymentMethod, transactionId: paymentMethod === 'cod' ? '' : transactionId, expectedTotal: totalAmount })
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Idempotency-Key': retry.key,
         },
         body: JSON.stringify({
           customer,
@@ -132,12 +138,14 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
         catch { receiptFailed = true; toast.error('Order received, but receipt upload failed. Retry from your secure order details page.') }
       }
       clearCart()
+      retry.clear()
       toast.success('Order placed successfully!')
       router.push(`/checkout/confirm-order/${encodeURIComponent(data.orderNumber)}?orderId=${encodeURIComponent(data.orderId)}&token=${encodeURIComponent(data.accessToken)}${receiptFailed ? '&receiptFailed=1' : ''}`)
     } catch (err: any) {
       setErrorMessage(err.message || 'An error occurred while placing order.')
       toast.error(err.message || 'Order submission failed')
     } finally {
+      submitting.current = false
       setIsSubmitting(false)
     }
   }

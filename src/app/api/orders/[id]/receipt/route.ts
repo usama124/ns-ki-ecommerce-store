@@ -9,6 +9,7 @@ import {
   validDocumentID,
 } from '@/utilities/apiSecurity'
 import { verifyOrderAccess } from '@/utilities/orderAccess'
+import { enforceRequestLimit } from '@/utilities/requestLimits'
 import {
   loadReceipt,
   readReceipt,
@@ -47,7 +48,7 @@ async function authorize(request: Request, context: Context) {
   if (!order) throw new RequestError('Order unavailable.', 404)
   // SQL leading-zero IDs / alternate ObjectId casing must not create aliases
   // that bypass the one-receipt-per-order conditional write.
-  return { id: order.id, order, admin: checkRole(['admin'], user) }
+  return { payload, id: order.id, order, admin: checkRole(['admin'], user) }
 }
 
 export async function GET(request: Request, context: Context) {
@@ -84,12 +85,13 @@ export async function GET(request: Request, context: Context) {
 export async function POST(request: Request, context: Context) {
   try {
     requireSameOrigin(request)
-    const { id, order, admin } = await authorize(request, context)
+    const { payload, id, order, admin } = await authorize(request, context)
     if (admin || order.paymentMethod === 'cod' || order.status !== 'pending_verification')
       throw new RequestError(
         'Receipts can only be attached to a digital order awaiting verification.',
         403,
       )
+    await enforceRequestLimit(payload, request.headers, 'receipt', String(id))
     // Fail closed before decoding if the separate bucket is not configured.
     const storage = receiptStorage()
     storage.client.destroy()

@@ -1,5 +1,7 @@
 # P0 implementation: batch 1
 
+**24 October purchase-integrity update:** The next MongoDB transaction/idempotency, inventory-allocation, order-email outbox and shared rate-limit batch is implemented locally. Read [Commerce reliability rollout](commerce-reliability-rollout.md) before deployment: initialization, legacy-stock reconciliation and an email scheduler are mandatory operational work. The pending list below is the historical first-batch checkpoint, not the latest implementation status. Full production P0 sign-off is still not claimed.
+
 **24 October update:** Private receipt upload/view code and configuration placeholders are now implemented; see [Private order receipt storage](private-order-receipts.md). The temporary screenshot-disable decision below describes the earlier batch checkpoint and is superseded for new private receipts. The bucket still needs its real environment values and staging verification. Historical public receipts are unchanged. Other P0 work remains pending.
 
 23 October 2026. This is a staged implementation, **not completion of the full P0 plan or a production-readiness certificate**. Nothing has been deployed. No production DB, R2, migrations or paid infrastructure were changed. The original audit records the pre-change revision and remains valid as a historical baseline.

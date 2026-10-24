@@ -12,6 +12,7 @@ const mock = vi.hoisted(() => ({
 }))
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
+vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
 vi.mock('@aws-sdk/client-s3', () => {
   class Command {
     constructor(public input: Record<string, unknown>) {}

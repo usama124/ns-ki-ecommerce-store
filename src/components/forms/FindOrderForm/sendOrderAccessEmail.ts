@@ -4,6 +4,8 @@ import { getServerSideURL } from '@/utilities/getURL'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { signOrderAccess } from '@/utilities/orderAccess'
+import { headers } from 'next/headers'
+import { enforceRequestLimit } from '@/utilities/requestLimits'
 
 type SendOrderAccessEmailArgs = {
   email: string
@@ -23,6 +25,7 @@ export async function sendOrderAccessEmail({
   const payload = await getPayload({ config: configPromise })
 
   try {
+    await enforceRequestLimit(payload, await headers(), 'recovery', email.toLowerCase())
     const { docs: orders } = await payload.find({
       collection: 'orders',
       where: {
@@ -57,8 +60,8 @@ export async function sendOrderAccessEmail({
     })
 
     return { success: true }
-  } catch (err) {
-    payload.logger.error({ msg: 'Failed to send order access email', err })
+  } catch {
+    payload.logger.error({ msg: 'Order access email request could not be completed' })
     return { success: true }
   }
 }

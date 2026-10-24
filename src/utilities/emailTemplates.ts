@@ -25,7 +25,7 @@ interface OrderFulfillment {
 }
 
 interface OrderData {
-  id?: string
+  id?: string | number
   orderNumber?: string
   status?: string
   paymentMethod?: string

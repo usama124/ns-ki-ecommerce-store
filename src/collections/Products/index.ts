@@ -1,4 +1,5 @@
 import { adminOnly } from '@/access/adminOnly'
+import { assertProductUnreserved } from '@/utilities/reservedProductGuard'
 import {
     FixedToolbarFeature,
     HeadingFeature,
@@ -41,7 +42,11 @@ export const Products: CollectionConfig = {
   },
   hooks: {
     beforeChange: [
-      ({ data }) => {
+      async ({ data, originalDoc, req }) => {
+        if (originalDoc && Array.isArray(data?.variants)) {
+          const kept = new Set(data.variants.map((variant: { id?: string }) => String(variant.id)))
+          if (originalDoc.variants?.some((variant: { id?: string }) => !kept.has(String(variant.id)))) await assertProductUnreserved(originalDoc.id, req)
+        }
         if (data?.variants && Array.isArray(data.variants)) {
           data.variants = data.variants.map((variant: any) => {
             // size is now a relationship — could be populated object { id, name } or just an ID number
@@ -58,6 +63,7 @@ export const Products: CollectionConfig = {
       },
     ],
     afterChange: [autoSyncShoppableVideo],
+    beforeDelete: [async ({ id, req }) => { await assertProductUnreserved(id, req) }],
     afterDelete: [removeShoppableVideoOnDelete],
   },
   fields: [
@@ -246,6 +252,10 @@ export const Products: CollectionConfig = {
                 {
                   name: 'stock',
                   type: 'number',
+                  // A stale product editor must not overwrite stock sold since
+                  // the form opened. Existing-stock writes use Inventory only.
+                  access: { update: ({ req }) => req.context?.commerceInventoryWrite === true },
+                  admin: { description: 'Set initial stock here. To adjust existing stock, use the Inventory dashboard.' },
                   required: true,
                   defaultValue: 10,
                   min: 0,

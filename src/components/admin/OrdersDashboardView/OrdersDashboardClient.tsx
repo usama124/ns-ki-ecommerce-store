@@ -1,5 +1,6 @@
 'use client'
 import { PrivateReceipt } from '@/components/orders/PrivateReceipt'
+import { CommerceOutbox } from '@/components/admin/CommerceOutbox'
 
 import { toast } from '@payloadcms/ui'
 import React, { useEffect, useState } from 'react'
@@ -371,6 +372,7 @@ export function OrdersDashboardClient() {
 
   return (
     <div style={pageWrap}>
+      <CommerceOutbox />
       {/* HEADER HERO CARD */}
       <div
         style={{

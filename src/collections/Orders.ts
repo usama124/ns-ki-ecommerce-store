@@ -1,12 +1,10 @@
 import { adminOnly } from '@/access/adminOnly'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { orderOwner } from '@/access/orderOwner'
-import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
-import {
-    sendAdminOrderPlacedAlert,
-    sendCustomerOrderConfirmedEmail,
-    sendStatusUpdateEmail,
-} from '@/utilities/sendOrderEmails'
+import { reconcileOrderInventory, recordInventoryMovement } from '@/utilities/orderInventory'
+import { enqueueOrderEmails } from '@/utilities/orderOutbox'
+import { RequestError } from '@/utilities/apiSecurity'
+import { requireCommerceReady } from '@/utilities/commerceDatabase'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -83,7 +81,9 @@ export const Orders: CollectionConfig = {
                 ...(originalDoc?.id ? { id: { not_equals: originalDoc.id } } : {}),
               },
               limit: 1,
+              pagination: false,
               overrideAccess: true,
+              req,
             })
 
             if (existingComposite.docs.length > 0) {
@@ -111,6 +111,7 @@ export const Orders: CollectionConfig = {
                 collection: 'media',
                 id: mediaId,
                 overrideAccess: true,
+                req,
               })
 
               if (mediaDoc) {
@@ -139,7 +140,9 @@ export const Orders: CollectionConfig = {
                 ...(originalDoc?.id ? { id: { not_equals: originalDoc.id } } : {}),
               },
               limit: 1,
+              pagination: false,
               overrideAccess: true,
+              req,
             })
 
             if (existingHash.docs.length > 0) {
@@ -160,66 +163,38 @@ export const Orders: CollectionConfig = {
     ],
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
-        if (req.context?.skipStockHook) return data
-
+        await requireCommerceReady(req.payload)
         if (operation === 'create') {
           // COD orders are auto-confirmed by default; digital payments require verification
-          if (data?.paymentMethod === 'cod') {
+          if (data?.paymentMethod === 'cod' && !data.status) {
             data.status = 'confirmed'
           } else if (!data?.status) {
             data.status = 'pending_verification'
           }
 
-          if (data?.items && Array.isArray(data.items)) {
-            await validateAndDeductStock({ items: data.items, req })
-          }
-        } else if (operation === 'update') {
-          const oldStatus = originalDoc?.status
-          const newStatus = data?.status
-
-          // Status changed from active -> cancelled: restore stock
-          if (oldStatus && oldStatus !== 'cancelled' && newStatus === 'cancelled') {
-            const items = data?.items || originalDoc?.items
-            if (items && Array.isArray(items)) {
-              await restoreOrderStock({ items, req })
-            }
-          }
-
-          // Status changed from cancelled -> active: re-deduct stock
-          if (oldStatus === 'cancelled' && newStatus && newStatus !== 'cancelled') {
-            const items = data?.items || originalDoc?.items
-            if (items && Array.isArray(items)) {
-              await validateAndDeductStock({ items, req })
-            }
-          }
         }
-
+        // Never accept a supplied allocation ledger from REST/GraphQL/admin forms.
+        data.inventoryState = await reconcileOrderInventory(data, operation === 'create' ? undefined : originalDoc, req)
         return data
       },
     ],
     afterChange: [
-      ({ doc, previousDoc, operation }) => {
-        if (operation === 'create') {
-          // Send instant alert email to store admin on every order creation
-          void sendAdminOrderPlacedAlert(doc).catch((err) => {
-            console.warn('[Orders] Background admin alert dispatch error:', err)
-          })
-
-          // COD orders are auto-confirmed at creation; send customer confirmation email immediately
-          if (doc.status === 'confirmed') {
-            void sendCustomerOrderConfirmedEmail(doc).catch((err) => {
-              console.warn('[Orders] Background customer confirmation error:', err)
-            })
-          }
-        } else if (operation === 'update') {
-          void sendStatusUpdateEmail(doc, previousDoc?.status).catch((err) => {
-            console.warn('[Orders] Background status email dispatch error:', err)
-          })
-        }
+      async ({ doc, previousDoc, operation, req }) => {
+        await recordInventoryMovement(doc, previousDoc, req)
+        await enqueueOrderEmails(doc, previousDoc, operation, req)
       },
     ],
+    beforeDelete: [async ({ id, req }) => {
+      const order = await req.payload.findByID({ collection: 'orders', id, depth: 0, req, overrideAccess: true })
+      if (order.status !== 'cancelled') throw new RequestError('Cancel and reconcile the order before deleting it.', 409)
+    }],
   },
   fields: [
+    {
+      name: 'inventoryState', type: 'json',
+      access: { create: () => false, update: () => false, read: adminOnlyFieldAccess },
+      admin: { readOnly: true, description: 'System-owned stock allocations. Legacy orders require manual reconciliation before cancellation or item edits.' },
+    },
     {
       name: 'customerAccount',
       type: 'relationship',

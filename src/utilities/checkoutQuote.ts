@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 import { RequestError, validDocumentID } from './apiSecurity'
 import { getSalePriceDetails } from './getSalePrice'
 import { calculateShipping } from './shipping'
@@ -74,7 +74,7 @@ export function parseCheckout(body: Record<string, unknown>) {
       : undefined
   if (proof?.screenshot)
     throw new RequestError(
-      'Screenshot uploads are unavailable until private receipt storage is configured. Please enter the transaction reference instead.',
+      'Attach receipts through the secure order receipt endpoint, not a public media ID.',
     )
   if (body.paymentMethod !== 'cod' && !paymentProof?.transactionId)
     throw new RequestError('Provide a transaction reference.')
@@ -89,9 +89,9 @@ export function parseCheckout(body: Record<string, unknown>) {
 }
 
 /** Only database values contribute to prices, fees, variant identity and totals. */
-export async function quoteCheckout(payload: Payload, input: ReturnType<typeof parseCheckout>) {
-  const [result, settings, sale] = await Promise.all([
-    payload.find({
+export async function quoteCheckout(payload: Payload, input: ReturnType<typeof parseCheckout>, req?: PayloadRequest) {
+  // MongoDB does not support parallel operations within one transaction/session.
+  const result = await payload.find({
       collection: 'products',
       where: {
         and: [
@@ -99,9 +99,10 @@ export async function quoteCheckout(payload: Payload, input: ReturnType<typeof p
           { status: { equals: 'published' } },
         ],
       },
-      depth: 1,
+      depth: 0,
       pagination: false,
       overrideAccess: false,
+      req,
       select: {
         title: true,
         basePricePKR: true,
@@ -109,10 +110,11 @@ export async function quoteCheckout(payload: Payload, input: ReturnType<typeof p
         categories: true,
         variants: true,
       },
-    }),
-    payload.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: false }),
-    payload.findGlobal({ slug: 'sale-settings', depth: 0, overrideAccess: false }),
-  ])
+    })
+  const settings = await payload.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: false, req })
+  const sale = await payload.findGlobal({ slug: 'sale-settings', depth: 0, overrideAccess: false, req })
+  const sizes = await payload.find({ collection: 'sizes', depth: 0, pagination: false, overrideAccess: false, req })
+  const sizeMap = new Map(sizes.docs.map(size => [String(size.id), size]))
   if (!settings?.shipping)
     throw new RequestError('Shipping settings are temporarily unavailable.', 503)
   if (!paymentConfigured(settings, input.paymentMethod))
@@ -131,7 +133,7 @@ export async function quoteCheckout(payload: Payload, input: ReturnType<typeof p
   const items = input.lines.map((line) => {
     const product = result.docs.find((product) => String(product.id) === line.productId)
     const variants = product?.variants?.filter((variant) => {
-      const size = variant.size
+      const size = typeof variant.size === 'object' ? variant.size : sizeMap.get(String(variant.size))
       return (
         typeof size === 'object' &&
         size &&
@@ -148,7 +150,7 @@ export async function quoteCheckout(payload: Payload, input: ReturnType<typeof p
     const unitPrice = money(getSalePriceDetails(product, sale, variant.pricePKR).effectivePrice)
     return {
       product: product.id,
-      variantSize: typeof variant.size === 'object' ? variant.size.name : line.variantSize,
+      variantSize: (typeof variant.size === 'object' ? variant.size?.name : sizeMap.get(String(variant.size))?.name) || line.variantSize,
       variantSku: variant.sku || '',
       quantity: line.quantity,
       unitPrice,

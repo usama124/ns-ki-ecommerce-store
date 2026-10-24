@@ -172,13 +172,11 @@ for (const outcome of ['success', 'failure'] as const) {
     await page.getByPlaceholder('House No, Street, Sector/Block, LandMark').fill('Test address')
     await page.getByRole('button', { name: /JazzCash Wallet/ }).click()
     await page.getByPlaceholder('e.g. 849201 or 019283746501').fill('TEST123456')
-    await page
-      .getByLabel('Payment receipt', { exact: true })
-      .setInputFiles({
-        name: 'receipt.png',
-        mimeType: 'image/png',
-        buffer: Buffer.from('local mock receipt'),
-      })
+    await page.getByLabel('Payment receipt', { exact: true }).setInputFiles({
+      name: 'receipt.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('local mock receipt'),
+    })
     await page.getByRole('button', { name: /Complete Order/ }).click()
     await expect
       .poll(() => page.evaluate(() => (window as Window & { navigatedTo?: string }).navigatedTo))
@@ -254,4 +252,58 @@ test('secure order receipt panel supports retry and private viewing', async ({ p
   await expect(page.getByRole('img', { name: 'Payment receipt' })).toBeVisible()
   await expect(input).toHaveCount(0)
   expect(attempts).toBe(2)
+})
+
+test('checkout retains the same retry key after an uncertain response and a page reload', async ({
+  page,
+}) => {
+  const keys: string[] = []
+  await page.route('https://store.example/**', async (route) => {
+    if (route.request().url().endsWith('/api/orders')) {
+      keys.push(route.request().headers()['idempotency-key'])
+      await route.fulfill({
+        status: keys.length === 1 ? 503 : 200,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          keys.length === 1
+            ? { error: 'Response uncertain. Retry with the same details.' }
+            : {
+                orderNumber: '#NKI-123456',
+                orderId: 'order1',
+                accessToken: 'signed-token',
+                replayed: true,
+              },
+        ),
+      })
+    } else
+      await route.fulfill({
+        contentType: 'text/html',
+        body: '<html><body><div id="root"></div></body></html>',
+      })
+  })
+  const fill = async () => {
+    await page.addScriptTag({ content: javascript })
+    await page.getByPlaceholder('e.g. Fatima Khan').fill('Test Customer')
+    await page.getByPlaceholder('e.g. 03001234567').fill('03001112222')
+    await page.getByPlaceholder('fatima@example.com').fill('customer@example.test')
+    await page.getByPlaceholder('House No, Street, Sector/Block, LandMark').fill('Test address')
+  }
+  await page.goto('https://store.example/')
+  await fill()
+  await page.getByRole('button', { name: /Complete Order/ }).click()
+  await expect(
+    page.getByText('Response uncertain. Retry with the same details.', { exact: true }).first(),
+  ).toBeVisible()
+  const saved = await page.evaluate(() => JSON.stringify(sessionStorage))
+  expect(saved).not.toContain('customer@example.test')
+  expect(saved).not.toContain('Test address')
+  await page.reload()
+  await fill()
+  await page.getByRole('button', { name: /Complete Order/ }).click()
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { navigatedTo?: string }).navigatedTo))
+    .toContain('signed-token')
+  expect(keys).toHaveLength(2)
+  expect(keys[0]).toMatch(/^[a-f0-9-]{36}$/)
+  expect(keys[1]).toBe(keys[0])
 })

@@ -7,6 +7,7 @@ import { adminOrSelf } from '@/access/adminOrSelf'
 import { checkRole } from '@/access/utilities'
 
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
+import { enforceRequestLimit } from '@/utilities/requestLimits'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -25,6 +26,15 @@ export const Users: CollectionConfig = {
   },
   auth: {
     tokenExpiration: 1209600,
+  },
+  hooks: {
+    beforeOperation: [async ({ operation, args, req }) => {
+      if (req.payloadAPI !== 'local' && !checkRole(['admin'], req.user) && ['create', 'forgotPassword'].includes(operation)) {
+        const email = 'data' in args && args.data && 'email' in args.data ? String(args.data.email || '').slice(0, 254) : 'unknown'
+        await enforceRequestLimit(req.payload, req.headers, operation === 'create' ? 'registration' : 'password', email)
+      }
+      return args
+    }],
   },
   fields: [
     {

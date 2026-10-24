@@ -12,6 +12,7 @@ import * as migration_20260917_000000_cancellation_reason from './20260917_00000
 import * as migration_20260918_180000_trx_security from './20260918_180000_trx_security'
 import * as migration_20261022_000000_shop_by_video_opt_in from './20261022_000000_shop_by_video_opt_in'
 import * as migration_20261023_000000_order_customer_account from './20261023_000000_order_customer_account'
+import * as migration_20261024_000000_order_inventory_state from './20261024_000000_order_inventory_state'
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20261023_000000_order_customer_account.up,
     down: migration_20261023_000000_order_customer_account.down,
     name: '20261023_000000_order_customer_account',
+  },
+  {
+    up: migration_20261024_000000_order_inventory_state.up,
+    down: migration_20261024_000000_order_inventory_state.down,
+    name: '20261024_000000_order_inventory_state',
   },
 ]

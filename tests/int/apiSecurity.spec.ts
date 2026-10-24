@@ -11,6 +11,11 @@ const mock = vi.hoisted(() => ({
 }))
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
+vi.mock('@/utilities/commerceDatabase', () => ({
+  commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) => work({}),
+  commerceSession: vi.fn().mockResolvedValue({}), COMMERCE: { movements: 'test-movements' },
+  mongoCommerce: () => ({ db: { collection: () => ({ insertOne: vi.fn() }) } }),
+}))
 import { GET as orders } from '@/app/api/admin/orders/route'
 import { POST as updateOrder } from '@/app/api/admin/orders/update-status/route'
 import { GET as dashboard } from '@/app/api/admin/dashboard-stats/route'

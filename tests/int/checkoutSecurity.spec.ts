@@ -10,6 +10,13 @@ const mock = vi.hoisted(() => ({
 }))
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
+vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+vi.mock('@/utilities/commerceDatabase', () => ({
+  commerceSession: vi.fn().mockResolvedValue({}),
+  commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) => work({}),
+  mongoCommerce: () => ({ db: { collection: () => ({ findOne: async () => null, insertOne: vi.fn(), updateOne: vi.fn() }) } }),
+  COMMERCE: { checkout: 'test-checkout' },
+}))
 import { POST } from '@/app/api/orders/route'
 import { GET as track } from '@/app/api/orders/track/route'
 import { parseCheckout, quoteCheckout } from '@/utilities/checkoutQuote'
@@ -53,7 +60,7 @@ const product = () => ({
 const request = (body: unknown, origin = 'https://store.example') =>
   new Request('https://store.example/api/orders', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: origin },
+    headers: { 'Content-Type': 'application/json', Origin: origin, 'Idempotency-Key': 'd380dd57-0d67-47ad-8273-e89de578ad59' },
     body: JSON.stringify(body),
   })
 beforeEach(() => {

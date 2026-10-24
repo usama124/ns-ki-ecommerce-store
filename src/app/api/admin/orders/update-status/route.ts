@@ -1,4 +1,5 @@
 import { privateJSON, readJSON, RequestError, requestError, requireAdmin, validDocumentID } from '@/utilities/apiSecurity'
+import { commerceTransaction } from '@/utilities/commerceDatabase'
 
 export async function POST(req: Request) {
   try {
@@ -28,15 +29,17 @@ export async function POST(req: Request) {
     const updatedOrders = []
 
     for (const id of targetIds) {
+      const updated = await commerceTransaction(payload, user, async transactionReq => {
       const existingOrder = await payload.findByID({
         collection: 'orders',
         id,
         depth: 0,
         user,
         overrideAccess,
+        req: transactionReq,
       })
 
-      if (!existingOrder) continue
+      if (!existingOrder) throw new RequestError('Order unavailable.', 404)
 
       const updateData: any = {
         status,
@@ -62,8 +65,11 @@ export async function POST(req: Request) {
         data: updateData,
         user,
         overrideAccess,
+        req: transactionReq,
       })
 
+      return updated
+      })
       updatedOrders.push(updated)
     }
 

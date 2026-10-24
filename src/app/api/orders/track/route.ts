@@ -1,6 +1,7 @@
 import configPromise from '@payload-config'
 import { privateJSON, RequestError, requestError } from '@/utilities/apiSecurity'
 import { getPayload } from 'payload'
+import { enforceRequestLimit } from '@/utilities/requestLimits'
 
 export async function GET(req: Request) {
   try {
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
     const formattedLujNum = `#LUJ-${cleanNumberStr}`
 
     const payload = await getPayload({ config: configPromise })
+    await enforceRequestLimit(payload, req.headers, 'tracking', isEmail ? contactQuery.toLowerCase() : contactQuery.replace(/\D/g, ''))
 
     // Find order matching number AND contact phone or email
     const result = await payload.find({

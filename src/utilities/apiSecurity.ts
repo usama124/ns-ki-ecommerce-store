@@ -1,5 +1,3 @@
-import config from '@payload-config'
-import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 import { checkRole } from '@/access/utilities'
 
@@ -26,7 +24,11 @@ export function privateJSON(data: unknown, status = 200) {
 }
 
 export function requestError(error: unknown) {
-  if (error instanceof RequestError) return privateJSON({ error: error.message }, error.status)
+  if (error instanceof RequestError) {
+    const response = privateJSON({ error: error.message }, error.status)
+    if (error.status === 429) response.headers.set('Retry-After', '900')
+    return response
+  }
   // Do not return database/provider errors or log request bodies/customer data.
   return privateJSON({ error: 'The request could not be completed. Please try again.' }, 503)
 }
@@ -42,6 +44,7 @@ export function requireSameOrigin(request: Request) {
 }
 
 export async function requireAdmin(request: Request) {
+  const [{ default: config }, { getPayload }] = await Promise.all([import('@payload-config'), import('payload')])
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers: request.headers })
   if (!user) throw new RequestError('Please log in.', 401)
