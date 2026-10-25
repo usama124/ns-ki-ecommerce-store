@@ -5,6 +5,7 @@ const mock = vi.hoisted(() => ({
   getPayload: vi.fn(),
   auth: vi.fn(),
   find: vi.fn(),
+  count: vi.fn(),
   findByID: vi.fn(),
   update: vi.fn(),
   findGlobal: vi.fn(),
@@ -58,6 +59,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   mock.getPayload.mockResolvedValue(mock)
   mock.find.mockResolvedValue({ docs: [], totalDocs: 0 })
+  mock.count.mockResolvedValue({ totalDocs: 0 })
   mock.findByID.mockResolvedValue({ id: 'product-1', variants: [{ stock: 1, size: 'M' }] })
   mock.update.mockResolvedValue({ id: 'order-1' })
   mock.findGlobal.mockResolvedValue({ isActive: false })
@@ -106,6 +108,7 @@ describe('Custom admin API boundaries', () => {
       expect(result.status).toBe(200)
       expect(result.headers.get('cache-control')).toBe('private, no-store')
       const calls = [
+        mock.count,
         mock.find,
         mock.findByID,
         mock.update,

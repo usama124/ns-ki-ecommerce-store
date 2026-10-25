@@ -697,5 +697,226 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         expect(await jobs().countDocuments({ 'event.name': 'purchase' })).toBe(0)
       })
     })
+    describe('operational reports on real MongoDB', () => {
+      let reports: typeof import('@/lib/reports/service')
+      let filters: typeof import('@/lib/reports/filters')
+      beforeAll(async () => {
+        reports = await import('@/lib/reports/service')
+        filters = await import('@/lib/reports/filters')
+        await reports.initializeReports(payload, admin)
+      })
+      const read = (query = '', exporting = false) =>
+        reports.getOperationalReport(
+          payload,
+          admin,
+          filters.parseReportFilters(
+            new URLSearchParams(`start=2026-10-25&end=2026-10-25&${query}`),
+          ),
+          exporting,
+        )
+      const rawOrders = () => {
+        const { db, adapter } = commerce.mongoCommerce(payload)
+        return db.collection(adapter.collections.orders.collection.collectionName)
+      }
+      const rawProducts = () => {
+        const { db, adapter } = commerce.mongoCommerce(payload)
+        return db.collection(adapter.collections.products.collection.collectionName)
+      }
+      const row = (extra: Record<string, unknown> = {}) => ({
+        orderNumber: `REPORT-${randomUUID()}`,
+        createdAt: new Date('2026-10-25T09:00:00Z'),
+        status: 'confirmed',
+        paymentMethod: 'cod',
+        customer: {
+          name: 'PRIVATE BUYER',
+          email: 'private@example.invalid',
+          phone: '03001112222',
+          address: 'PRIVATE ADDRESS',
+          city: 'Lahore',
+        },
+        subtotal: 1000,
+        shippingFee: 250,
+        codFee: 100,
+        totalAmount: 1350,
+        items: [{ product: 'unknown', variantSize: 'M', quantity: 1, unitPrice: 1000 }],
+        ...extra,
+      })
+      it('covers every matching order beyond old caps, paginates details and exports all rows', async () => {
+        await rawOrders().insertMany(
+          Array.from({ length: 503 }, (_, index) =>
+            row({ status: index === 502 ? 'cancelled' : 'confirmed' }),
+          ),
+        )
+        const result = await read('view=orders&page=11')
+        expect(result.summary).toMatchObject({
+          orders: 503,
+          acceptedOrders: 502,
+          acceptedValue: 502 * 1350,
+          units: 503,
+        })
+        expect(result.pagination).toMatchObject({ totalRows: 503, totalPages: 11 })
+        expect(result.rows).toHaveLength(3)
+        expect(result.exportReady).toBe(true)
+        const exported = await read('view=orders&page=11', true)
+        expect(exported.rows).toHaveLength(503)
+        expect(JSON.stringify(exported)).not.toMatch(
+          /PRIVATE BUYER|private@example|030011|PRIVATE ADDRESS/,
+        )
+      })
+      it('uses exact Karachi boundaries, prior-period comparison and zero-filled days', async () => {
+        await rawOrders().insertMany([
+          row({ createdAt: new Date('2026-10-24T18:59:59.999Z') }),
+          row({ createdAt: new Date('2026-10-24T19:00:00.000Z') }),
+          row({ createdAt: new Date('2026-10-25T18:59:59.999Z') }),
+          row({ createdAt: new Date('2026-10-25T19:00:00.000Z') }),
+        ])
+        const result = await read()
+        expect(result.summary.orders).toBe(2)
+        expect(result.trend).toEqual([{ day: '2026-10-25', orders: 2, value: 2700 }])
+        expect(result.comparison?.orders).toEqual({ absolute: 1, percent: 100 })
+        const empty = await read('view=orders&status=cancelled')
+        expect(empty.summary.orders).toBe(0)
+        expect(empty.summary.averageAcceptedValue).toBeNull()
+        expect(empty.summary.cancellationRate).toBeNull()
+        expect(empty.trend[0].orders).toBe(0)
+        expect(empty.comparison?.orders.percent).toBeNull()
+      })
+      it('filters status, method, city and courier without exposing payment-proof fields', async () => {
+        await rawOrders().insertMany([
+          row(),
+          row({
+            paymentMethod: 'jazzcash',
+            status: 'pending_verification',
+            paymentProof: { transactionId: 'PRIVATE-REFERENCE' },
+            fulfillment: { courierName: 'TCS' },
+          }),
+          row({ paymentMethod: 'jazzcash', status: 'confirmed', customer: { city: 'Karachi' } }),
+        ])
+        const result = await read(
+          'view=payments&payment=jazzcash&status=pending_verification&city=lahore&courier=TCS',
+        )
+        expect(result.summary).toMatchObject({
+          orders: 1,
+          acceptedValue: 0,
+          pendingVerification: 1,
+        })
+        expect(result.breakdowns.courier).toEqual([{ label: 'TCS', orders: 1, value: 1350 }])
+        expect(JSON.stringify(result)).not.toContain('PRIVATE-REFERENCE')
+        expect(result.unavailable.join(' ')).toMatch(/Collected cash/)
+      })
+      it('ranks multi-line products by item value, counts each order once and includes zero-order products', async () => {
+        const item = await product(10),
+          other = await product(10),
+          zero = await product(10)
+        const a = (await rawProducts().findOne({ slug: item.slug }))!,
+          b = (await rawProducts().findOne({ slug: other.slug }))!
+        await rawOrders().insertMany([
+          row({
+            subtotal: 3100,
+            totalAmount: 3450,
+            items: [
+              { product: a._id, quantity: 2, unitPrice: 800, variantSize: 'M' },
+              { product: a._id, quantity: 1, unitPrice: 1000, variantSize: 'L' },
+              { product: b._id, quantity: 1, unitPrice: 500, variantSize: 'M' },
+            ],
+          }),
+          row({ status: 'cancelled', items: [{ product: a._id, quantity: 99, unitPrice: 1000 }] }),
+        ])
+        const result = await read('view=products')
+        expect(result.summary).toMatchObject({
+          products: 3,
+          units: 4,
+          merchandiseValue: 3100,
+          zeroOrderProducts: 1,
+        })
+        expect(result.rows.find((value) => value.id === String(item.id))).toMatchObject({
+          units: 3,
+          orders: 1,
+          merchandiseValue: 2600,
+        })
+        expect(result.rows.find((value) => value.id === String(zero.id))).toMatchObject({
+          units: 0,
+          orders: 0,
+        })
+        const cohort = await read(`view=orders&product=${item.id}`)
+        expect(cohort.summary.placedValue).toBe(4800) // Entire matching orders, including cancelled.
+        const selected = await read(`view=products&product=${item.id}&category=${category}`)
+        expect(selected.summary).toMatchObject({ products: 1, units: 3, merchandiseValue: 2600 })
+      })
+      it('keeps deleted product IDs reportable and labels current catalog metadata as unavailable', async () => {
+        const { ObjectId } = await import('mongodb')
+        const missing = new ObjectId()
+        await rawOrders().insertOne(
+          row({ items: [{ product: missing, quantity: 2, unitPrice: 700, variantSize: 'M' }] }),
+        )
+        const result = await read('view=products')
+        expect(result.rows).toHaveLength(1)
+        expect(result.rows[0]).toMatchObject({
+          id: missing.toHexString(),
+          title: 'Deleted / unavailable product',
+          merchandiseValue: 1400,
+          units: 2,
+          productStatus: 'unavailable',
+        })
+      })
+      it('aggregates all variants beyond product caps, distinguishes unknown/zero and honors a free price override', async () => {
+        const item = await product(10)
+        const a = (await rawProducts().findOne({ slug: item.slug }))!
+        await rawProducts().deleteMany({})
+        const docs = Array.from({ length: 305 }, (_, index) => ({
+          title: `Product ${String(index).padStart(4, '0')}`,
+          status: 'published',
+          primaryCategory: a.primaryCategory,
+          basePricePKR: 1000,
+          variants: [
+            {
+              id: `m-${index}`,
+              size: a.variants[0].size,
+              sku: `SKU-${index}-M`,
+              stock: index === 0 ? 2 : 10,
+              pricePKR: index === 0 ? 0 : null,
+            },
+            {
+              id: `l-${index}`,
+              size: a.variants[0].size,
+              sku: `SKU-${index}-L`,
+              stock: index === 0 ? 0 : index === 1 ? null : 10,
+              allowBackorder: index === 0,
+            },
+          ],
+        }))
+        await rawProducts().insertMany(docs)
+        const result = await read('view=inventory&page=13')
+        expect(result.summary).toMatchObject({
+          variants: 610,
+          inStock: 608,
+          lowStock: 1,
+          outOfStock: 1,
+          unknownStock: 1,
+          backorderEnabled: 1,
+          stockUnits: 6072,
+          retailStockValue: 6070000,
+        })
+        expect(result.pagination).toMatchObject({ totalRows: 610, totalPages: 13 })
+        expect(result.rows).toHaveLength(10)
+        const low = await read('view=inventory&stock=low_stock')
+        expect(low.rows).toHaveLength(1)
+        expect(low.rows[0]).toMatchObject({
+          stock: 2,
+          price: 0,
+          retailValue: 0,
+          stockState: 'low_stock',
+        })
+        const out = await read('view=inventory&stock=out_of_stock')
+        expect(out.rows[0]).toMatchObject({ stock: 0, backorder: true })
+        const unknown = await read('view=inventory&stock=unknown')
+        expect(unknown.rows[0].stock).toBeNull()
+      })
+      it('refuses oversized synchronous exports rather than silently truncating', async () => {
+        await rawOrders().insertMany(Array.from({ length: 5001 }, () => row()))
+        await expect(read('view=orders', true)).rejects.toMatchObject({ status: 413 })
+        expect((await read('view=orders')).pagination.totalRows).toBe(5001)
+      })
+    })
   },
 )

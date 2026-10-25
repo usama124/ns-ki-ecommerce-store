@@ -234,3 +234,48 @@ test('QA-17 administrator sees report pagination and explicit inventory scope', 
     await expect(page.getByText('Counts, search and stock filters below apply to this page only. Save changes before changing pages.', { exact: true })).toBeVisible()
   } finally { await admin.dispose() }
 })
+
+test('QA-18 Reports loads in the actual admin shell and current inventory is date-independent', async ({ page }) => {
+  const admin = await actor('admin')
+  try {
+    await page.context().addCookies((await admin.storageState()).cookies)
+    await page.goto('/store-admin/reports')
+    await expect(page.getByRole('heading', { name: 'Reports', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Orders placed', exact: true })).toBeVisible()
+    // Payload mounts its own empty global alert region; scope errors to Reports.
+    await expect(page.locator('.nski-reports').getByRole('alert')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Products', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Products with zero orders', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Inventory', exact: true }).click()
+    await expect(page.getByText('Current stock as of request time; not historical stock')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Stock units now', exact: true })).toBeVisible()
+    await expect(page.locator('.nski-reports').getByRole('alert')).toHaveCount(0)
+    await page.screenshot({ path: '/tmp/nski-reports-admin-desktop.png', fullPage: true })
+  } finally { await admin.dispose() }
+})
+
+test('QA-19 report JSON, CSV, suggestions and preparation reject guests and customers', async ({ request }) => {
+  for (const path of ['/api/admin/reports', '/api/admin/reports?format=csv', '/api/admin/reports/options']) expect((await request.get(path)).status()).toBe(401)
+  expect((await request.post('/api/admin/reports/initialize')).status()).toBe(401)
+  const customer = await actor('customer')
+  try {
+    for (const path of ['/api/admin/reports', '/api/admin/reports?format=csv', '/api/admin/reports/options']) expect((await customer.get(path)).status()).toBe(403)
+    expect((await customer.post('/api/admin/reports/initialize')).status()).toBe(403)
+  } finally { await customer.dispose() }
+})
+
+test('QA-20 report exports initialize explicitly, contain all matching rows and exclude private fields', async () => {
+  const admin = await actor('admin')
+  try {
+    expect((await admin.post('/api/admin/reports/initialize')).status()).toBe(200)
+    const report = await admin.get('/api/admin/reports?view=orders&start=2026-10-01&end=2026-10-25')
+    expect(report.status()).toBe(200)
+    const data = await report.json()
+    const exported = await admin.get('/api/admin/reports?view=orders&start=2026-10-01&end=2026-10-25&format=csv')
+    expect(exported.status()).toBe(200)
+    expect(exported.headers()['cache-control']).toBe('private, no-store')
+    const csv = await exported.text()
+    expect(csv.trim().split('\r\n')).toHaveLength(data.pagination.totalRows + 1)
+    expect(csv).not.toMatch(/qa-buyer@example|0300\d{7}|SYNTHETIC QA STREET|transactionId|receipt|email|phone/i)
+  } finally { await admin.dispose() }
+})

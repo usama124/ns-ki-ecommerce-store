@@ -81,11 +81,16 @@ export default buildConfig({
       beforeLogin: ['@/components/BeforeLogin#BeforeLogin'],
       beforeDashboard: ['@/components/BeforeDashboard#BeforeDashboard'],
       afterNavLinks: [
+        '@/components/admin/ReportsNavLink#ReportsNavLink',
         '@/components/admin/InventoryNavLink#InventoryNavLink',
         '@/components/admin/OrdersDashboardNavLink#OrdersDashboardNavLink',
         '@/components/admin/SaleDashboardNavLink#SaleDashboardNavLink',
       ],
       views: {
+        reports: {
+          Component: '@/components/admin/ReportsView#ReportsView',
+          path: '/reports',
+        },
         inventory: {
           Component: '@/components/admin/InventoryView#InventoryView',
           path: '/inventory',

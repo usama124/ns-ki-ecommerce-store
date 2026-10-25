@@ -1,6 +1,6 @@
 # Store analytics implementation plan
 
-Status (25 October 2026): batches 1–2 implemented locally. Browser journey instrumentation and consent-aware, transactional server order/purchase tracking are disabled by default pending property/privacy review and server configuration. Batch 2 includes an authenticated worker, validation-only mode and aggregate queue status. Real GA ingestion, dashboards and the full admin Reports module remain pending. See [setup and GTM creation steps](analytics-setup.md) and [server analytics rollout](analytics-server-rollout.md).
+Status (25 October 2026): batches 1–3 implemented locally. Browser/server analytics remain disabled pending property/privacy review and configuration. Batch 3 adds the admin Reports foundation: order cohorts/comparisons, product performance, current inventory, status-based payment/fulfillment breakdowns and protected CSV exports. Historical operations, cash/refund workflows and GA4 admin dashboards remain pending. See [analytics setup](analytics-setup.md), [server rollout](analytics-server-rollout.md) and [admin reporting guide](admin-reporting.md).
 
 ## Outcome and current state
 
@@ -119,6 +119,8 @@ Build a same-session funnel and a separate seven-day conversion-window explorati
 Acceptance: dashboard totals have clear definitions, date windows and currency; attribution and operational totals are not conflated; the client can find every requested metric without editing code.
 
 ## Phase 5 — Integrated admin reporting
+
+Batch 3 implements delivery batches 1–2 below using existing trustworthy fields. The Reports shell has all five sections, but Payments & Fulfillment currently shows placed-cohort/current-status breakdowns only. It deliberately does not infer cash collection, refunds, event timestamps or complete stock history. Exports are synchronous and explicitly limited to 5,000 rows; background exports remain future work. MongoDB is the supported reporting adapter for this release. See [admin-reporting.md](admin-reporting.md) for precise scope and limitations.
 
 ### Entry point and architecture
 
@@ -247,7 +249,7 @@ Required from deployment: server-only Measurement Protocol credentials and an au
 
 Admin reporting additionally requires agreement on metric/status definitions, payment collection workflow, inventory baseline date, reporting permissions, export contents, and expected data volumes. Optional GA4-in-admin reporting requires Data API credentials/property access; operational reporting does not depend on that connection.
 
-Batches 1–2 are implemented in code: safe/consented browser journey events, restricted server context, authoritative order/purchase snapshots and a separate transactional outbox/worker. Operational endpoint protection and trusted pricing are already implemented. Next: full admin reporting and historical operational milestones, GA4 funnels/dashboards, and controlled activation/ingestion validation. Core operational reports can proceed independently of GA4. External accounts/production tracking remain unchanged until configuration and rollout approval.
+Batches 1–3 are implemented in code: consented browser/server journey events plus operational Reports for order cohorts, products and current inventory. Next: durable historical operational milestones, complete inventory movement coverage/opening baseline, explicit payment/refund workflows, GA4 funnels/admin integration, and controlled analytics activation/ingestion validation. Existing reports work without GA credentials. External accounts/production tracking remain unchanged until configuration and rollout approval.
 
 ## Primary references
 
