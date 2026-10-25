@@ -1,5 +1,7 @@
 # Admin reporting — batch 3
 
+Update: the history/stock portion of batch 4 is now implemented in a separate expandable history view within Reports. See [historical operations](historical-operations.md) for explicit activation, coverage limitations, rollout and the latest 536-test verification. The cohort/current-state definitions below remain unchanged.
+
 Implemented locally on 25 October 2026. Open **Reports** in the Payload sidebar, or `/store-admin/reports`. Only administrators can use the view, report APIs, suggestions, setup and CSV exports. No Google credentials are needed.
 
 ## Available now
@@ -44,7 +46,7 @@ Synchronous exports support **at most 5,000 matching rows**. Larger requests ret
 
 ## Intentionally deferred
 
-First confirmation and shipping/delivery activity dates, immutable catalog/discount snapshots, a complete append-only stock ledger covering all edit paths and an opening baseline, historical stock/aging/coverage, payment collection/refund records, cost/profit, courier settlement, background exports and optional GA4 visitor/funnel metrics. The existing order-specific stock movements are not a complete inventory ledger, and the expiring analytics outbox is not operational history. Do not backfill dates or payment/movement facts that cannot be proven.
+Batch 4 adds first observed confirmation/shipping/delivery dates for newly tracked orders, bounded creation-item snapshots and an app-mediated stock ledger/opening baseline in the separate history view. Historical stock aging/coverage and derived trend reports, full discount/cost/category-name snapshots, payment collection/refund records, cost/profit, courier settlement, background exports and optional GA4 visitor/funnel metrics remain deferred. The older order-specific stock movements and expiring analytics outbox are not substitutes for the new operational history. Do not backfill facts that cannot be proven.
 
 No production deployment, Google account changes, real provider request or production database mutation is part of this batch. Analytics delivery remains in its prior disabled state.
 

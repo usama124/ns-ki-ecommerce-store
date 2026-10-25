@@ -531,7 +531,7 @@ export async function getOperationalReport(
     },
     unavailable: [
       'Collected cash, refunds, profit and courier settlement are not recorded.',
-      'Historical confirmation/fulfillment timestamps and complete stock movements are not available.',
+      'Pre-activation milestones/stock movements cannot be reconstructed; new tracked facts are in Historical operations.',
       'GA4 traffic, product views and cart abandonment are not connected to admin reports.',
     ],
     exportReady: Boolean(ready),

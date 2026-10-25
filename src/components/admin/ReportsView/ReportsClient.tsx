@@ -14,6 +14,7 @@ import {
   type ReportView,
 } from '@/lib/reports/model'
 import './reports.css'
+import { OperationsPanel } from './OperationsPanel'
 
 type Form = Record<keyof ReportFilters | 'preset', string>
 const titles: Record<ReportView, string> = {
@@ -146,6 +147,7 @@ export function ReportsClient() {
     limited: boolean
   }>({ products: [], categories: [], limited: false })
   const [optionsError, setOptionsError] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const beginLoad = useCallback(() => {
     setLoading(true)
     setError('')
@@ -282,6 +284,13 @@ export function ReportsClient() {
           Refresh report
         </button>
       </header>
+      <details
+        className="report-panel"
+        onToggle={(event) => setHistoryOpen(event.currentTarget.open)}
+      >
+        <summary>Order history, first milestones & stock ledger</summary>
+        {historyOpen && <OperationsPanel />}
+      </details>
       <nav aria-label="Report sections">
         {reportViews.map((view) => (
           <button

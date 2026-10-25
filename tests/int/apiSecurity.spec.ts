@@ -14,8 +14,10 @@ const mock = vi.hoisted(() => ({
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
 vi.mock('@/utilities/commerceDatabase', () => ({
-  commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) => work({}),
-  commerceSession: vi.fn().mockResolvedValue({}), COMMERCE: { movements: 'test-movements' },
+  commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) =>
+    work({}),
+  commerceSession: vi.fn().mockResolvedValue({}),
+  COMMERCE: { movements: 'test-movements' },
   mongoCommerce: () => ({ db: { collection: () => ({ insertOne: vi.fn() }) } }),
 }))
 import { GET as orders } from '@/app/api/admin/orders/route'
@@ -69,20 +71,63 @@ describe('Custom admin API boundaries', () => {
   it('queries older order pages and filters in the database rather than the first 500 orders', async () => {
     const user = { id: 'admin', roles: ['admin'] }
     mock.auth.mockResolvedValue({ user })
-    mock.find.mockResolvedValue({ docs: [], totalDocs: 501, totalPages: 11, page: 11, hasPrevPage: true })
-    const result = await orders(new Request('https://store.example/api/admin/orders?page=11&q=oldest&status=confirmed'))
+    mock.find.mockResolvedValue({
+      docs: [],
+      totalDocs: 501,
+      totalPages: 11,
+      page: 11,
+      hasPrevPage: true,
+    })
+    const result = await orders(
+      new Request('https://store.example/api/admin/orders?page=11&q=oldest&status=confirmed'),
+    )
     expect(result.status).toBe(200)
-    expect(mock.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'orders', limit: 50, page: 11, user, overrideAccess: false, where: { and: [{ status: { in: ['confirmed'] } }, { or: expect.arrayContaining([{ orderNumber: { contains: 'oldest' } }]) }] } }))
-    expect((await result.json()).pagination).toMatchObject({ page: 11, totalPages: 11, totalDocs: 501 })
+    expect(mock.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'orders',
+        limit: 50,
+        page: 11,
+        user,
+        overrideAccess: false,
+        where: {
+          and: [
+            { status: { in: ['confirmed'] } },
+            { or: expect.arrayContaining([{ orderNumber: { contains: 'oldest' } }]) },
+          ],
+        },
+      }),
+    )
+    expect((await result.json()).pagination).toMatchObject({
+      page: 11,
+      totalPages: 11,
+      totalDocs: 501,
+    })
   })
   it('makes products beyond the old 300-product inventory cap reachable with explicit scope', async () => {
     mock.auth.mockResolvedValue({ user: { id: 'admin', roles: ['admin'] } })
     mock.find.mockResolvedValue({ docs: [], totalDocs: 301, totalPages: 7, page: 7 })
     const result = await inventory(new Request('https://store.example/api/inventory?page=7'))
     expect(result.status).toBe(200)
-    expect(mock.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'products', page: 7, limit: 50, overrideAccess: false }))
-    expect(mock.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'categories', pagination: false, overrideAccess: false }))
-    expect(await result.json()).toMatchObject({ totalProducts: 301, variantsScope: 'current_product_page', pagination: { page: 7, totalPages: 7 } })
+    expect(mock.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'products',
+        page: 7,
+        limit: 50,
+        overrideAccess: false,
+      }),
+    )
+    expect(mock.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'categories',
+        pagination: false,
+        overrideAccess: false,
+      }),
+    )
+    expect(await result.json()).toMatchObject({
+      totalProducts: 301,
+      variantsScope: 'current_product_page',
+      pagination: { page: 7, totalPages: 7 },
+    })
   })
   for (const route of routes) {
     for (const user of [null, { id: 'customer', roles: ['customer'] }]) {
@@ -138,6 +183,36 @@ describe('Custom admin API boundaries', () => {
     expect(
       (await updateOrder(request('POST', { orderIds: Array(101).fill('a'), status: 'confirmed' })))
         .status,
+    ).toBe(400)
+    expect(mock.update).not.toHaveBeenCalled()
+  })
+  it('refuses stale stock/variant writes and invalid adjustment reasons', async () => {
+    mock.auth.mockResolvedValue({ user: { id: 'admin', roles: ['admin'] } })
+    expect(
+      (
+        await updateInventory(
+          request('POST', { productId: 'product-1', variantIndex: 0, stock: 5, expectedStock: 0 }),
+        )
+      ).status,
+    ).toBe(409)
+    expect(
+      (
+        await updateInventory(
+          request('POST', {
+            productId: 'product-1',
+            variantIndex: 0,
+            stock: 5,
+            variantId: 'wrong-variant',
+          }),
+        )
+      ).status,
+    ).toBe(409)
+    expect(
+      (
+        await updateInventory(
+          request('POST', { productId: 'product-1', stock: 5, reason: ['restock'] }),
+        )
+      ).status,
     ).toBe(400)
     expect(mock.update).not.toHaveBeenCalled()
   })

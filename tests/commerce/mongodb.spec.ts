@@ -918,5 +918,331 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         expect((await read('view=orders')).pagination.totalRows).toBe(5001)
       })
     })
+    describe('durable order milestones and complete product-write stock ledger', () => {
+      let operations: typeof import('@/utilities/operationsHistory')
+      let activity: typeof import('@/lib/reports/operations')
+      beforeAll(async () => {
+        operations = await import('@/utilities/operationsHistory')
+        activity = await import('@/lib/reports/operations')
+        await operations.initializeOperations(payload, admin)
+      })
+      beforeEach(async () => {
+        for (const name of Object.values(operations.OPERATIONS))
+          await commerce.mongoCommerce(payload).db.collection(name).deleteMany({})
+      })
+      const collection = (name: keyof typeof operations.OPERATIONS) =>
+        commerce
+          .mongoCommerce(payload)
+          .db.collection<import('@/utilities/commerceDatabase').InternalRecord>(
+            operations.OPERATIONS[name],
+          )
+      const setReady = (ready: boolean) =>
+        commerce
+          .mongoCommerce(payload)
+          .db.collection<import('@/utilities/commerceDatabase').InternalRecord>(
+            commerce.COMMERCE.config,
+          )
+          .updateOne({ _id: 'operations-v1' }, { $set: { ready } })
+      const adjust = (id: number | string, next: number, reason = 'restock') =>
+        commerce.commerceTransaction(payload, admin, async (req) => {
+          const item = await payload.findByID({ collection: 'products', id, req, depth: 0 })
+          return payload.update({
+            collection: 'products',
+            id,
+            req,
+            data: {
+              variants: item.variants!.map((v) => ({
+                ...v,
+                size: typeof v.size === 'object' ? v.size.id : v.size,
+                stock: next,
+              })),
+            },
+            context: { commerceInventoryWrite: true, stockReason: reason },
+          })
+        })
+      it('records checkout/replay/cancel/reopen once and preserves first-confirmation value/time', async () => {
+        const item = await product(10),
+          key = checkout.checkoutKey(randomUUID())
+        const result = await purchase(input(item.id), key)
+        if (!('orderId' in result)) throw new Error('Missing order')
+        await purchase(input(item.id), key)
+        const first = await collection('milestones').findOne({ _id: String(result.orderId) })
+        expect(first?.coverage).toBe('since_creation')
+        expect(first?.firstConfirmedValue).toBe(1350)
+        expect(first?.creationItems[0]).toMatchObject({
+          title: 'Test suit',
+          unitPrice: 1000,
+          quantity: 1,
+        })
+        expect(await collection('history').countDocuments()).toBe(1)
+        expect(
+          await collection('stock').countDocuments({
+            kind: 'order_allocation',
+            orderId: String(result.orderId),
+            delta: -1,
+          }),
+        ).toBe(1)
+        await status(result.orderId, 'cancelled')
+        await status(result.orderId, 'cancelled')
+        await status(result.orderId, 'confirmed')
+        expect(await collection('history').countDocuments()).toBe(3)
+        const latest = await collection('milestones').findOne({ _id: String(result.orderId) })
+        expect(latest?.firstConfirmedAt).toEqual(first?.firstConfirmedAt)
+        expect(latest?.firstConfirmedValue).toBe(1350)
+        const ledger = await collection('stock')
+          .find({ productId: String(item.id) })
+          .sort({ sequence: 1 })
+          .toArray()
+        expect(ledger.reduce((sum, row) => sum + row.delta, ledger[0].after)).toBe(9)
+        expect(await stock(item.id)).toBe(9)
+      })
+      it('records physical backorder deductions/restorations separately from requested demand', async () => {
+        const item = await product(1, true)
+        const result = await purchase(input(item.id, 3), undefined, 3350)
+        if (!('orderId' in result)) throw new Error('Missing order')
+        expect(
+          await collection('history').findOne({ orderId: String(result.orderId) }),
+        ).toMatchObject({ requestedUnits: 3, deductedUnits: 1, backorderedUnits: 2 })
+        expect(await collection('stock').findOne({ kind: 'order_allocation' })).toMatchObject({
+          before: 1,
+          after: 0,
+          delta: -1,
+        })
+        await status(result.orderId, 'cancelled')
+        expect(await collection('stock').findOne({ kind: 'order_restore' })).toMatchObject({
+          before: 0,
+          after: 1,
+          delta: 1,
+        })
+        expect(await stock(item.id)).toBe(1)
+      })
+      it('rolls back order, stock, milestones and history together', async () => {
+        const item = await product(5),
+          before = await collection('stock').countDocuments()
+        await expect(
+          commerce.commerceTransaction(payload, null, async (req) => {
+            await payload.create({
+              collection: 'orders',
+              req,
+              draft: false,
+              data: {
+                orderNumber: `OPS-${randomUUID()}`,
+                customer: input(item.id).customer,
+                paymentMethod: 'cod',
+                status: 'confirmed',
+                subtotal: 1000,
+                totalAmount: 1350,
+                shippingFee: 250,
+                codFee: 100,
+                items: [{ product: item.id, variantSize: 'M', quantity: 1, unitPrice: 1000 }],
+              },
+            })
+            throw new Error('synthetic history rollback')
+          }),
+        ).rejects.toThrow('synthetic history rollback')
+        expect(await collection('history').countDocuments()).toBe(0)
+        expect(await collection('milestones').countDocuments()).toBe(0)
+        expect(await collection('stock').countDocuments()).toBe(before)
+        expect(await stock(item.id)).toBe(5)
+      })
+      it('records manual adjustments and ignores unchanged stock/metadata-only writes', async () => {
+        const item = await product(5)
+        await adjust(item.id, 12)
+        expect(await collection('stock').findOne({ kind: 'restock' })).toMatchObject({
+          before: 5,
+          after: 12,
+          delta: 7,
+          actorId: String(admin.id),
+        })
+        const count = await collection('stock').countDocuments()
+        await adjust(item.id, 12)
+        await payload.update({
+          collection: 'products',
+          id: item.id,
+          data: { title: 'Renamed suit' },
+          context: { skipShoppableVideoSync: true },
+        })
+        expect(await collection('stock').countDocuments()).toBe(count)
+        expect((await activity.operationsStatus(payload, admin)).driftedVariants).toBe(0)
+      })
+      it('retains retirement movements for removed variants and deleted products', async () => {
+        const item = await product(5)
+        await payload.update({
+          collection: 'products',
+          id: item.id,
+          data: { variants: [] },
+          context: { skipShoppableVideoSync: true },
+        })
+        expect(await collection('stock').findOne({ kind: 'variant_removed' })).toMatchObject({
+          delta: -5,
+          after: 0,
+        })
+        const other = await product(4)
+        await payload.delete({
+          collection: 'products',
+          id: other.id,
+          context: { skipShoppableVideoSync: true },
+        })
+        expect(await collection('stock').findOne({ kind: 'product_deleted' })).toMatchObject({
+          delta: -4,
+          after: 0,
+        })
+        expect(await collection('balances').countDocuments({ active: true })).toBe(0)
+      })
+      it('does not invent first milestones for legacy orders already present at activation', async () => {
+        await setReady(false)
+        const item = await product(5),
+          result = await purchase(input(item.id))
+        if (!('orderId' in result)) throw new Error('Missing order')
+        await setReady(true)
+        await status(result.orderId, 'cancelled')
+        await status(result.orderId, 'confirmed')
+        const state = await collection('milestones').findOne({ _id: String(result.orderId) })
+        expect(state?.coverage).toBe('partial_legacy')
+        expect(state?.firstConfirmedAt).toBeUndefined()
+        expect(state?.placedAt).toBeUndefined()
+        expect(await collection('history').countDocuments()).toBe(2)
+      })
+      it('captures bounded resumable baselines without modifying original product records', async () => {
+        await setReady(false)
+        for (let index = 0; index < 27; index++) await product(5)
+        await setReady(true)
+        const { db, adapter } = commerce.mongoCommerce(payload)
+        const products = db.collection(adapter.collections.products.collection.collectionName)
+        const original = await products.find().sort({ _id: 1 }).toArray()
+        const first = await operations.captureInventoryBaselines(payload, admin)
+        expect(first.processed).toBe(25)
+        expect(first.nextCursor).toBeTruthy()
+        const last = await operations.captureInventoryBaselines(payload, admin, first.nextCursor!)
+        expect(last).toMatchObject({ processed: 2, nextCursor: null })
+        await operations.captureInventoryBaselines(payload, admin)
+        expect(await collection('stock').countDocuments()).toBe(27)
+        expect(await products.find().sort({ _id: 1 }).toArray()).toEqual(original)
+        expect(await activity.operationsStatus(payload, admin)).toMatchObject({
+          currentVariants: 27,
+          trackedVariants: 27,
+          driftedVariants: 0,
+        })
+      })
+      it('baseline capture races safely with checkout and does not lose a stock movement', async () => {
+        await setReady(false)
+        const item = await product(10)
+        await setReady(true)
+        await Promise.all([
+          operations.captureInventoryBaselines(payload, admin),
+          purchase(input(item.id)),
+        ])
+        const balance = await collection('balances').findOne({ productId: String(item.id) })
+        expect(balance?.stock).toBe(9)
+        const ledger = await collection('stock')
+          .find({ productId: String(item.id) })
+          .sort({ sequence: 1 })
+          .toArray()
+        expect(ledger.reduce((sum, value) => sum + value.delta, ledger[0].after)).toBe(9)
+        expect((await activity.operationsStatus(payload, admin)).driftedVariants).toBe(0)
+      })
+      it('refuses to overwrite detected drift and makes discrepancies visible', async () => {
+        const item = await product(5)
+        const { adapter } = commerce.mongoCommerce(payload)
+        await adapter.collections.products.updateOne(
+          { _id: item.id },
+          { $set: { 'variants.0.stock': 20 } },
+        )
+        await expect(adjust(item.id, 30)).rejects.toThrow('Reconciliation')
+        expect(await stock(item.id)).toBe(20)
+        expect((await activity.operationsStatus(payload, admin)).driftedVariants).toBe(1)
+        await expect(operations.captureInventoryBaselines(payload, admin)).rejects.toThrow(
+          'Reconciliation',
+        )
+      })
+      it('preserves first milestones and snapshots after rename, repricing, cancellation and deletion', async () => {
+        const item = await product(5),
+          result = await purchase(input(item.id))
+        if (!('orderId' in result)) throw new Error('Missing order')
+        await payload.update({
+          collection: 'products',
+          id: item.id,
+          data: { title: 'Later product name' },
+          context: { skipShoppableVideoSync: true },
+        })
+        await commerce.commerceTransaction(payload, admin, (req) =>
+          payload.update({
+            collection: 'orders',
+            id: result.orderId,
+            req,
+            data: { items: [{ product: item.id, variantSize: 'M', quantity: 1, unitPrice: 1200 }] },
+          }),
+        )
+        await status(result.orderId, 'cancelled')
+        await payload.delete({ collection: 'orders', id: result.orderId })
+        const state = await collection('milestones').findOne({ _id: String(result.orderId) })
+        expect(state?.firstConfirmedValue).toBe(1350)
+        expect(state?.creationItems[0].title).toBe('Test suit')
+        const report = await activity.operationsReport(
+          payload,
+          admin,
+          new URLSearchParams({ source: 'milestones' }),
+        )
+        expect(report.summary.confirmedValue).toBe(1350)
+        expect(report.rows[0]).toMatchObject({ deleted: true, value: 1350 })
+        expect(JSON.stringify(report)).not.toMatch(/test@example|030011|Synthetic test address/)
+      })
+      it('concurrent stock writers maintain one continuous stable-ID ledger', async () => {
+        const item = await product(5)
+        await Promise.all([adjust(item.id, 20), adjust(item.id, 30)])
+        const balance = await collection('balances').findOne({ productId: String(item.id) })
+        expect(balance?.stock).toBe(await stock(item.id))
+        const ledger = await collection('stock')
+          .find({ productId: String(item.id) })
+          .sort({ sequence: 1 })
+          .toArray()
+        for (let index = 1; index < ledger.length; index++)
+          expect(ledger[index].before).toBe(ledger[index - 1].after)
+        expect(ledger.reduce((sum, value) => sum + value.delta, ledger[0].after)).toBe(
+          balance?.stock,
+        )
+      })
+      it('records first shipping/delivery dates without erasing earlier milestones', async () => {
+        const item = await product(5),
+          result = await purchase(input(item.id))
+        if (!('orderId' in result)) throw new Error('Missing order')
+        const move = (next: 'shipped' | 'delivered') =>
+          commerce.commerceTransaction(payload, admin, (req) =>
+            payload.update({
+              collection: 'orders',
+              id: result.orderId,
+              req,
+              data: { status: next },
+            }),
+          )
+        await move('shipped')
+        await move('delivered')
+        const first = await collection('milestones').findOne({ _id: String(result.orderId) })
+        expect(first?.firstShippedAt).toBeInstanceOf(Date)
+        expect(first?.firstDeliveredAt).toBeInstanceOf(Date)
+        await status(result.orderId, 'cancelled')
+        await status(result.orderId, 'confirmed')
+        await move('shipped')
+        await move('delivered')
+        const latest = await collection('milestones').findOne({ _id: String(result.orderId) })
+        expect(latest?.firstShippedAt).toEqual(first?.firstShippedAt)
+        expect(latest?.firstDeliveredAt).toEqual(first?.firstDeliveredAt)
+      })
+      it('history pagination and audited CSV include all matching safe records', async () => {
+        const item = await product(5)
+        for (let index = 6; index <= 56; index++) await adjust(item.id, index)
+        const query = new URLSearchParams({ source: 'stock', productId: String(item.id) })
+        const normal = await activity.operationsReport(payload, admin, query)
+        expect(normal.rows).toHaveLength(50)
+        expect(normal.pagination.totalRows).toBe(53)
+        query.set('format', 'csv')
+        const exported = await activity.operationsReport(payload, admin, query)
+        expect(exported.rows).toHaveLength(53)
+        const csv = await activity.operationsCSV(payload, admin, exported)
+        expect(csv.trim().split('\r\n')).toHaveLength(54)
+        expect(csv).not.toMatch(/customer|test@example|030011|Synthetic test address|receipt/i)
+        expect(await collection('audit').countDocuments()).toBe(1)
+      })
+    })
   },
 )

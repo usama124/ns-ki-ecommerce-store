@@ -279,3 +279,37 @@ test('QA-20 report exports initialize explicitly, contain all matching rows and 
     expect(csv).not.toMatch(/qa-buyer@example|0300\d{7}|SYNTHETIC QA STREET|transactionId|receipt|email|phone/i)
   } finally { await admin.dispose() }
 })
+
+test('QA-21 admin enables history and captures consistent baselines without inventing old events', async ({ page }) => {
+  const admin = await actor('admin')
+  try {
+    await page.context().addCookies((await admin.storageState()).cookies)
+    await page.goto('/store-admin/reports')
+    await page.getByText('Order history, first milestones & stock ledger', { exact: true }).click()
+    const enable = page.getByRole('button', { name: 'Enable order & stock history' })
+    await expect(page.getByRole('heading', { name: 'Historical operations', exact: true })).toBeVisible()
+    const before = await admin.get('/api/admin/operations/status')
+    if (!(await before.json()).ready) await enable.click()
+    await page.getByRole('button', { name: 'Capture next 25 product baselines' }).click()
+    await expect(page.locator('section[aria-label="Historical operations"]').getByRole('status')).toContainText('Scan complete')
+    const state = await (await admin.get('/api/admin/operations/status')).json()
+    expect(state.currentVariants).toBeGreaterThan(0)
+    expect(state.trackedVariants).toBe(state.currentVariants)
+    expect(state.driftedVariants).toBe(0)
+    await page.getByLabel('History source').selectOption('stock')
+    await page.getByRole('button', { name: 'Load history', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Export history CSV (max 5,000)' })).toBeVisible()
+    await expect(page.locator('section[aria-label="Historical operations"]').getByRole('alert')).toHaveCount(0)
+    await page.screenshot({ path: '/tmp/nski-history-admin.png', fullPage: true })
+  } finally { await admin.dispose() }
+})
+
+test('QA-22 operations history/setup/backfill deny guests and customers', async ({ request }) => {
+  for (const path of ['/api/admin/operations', '/api/admin/operations?source=stock&format=csv', '/api/admin/operations/status']) expect((await request.get(path)).status()).toBe(401)
+  for (const path of ['/api/admin/operations/initialize', '/api/admin/operations/baseline']) expect((await request.post(path, { data: {} })).status()).toBe(401)
+  const customer = await actor('customer')
+  try {
+    for (const path of ['/api/admin/operations', '/api/admin/operations?source=stock&format=csv', '/api/admin/operations/status']) expect((await customer.get(path)).status()).toBe(403)
+    for (const path of ['/api/admin/operations/initialize', '/api/admin/operations/baseline']) expect((await customer.post(path, { data: {} })).status()).toBe(403)
+  } finally { await customer.dispose() }
+})

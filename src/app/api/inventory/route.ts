@@ -51,6 +51,7 @@ export async function GET(req: Request) {
             primaryCategorySlug: primaryCat ? primaryCat.slug : '',
             imageUrl,
             variantIndex: vIdx,
+            variantId: String(v.id || ''),
             sizeName,
             sku: v.sku || `NKI-${product.id}-${vIdx}`,
             stock: typeof v.stock === 'number' ? v.stock : 0,

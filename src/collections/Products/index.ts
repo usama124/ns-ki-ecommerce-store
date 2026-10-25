@@ -1,5 +1,6 @@
 import { adminOnly } from '@/access/adminOnly'
 import { assertProductUnreserved } from '@/utilities/reservedProductGuard'
+import { recordProductStock } from '@/utilities/operationsHistory'
 import {
     FixedToolbarFeature,
     HeadingFeature,
@@ -62,8 +63,12 @@ export const Products: CollectionConfig = {
         return data
       },
     ],
-    afterChange: [autoSyncShoppableVideo],
-    beforeDelete: [async ({ id, req }) => { await assertProductUnreserved(id, req) }],
+    afterChange: [autoSyncShoppableVideo, async ({ doc, previousDoc, operation, req }) => { await recordProductStock(doc, operation === 'create' ? undefined : previousDoc, req) }],
+    beforeDelete: [async ({ id, req }) => {
+      await assertProductUnreserved(id, req)
+      const product = await req.payload.findByID({ collection: 'products', id, depth: 0, req, overrideAccess: true })
+      await recordProductStock(product, product, req, true)
+    }],
     afterDelete: [removeShoppableVideoOnDelete],
   },
   fields: [

@@ -72,7 +72,7 @@ async function restore(allocations: Allocation[], req: PayloadRequest) {
       data: { variants: updated },
       overrideAccess: true,
       req,
-      context: { skipShoppableVideoSync: true },
+      context: { skipShoppableVideoSync: true, stockReason: 'order_restore' },
     })
   }
 }
@@ -155,7 +155,7 @@ async function allocate(items: Line[], req: PayloadRequest): Promise<Allocation[
       data: { variants: updated },
       req,
       overrideAccess: true,
-      context: { skipShoppableVideoSync: true },
+      context: { skipShoppableVideoSync: true, stockReason: 'order_allocation' },
     })
     if (existing) {
       existing.quantity += line.quantity

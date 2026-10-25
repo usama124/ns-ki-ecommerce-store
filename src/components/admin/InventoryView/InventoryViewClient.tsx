@@ -23,6 +23,7 @@ export type InventoryRow = {
   primaryCategorySlug: string
   imageUrl: string | null
   variantIndex: number
+  variantId?: string
   sizeName: string
   sku: string
   stock: number
@@ -162,6 +163,8 @@ export function InventoryViewClient() {
         body: JSON.stringify({
           productId: item.productId,
           variantIndex: item.variantIndex,
+          variantId: item.variantId,
+          expectedStock: item.stock,
           stock: newStock,
         }),
       })
@@ -192,8 +195,8 @@ export function InventoryViewClient() {
     if (!dirtyKeys.length) return
     setBatchSaving(true)
     const updates = dirtyKeys.map((key) => {
-      const [productId, vIdxStr] = key.split('-')
-      return { productId, variantIndex: Number(vIdxStr), stock: editedStocks[key] }
+      const item = inventory.find(item => `${item.productId}-${item.variantIndex}` === key)!
+      return { productId: item.productId, variantIndex: item.variantIndex, variantId: item.variantId, expectedStock: item.stock, stock: editedStocks[key] }
     })
     try {
       const res = await fetch('/api/inventory/update', {

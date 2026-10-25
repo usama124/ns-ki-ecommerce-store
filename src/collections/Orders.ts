@@ -4,6 +4,7 @@ import { orderOwner } from '@/access/orderOwner'
 import { reconcileOrderInventory, recordInventoryMovement } from '@/utilities/orderInventory'
 import { enqueueOrderEmails } from '@/utilities/orderOutbox'
 import { enqueueOrderAnalytics } from '@/utilities/orderAnalytics'
+import { recordOrderHistory } from '@/utilities/operationsHistory'
 import { RequestError } from '@/utilities/apiSecurity'
 import { requireCommerceReady } from '@/utilities/commerceDatabase'
 import { orderAmounts } from '@/utilities/orderAmounts'
@@ -194,6 +195,7 @@ export const Orders: CollectionConfig = {
     afterChange: [
       async ({ doc, previousDoc, operation, req }) => {
         await recordInventoryMovement(doc, previousDoc, req)
+        await recordOrderHistory(doc, previousDoc, operation, req)
         await enqueueOrderEmails(doc, previousDoc, operation, req)
         await enqueueOrderAnalytics(doc, previousDoc, operation, req)
       },
@@ -201,6 +203,7 @@ export const Orders: CollectionConfig = {
     beforeDelete: [async ({ id, req }) => {
       const order = await req.payload.findByID({ collection: 'orders', id, depth: 0, req, overrideAccess: true })
       if (order.status !== 'cancelled') throw new RequestError('Cancel and reconcile the order before deleting it.', 409)
+      await recordOrderHistory(order, order, 'update', req, true)
     }],
   },
   fields: [
