@@ -354,3 +354,40 @@ test('QA-24 payment report/record/setup deny guests and customers', async ({ req
     for (const path of ['/api/admin/payments', '/api/admin/payments/initialize']) expect((await customer.post(path, { data: {} })).status()).toBe(403)
   } finally { await customer.dispose() }
 })
+
+test('QA-25 actual admin insights show truthful source coverage and current stock scope', async ({ page }) => {
+  const admin = await actor('admin')
+  try {
+    await page.context().addCookies((await admin.storageState()).cookies)
+    await page.goto('/store-admin/reports')
+    await page.getByText('Historical trends & stock inactivity', { exact: true }).click()
+    const status=await (await admin.get('/api/admin/insights/status')).json()
+    if(!status.ready)await page.getByRole('button',{ name:'Prepare insight indexes & exports' }).click()
+    await page.getByRole('button',{ name:'Load insights',exact:true }).click()
+    const panel=page.locator('section[aria-label="Historical insights"]')
+    await expect(panel.getByText('Independent event series, not a conversion cohort.',{ exact:false })).toBeVisible()
+    await expect(panel.getByRole('alert')).toHaveCount(0)
+    await page.getByLabel('Insight view').selectOption('stock')
+    await page.getByRole('button',{ name:'Load insights',exact:true }).click()
+    await expect(panel.getByText('Current catalog variants only.',{ exact:false })).toBeVisible()
+    await expect(panel.getByRole('alert')).toHaveCount(0)
+    await expect(panel.getByRole('button',{ name:'Export insights CSV (max 5,000)' })).toBeVisible()
+    const report=await (await admin.get('/api/admin/insights?view=stock')).json()
+    expect(report.summary.variants).toBeGreaterThan(0)
+    expect(report.summary.drifted).toBe(0)
+    const exported=await admin.get('/api/admin/insights?view=stock&format=csv')
+    expect(exported.status()).toBe(200)
+    expect((await exported.text()).trim().split('\r\n')).toHaveLength(report.pagination.totalRows+1)
+    await page.screenshot({ path:'/tmp/nski-insights-admin.png',fullPage:true })
+  } finally { await admin.dispose() }
+})
+
+test('QA-26 insight status/report/export/setup deny guests and customers',async({request})=>{
+  for(const path of ['/api/admin/insights','/api/admin/insights?view=stock&format=csv','/api/admin/insights/status'])expect((await request.get(path)).status()).toBe(401)
+  expect((await request.post('/api/admin/insights/initialize')).status()).toBe(401)
+  const customer=await actor('customer')
+  try {
+    for(const path of ['/api/admin/insights','/api/admin/insights?view=stock&format=csv','/api/admin/insights/status'])expect((await customer.get(path)).status()).toBe(403)
+    expect((await customer.post('/api/admin/insights/initialize')).status()).toBe(403)
+  } finally { await customer.dispose() }
+})

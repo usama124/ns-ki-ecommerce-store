@@ -1576,5 +1576,343 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         expect(await collection('audit').countDocuments()).toBe(1)
       })
     })
+    describe('historical trends and honest stock inactivity insights', () => {
+      let insights: typeof import('@/lib/reports/insights')
+      let ops: typeof import('@/utilities/operationsHistory')
+      let money: typeof import('@/utilities/paymentLedger')
+      const now = new Date('2026-10-25T12:00:00Z')
+      const native = (name: string) =>
+        commerce
+          .mongoCommerce(payload)
+          .db.collection<import('@/utilities/commerceDatabase').InternalRecord>(name)
+      const read = (query = '') =>
+        insights.insightReport(payload, admin, new URLSearchParams(query), now)
+      beforeAll(async () => {
+        insights = await import('@/lib/reports/insights')
+        ops = await import('@/utilities/operationsHistory')
+        money = await import('@/utilities/paymentLedger')
+        await ops.initializeOperations(payload, admin)
+        await money.initializeMoney(payload, admin)
+        await insights.initializeInsights(payload, admin)
+      })
+      beforeEach(async () => {
+        for (const name of [
+          ...Object.values(ops.OPERATIONS),
+          ...Object.values(money.MONEY),
+          'nski_insight_exports',
+        ])
+          await native(name).deleteMany({})
+        for (const id of ['operations-v1', 'money-v1'])
+          await native(commerce.COMMERCE.config).updateOne(
+            { _id: id },
+            { $set: { ready: true, coverageStartedAt: new Date('2026-10-01T07:00:00Z') } },
+          )
+      })
+      const stockFixture = async (
+        baseline = '2026-09-01T00:00:00Z',
+        allocation = '2026-10-20T00:00:00Z',
+      ) => {
+        const item = await product(8),
+          variantId = String(item.variants![0].id),
+          productId = String(item.id),
+          key = `${productId}:${variantId}`
+        await native(ops.OPERATIONS.stock).deleteMany({ productId })
+        await native(ops.OPERATIONS.balances).replaceOne(
+          { _id: key },
+          {
+            _id: key,
+            productId,
+            variantId,
+            stock: 8,
+            active: true,
+            sequence: 1,
+            baselineAt: new Date(baseline),
+            lastChangedAt: new Date(allocation),
+          },
+          { upsert: true },
+        )
+        await native(ops.OPERATIONS.stock).insertMany([
+          {
+            _id: key + ':0',
+            productId,
+            variantId,
+            sequence: 0,
+            kind: 'opening_balance',
+            before: null,
+            after: 20,
+            delta: 0,
+            recordedAt: new Date(baseline),
+          },
+          {
+            _id: key + ':1',
+            productId,
+            variantId,
+            sequence: 1,
+            kind: 'order_allocation',
+            before: 20,
+            after: 8,
+            delta: -12,
+            recordedAt: new Date(allocation),
+          },
+        ])
+        return { item, productId, variantId, key }
+      }
+      it('zero-fills only tracked milestone days, excludes legacy and retains firsts after cancellation/deletion', async () => {
+        await native(ops.OPERATIONS.milestones).insertMany([
+          {
+            _id: 'one',
+            coverage: 'since_creation',
+            currentStatus: 'cancelled',
+            deleted: true,
+            firstConfirmedAt: new Date('2026-10-01T19:00:00Z'),
+            firstConfirmedValue: 1350,
+            firstShippedAt: new Date('2026-10-02T19:00:00Z'),
+            firstDeliveredAt: new Date('2026-10-03T19:00:00Z'),
+          },
+          {
+            _id: 'legacy',
+            coverage: 'partial_legacy',
+            firstConfirmedAt: new Date('2026-10-01T19:00:00Z'),
+            firstConfirmedValue: 99999,
+          },
+        ])
+        const report = await read('start=2026-09-30&end=2026-10-04')
+        expect(report.rows[0]).toMatchObject({
+          historyCoverage: 'before_tracking',
+          firstConfirmed: null,
+        })
+        expect(report.rows[1]).toMatchObject({
+          historyCoverage: 'activation_day_partial',
+          firstConfirmed: 0,
+        })
+        expect(report.rows[2]).toMatchObject({
+          day: '2026-10-02',
+          firstConfirmed: 1,
+          firstConfirmedValuePKR: 1350,
+        })
+        expect(report.summary).toMatchObject({
+          firstConfirmed: 1,
+          firstShipped: 1,
+          firstDelivered: 1,
+          firstConfirmedValuePKR: 1350,
+        })
+      })
+      it('prepares insight indexes without enabling source recording or changing products', async () => {
+        const item = await product(8)
+        const before = await payload.findByID({ collection: 'products', id: item.id, depth: 0 })
+        for (const id of ['operations-v1', 'money-v1'])
+          await native(commerce.COMMERCE.config).updateOne({ _id: id }, { $set: { ready: false } })
+        await insights.initializeInsights(payload, admin)
+        expect(await insights.insightStatus(payload, admin)).toMatchObject({
+          ready: true,
+          historyReady: false,
+          moneyReady: false,
+        })
+        expect(await payload.findByID({ collection: 'products', id: item.id, depth: 0 })).toEqual(
+          before,
+        )
+      })
+      it('shows unavailable disabled sources, not convincing zero metrics', async () => {
+        for (const id of ['operations-v1', 'money-v1'])
+          await native(commerce.COMMERCE.config).updateOne({ _id: id }, { $set: { ready: false } })
+        const report = await read()
+        expect(report.summary).toMatchObject({
+          firstConfirmed: null,
+          collectedPKR: null,
+          netRecordedPKR: null,
+        })
+        expect(report.rows[0]).toMatchObject({
+          historyCoverage: 'not_enabled',
+          firstDelivered: null,
+          collectedPKR: null,
+        })
+        await expect(read('view=stock')).rejects.toMatchObject({ status: 503 })
+      })
+      it('aggregates actual money times, exact decimal totals and negative refund periods without exposing private fields', async () => {
+        await native(money.MONEY.entries).insertMany([
+          {
+            _id: 'before',
+            kind: 'collection',
+            amountMinor: 99999,
+            occurredAt: new Date('2026-10-23T18:59:59.999Z'),
+          },
+          {
+            _id: 'a',
+            kind: 'collection',
+            amountMinor: 10,
+            occurredAt: new Date('2026-10-23T19:00:00Z'),
+            fingerprint: 'PRIVATE-REFERENCE',
+          },
+          {
+            _id: 'b',
+            kind: 'collection',
+            amountMinor: 20,
+            occurredAt: new Date('2026-10-24T19:00:00Z'),
+          },
+          {
+            _id: 'c',
+            kind: 'refund',
+            amountMinor: 10001,
+            occurredAt: new Date('2026-10-24T19:00:01Z'),
+            recordedAt: now,
+          },
+        ])
+        const report = await read('start=2026-10-24&end=2026-10-25')
+        expect(report.summary).toMatchObject({
+          collectedPKR: 0.3,
+          refundedPKR: 100.01,
+          netRecordedPKR: -99.71,
+        })
+        expect(report.rows[0]).toMatchObject({ day: '2026-10-24', collectedPKR: 0.1 })
+        expect(report.rows[1].historyCoverage).toBe('current_day_partial')
+        expect(JSON.stringify(report)).not.toContain('PRIVATE-REFERENCE')
+      })
+      it('reconstructs known opening/closing stock and estimates coverage from elapsed physical allocations only', async () => {
+        const { productId } = await stockFixture()
+        const report = await read(
+          `view=stock&productId=${productId}&start=2026-10-01&end=2026-10-25`,
+        )
+        expect(report.rows[0]).toMatchObject({
+          coverage: 'full_window',
+          stock: 8,
+          openingStock: 20,
+          closingStock: 8,
+          recordedNetChange: -12,
+          allocatedUnits: 12,
+          restoredUnits: 0,
+          daysWithoutRecordedChange: 5,
+        })
+        const elapsed = (now.getTime() - Date.parse('2026-10-01T00:00:00+05:00')) / 86400000
+        expect(report.rows[0].allocationCoverageDays).toBeCloseTo((8 * elapsed) / 12)
+        expect(report.summary).toMatchObject({
+          variants: 1,
+          fullWindow: 1,
+          recordedAllocatedUnits: 12,
+        })
+      })
+      it('keeps partial baselines and unknown or drifted stock out of coverage estimates', async () => {
+        const { productId, key } = await stockFixture('2026-10-10T00:00:00Z')
+        const query = `view=stock&productId=${productId}&start=2026-10-01&end=2026-10-25`
+        expect((await read(query)).rows[0]).toMatchObject({
+          coverage: 'partial_window',
+          openingStock: null,
+          allocationCoverageDays: null,
+          allocatedUnits: 12,
+        })
+        await native(ops.OPERATIONS.balances).updateOne({ _id: key }, { $set: { stock: 7 } })
+        expect((await read(query)).rows[0]).toMatchObject({
+          coverage: 'drifted',
+          openingStock: null,
+          closingStock: null,
+          daysWithoutRecordedChange: null,
+          allocationCoverageDays: null,
+        })
+        await native(ops.OPERATIONS.balances).deleteOne({ _id: key })
+        const unknown = await read(query)
+        expect(unknown.rows[0]).toMatchObject({
+          coverage: 'untracked',
+          stock: 8,
+          allocatedUnits: null,
+        })
+        expect(unknown.summary).toMatchObject({ untracked: 1, fullWindow: 0 })
+      })
+      it('labels inactivity since observation and leaves zero-allocation coverage undefined', async () => {
+        const { productId } = await stockFixture('2026-09-01T00:00:00Z', '2026-09-20T00:00:00Z')
+        const report = await read(
+          `view=stock&productId=${productId}&start=2026-10-01&end=2026-10-25`,
+        )
+        expect(report.rows[0]).toMatchObject({
+          openingStock: 8,
+          closingStock: 8,
+          daysWithoutRecordedChange: 35,
+          allocatedUnits: 0,
+          allocationCoverageDays: null,
+        })
+        expect(report.summary.inactive30Plus).toBe(1)
+        expect(report.definition).toContain('physical unit aging is unavailable')
+      })
+      it('handles an exact-start baseline without counting a same-instant allocation in opening stock', async () => {
+        const { productId } = await stockFixture('2026-09-30T19:00:00Z', '2026-09-30T19:00:00Z')
+        const report = await read(
+          `view=stock&productId=${productId}&start=2026-10-01&end=2026-10-25`,
+        )
+        expect(report.rows[0]).toMatchObject({
+          coverage: 'full_window',
+          openingStock: 20,
+          closingStock: 8,
+          allocatedUnits: 12,
+          recordedNetChange: -12,
+        })
+      })
+      it('paginates complete current catalogs and audits formula-safe full exports', async () => {
+        const item = await product(1),
+          { adapter } = commerce.mongoCommerce(payload)
+        const variants = Array.from({ length: 61 }, (_, index) => ({
+          _id: randomUUID().replaceAll('-', '').slice(0, 24),
+          size,
+          stock: index,
+          sku: index === 60 ? '=HYPERLINK("bad")' : `SKU-${index}`,
+        }))
+        await adapter.collections.products.collection.updateOne(
+          { _id: adapter.collections.products.schema.path('_id').cast(item.id) },
+          { $set: { variants } },
+        )
+        const query = `view=stock&productId=${item.id}`
+        const report = await read(query)
+        expect(report.rows).toHaveLength(50)
+        expect(report.summary.variants).toBe(61)
+        expect((await read(query + '&page=2')).rows).toHaveLength(11)
+        const exported = await read(query + '&format=csv'),
+          csv = await insights.insightCSV(payload, admin, exported)
+        expect(csv.trim().split('\r\n')).toHaveLength(62)
+        expect(csv).toContain("'=HYPERLINK")
+        expect(csv).not.toMatch(/customer|receipt|fingerprint|PRIVATE-REFERENCE/)
+        expect(await native('nski_insight_exports').countDocuments()).toBe(1)
+      })
+      it('refuses oversized stock exports and exports all bounded trend days', async () => {
+        const item = await product(1),
+          { adapter } = commerce.mongoCommerce(payload)
+        const variants = Array.from({ length: 5001 }, (_, index) => ({
+          _id: randomUUID().replaceAll('-', '').slice(0, 24),
+          size,
+          stock: 0,
+          sku: `SKU-${index}`,
+        }))
+        await adapter.collections.products.collection.updateOne(
+          { _id: adapter.collections.products.schema.path('_id').cast(item.id) },
+          { $set: { variants } },
+        )
+        await expect(read(`view=stock&productId=${item.id}&format=csv`)).rejects.toMatchObject({
+          status: 413,
+        })
+        const report = await read('start=2026-01-01&end=2026-10-25&format=csv')
+        expect(report.rows.length).toBeGreaterThan(50)
+        expect(report.rows.length).toBe(report.pagination.totalRows)
+        expect(
+          (await insights.insightCSV(payload, admin, report)).trim().split('\r\n'),
+        ).toHaveLength(report.rows.length + 1)
+      })
+      it('fails exports closed if their minimal audit cannot persist', async () => {
+        const report = await read('format=csv'),
+          { db } = commerce.mongoCommerce(payload)
+        const proto = Object.getPrototypeOf(db.collection('nski_insight_exports')),
+          original = proto.insertOne
+        const spy = vi.spyOn(proto, 'insertOne').mockImplementation(function (
+          this: { collectionName: string },
+          ...args: unknown[]
+        ) {
+          if (this.collectionName === 'nski_insight_exports')
+            throw new Error('Synthetic insight audit failure')
+          return original.apply(this, args)
+        })
+        try {
+          await expect(insights.insightCSV(payload, admin, report)).rejects.toThrow(
+            'Synthetic insight audit failure',
+          )
+        } finally {
+          spy.mockRestore()
+        }
+      })
+    })
   },
 )

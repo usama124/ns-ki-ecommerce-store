@@ -16,6 +16,7 @@ import {
 import './reports.css'
 import { OperationsPanel } from './OperationsPanel'
 import { PaymentsPanel } from './PaymentsPanel'
+import { InsightsPanel } from './InsightsPanel'
 
 type Form = Record<keyof ReportFilters | 'preset', string>
 const titles: Record<ReportView, string> = {
@@ -150,6 +151,7 @@ export function ReportsClient() {
   const [optionsError, setOptionsError] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [moneyOpen, setMoneyOpen] = useState(false)
+  const [insightsOpen, setInsightsOpen] = useState(false)
   const beginLoad = useCallback(() => {
     setLoading(true)
     setError('')
@@ -296,6 +298,10 @@ export function ReportsClient() {
       <details className="report-panel" onToggle={(event) => setMoneyOpen(event.currentTarget.open)}>
         <summary>Recorded payments & refunds (actual money)</summary>
         {moneyOpen && <PaymentsPanel />}
+      </details>
+      <details className="report-panel" onToggle={(event) => setInsightsOpen(event.currentTarget.open)}>
+        <summary>Historical trends & stock inactivity</summary>
+        {insightsOpen && <InsightsPanel />}
       </details>
       <nav aria-label="Report sections">
         {reportViews.map((view) => (

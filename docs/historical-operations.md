@@ -4,6 +4,8 @@ Implemented locally on 25 October 2026. In **Reports**, expand **Order history, 
 
 Subsequent update: separate actual-money recording is now implemented; see [payment recording](payment-recording.md). It requires independent explicit activation and does not infer payments from these milestones or execute transfers/refunds. The verification below records the earlier history/stock batch.
 
+Further update: [historical insights](historical-insights.md) now derives daily first-milestone/money trends and current-variant stock inactivity, known balances and conditional allocation coverage. Physical unit aging still requires receipt/lot data. These read-only reports do not reconstruct missing facts or replace the original history.
+
 ## What is recorded
 
 - Order changes, deletion events and immutable creation-item snapshots: product/title, primary category ID, SKU/variant ID when resolved, size, quantity and accepted unit price. Customer/contact/address, receipt, payment reference and notes are excluded.

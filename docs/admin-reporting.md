@@ -4,6 +4,8 @@ Update: the history/stock portion of batch 4 is now implemented in a separate ex
 
 Further update: **Recorded payments & refunds (actual money)** now supports explicitly entered collections/partial refunds, transactional balances and audited CSV. See [payment recording](payment-recording.md) for activation, financial edit/deletion locks, recovery behavior and verification. Money-event reports are separate from the placement cohorts below; settlement/profit and GA4 refunds remain unavailable.
 
+Further update: **Historical trends & stock inactivity** adds first-milestone/money daily series, known opening/closing stock, observed inactivity and conditional allocation coverage estimates. See [historical insights](historical-insights.md). Physical unit aging is not inferred without receipt lots; current-catalog stock scope and event-date trends remain distinct from placement cohorts.
+
 Implemented locally on 25 October 2026. Open **Reports** in the Payload sidebar, or `/store-admin/reports`. Only administrators can use the view, report APIs, suggestions, setup and CSV exports. No Google credentials are needed.
 
 ## Available now

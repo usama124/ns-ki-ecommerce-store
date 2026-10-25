@@ -2,6 +2,8 @@
 
 Implemented locally on 25 October 2026, following the historical-operations batch. Open **Reports → Recorded payments & refunds (actual money)**. This is an operational record of money already received/returned, **not a payment gateway or a refund execution service**. No production activation or money transfer is performed by this implementation.
 
+Subsequent update: [historical insights](historical-insights.md) now includes daily actual-money trends alongside independent first-milestone series. Money recording semantics remain unchanged, and those activity series are not a conversion cohort. The verification below records the earlier payment-recording batch.
+
 ## Activate and use
 
 1. Release through the normal backup/staging/deployment workflow. Transaction-enabled MongoDB and initialized commerce infrastructure are required. There are no new environment variables, Payload schema fields, generated types or import-map entries in this batch. History/stock activation remains separate.
