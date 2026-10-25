@@ -105,6 +105,24 @@
 .nski-reports input::placeholder {
   color: #a2b5a9;
 }
+.nski-reports .money-attestation {
+  flex-direction: row;
+  align-items: center;
+  margin: 14px 0;
+}
+.nski-reports .money-entry-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+.nski-reports .money-attestation input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+}
 .report-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

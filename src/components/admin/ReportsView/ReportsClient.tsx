@@ -15,6 +15,7 @@ import {
 } from '@/lib/reports/model'
 import './reports.css'
 import { OperationsPanel } from './OperationsPanel'
+import { PaymentsPanel } from './PaymentsPanel'
 
 type Form = Record<keyof ReportFilters | 'preset', string>
 const titles: Record<ReportView, string> = {
@@ -148,6 +149,7 @@ export function ReportsClient() {
   }>({ products: [], categories: [], limited: false })
   const [optionsError, setOptionsError] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [moneyOpen, setMoneyOpen] = useState(false)
   const beginLoad = useCallback(() => {
     setLoading(true)
     setError('')
@@ -290,6 +292,10 @@ export function ReportsClient() {
       >
         <summary>Order history, first milestones & stock ledger</summary>
         {historyOpen && <OperationsPanel />}
+      </details>
+      <details className="report-panel" onToggle={(event) => setMoneyOpen(event.currentTarget.open)}>
+        <summary>Recorded payments & refunds (actual money)</summary>
+        {moneyOpen && <PaymentsPanel />}
       </details>
       <nav aria-label="Report sections">
         {reportViews.map((view) => (
@@ -551,8 +557,9 @@ export function ReportsClient() {
             <section className="report-panel">
               <h3>Collection and settlement</h3>
               <p>
-                Collected COD, bank settlement, actual refunds and net paid revenue:{' '}
-                <strong>Unavailable</strong>. Confirmation/delivery does not prove receipt of cash.
+                This placement-cohort view does not include actual money entries. Use the separate
+                recorded payments & refunds section above. Bank/courier settlement and net sales
+                remain unavailable. Confirmation/delivery does not prove receipt of cash.
               </p>
             </section>
           )}

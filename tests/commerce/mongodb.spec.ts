@@ -802,7 +802,7 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         })
         expect(result.breakdowns.courier).toEqual([{ label: 'TCS', orders: 1, value: 1350 }])
         expect(JSON.stringify(result)).not.toContain('PRIVATE-REFERENCE')
-        expect(result.unavailable.join(' ')).toMatch(/Collected cash/)
+        expect(result.unavailable.join(' ')).toMatch(/separate recorded payments/)
       })
       it('ranks multi-line products by item value, counts each order once and includes zero-order products', async () => {
         const item = await product(10),
@@ -916,6 +916,338 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         await rawOrders().insertMany(Array.from({ length: 5001 }, () => row()))
         await expect(read('view=orders', true)).rejects.toMatchObject({ status: 413 })
         expect((await read('view=orders')).pagination.totalRows).toBe(5001)
+      })
+    })
+    describe('manual actual-money ledger and refunds', () => {
+      let money: typeof import('@/utilities/paymentLedger')
+      let reports: typeof import('@/lib/payments/report')
+      beforeAll(async () => {
+        money = await import('@/utilities/paymentLedger')
+        reports = await import('@/lib/payments/report')
+        await money.initializeMoney(payload, admin)
+      })
+      beforeEach(async () => {
+        for (const name of Object.values(money.MONEY))
+          await commerce.mongoCommerce(payload).db.collection(name).deleteMany({})
+      })
+      const entryCollection = () =>
+        commerce
+          .mongoCommerce(payload)
+          .db.collection<import('@/utilities/commerceDatabase').InternalRecord>(money.MONEY.entries)
+      const createOrder = async () => {
+        const item = await product(10)
+        const result = await purchase(input(item.id))
+        if (!('orderId' in result)) throw new Error('No order')
+        return {
+          item,
+          order: await payload.findByID({ collection: 'orders', id: result.orderId, depth: 0 }),
+        }
+      }
+      const command = (orderId: string | number, amount = '500') => ({
+        key: randomUUID(),
+        orderId: String(orderId),
+        kind: 'collection',
+        amount,
+        method: 'cash',
+        reason: 'customer_payment',
+        occurredAt: new Date().toISOString(),
+      })
+      const refund = (payment: ReturnType<typeof command>, amount = '100') => ({
+        ...command(payment.orderId, amount),
+        kind: 'refund',
+        reason: 'return',
+        refundOf: payment.key,
+      })
+      const read = (query = '') => reports.moneyReport(payload, admin, new URLSearchParams(query))
+      it('records partial collections/refunds without changing order status, stock, content or timestamps', async () => {
+        const { item, order } = await createOrder(),
+          payment = command(order.id, '500.25')
+        const before = await payload.findByID({ collection: 'orders', id: order.id, depth: 0 })
+        await money.recordMoney(payload, admin, payment)
+        await money.recordMoney(payload, admin, refund(payment, '100.01'))
+        await money.recordMoney(payload, admin, refund(payment, '200.02'))
+        const report = await read(`orderId=${order.id}`)
+        expect(report.summary).toMatchObject({
+          collectedMinor: 50025,
+          refundedMinor: 30003,
+          netMovementMinor: 20022,
+        })
+        expect(report.order).toMatchObject({
+          collectedMinor: 50025,
+          refundedMinor: 30003,
+          hasEntries: true,
+        })
+        expect(await payload.findByID({ collection: 'orders', id: order.id, depth: 0 })).toEqual(
+          before,
+        )
+        expect(await stock(item.id)).toBe(9)
+        expect(JSON.stringify(report)).not.toMatch(
+          /test@example|030011|Synthetic test address|fingerprint|paymentProof/,
+        )
+      })
+      it('replays concurrent identical commands once and refuses mismatched key reuse', async () => {
+        const { order } = await createOrder(),
+          payment = command(order.id)
+        const results = await Promise.all([
+          money.recordMoney(payload, admin, payment),
+          money.recordMoney(payload, admin, payment),
+        ])
+        expect(results.map((r) => r.replayed).sort()).toEqual([false, true])
+        expect(await entryCollection().countDocuments()).toBe(1)
+        await expect(
+          money.recordMoney(payload, admin, { ...payment, amount: '501' }),
+        ).rejects.toMatchObject({ status: 409 })
+      })
+      it('serializes competing collections at the order cap', async () => {
+        const { order } = await createOrder()
+        const results = await Promise.allSettled([
+          money.recordMoney(payload, admin, command(order.id, '1000')),
+          money.recordMoney(payload, admin, command(order.id, '1000')),
+        ])
+        expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
+        expect((await read()).summary.collectedMinor).toBe(100000)
+      })
+      it('serializes refunds against the remaining linked collection and order balance', async () => {
+        const { order } = await createOrder(),
+          payment = command(order.id)
+        await money.recordMoney(payload, admin, payment)
+        const results = await Promise.allSettled([
+          money.recordMoney(payload, admin, refund(payment, '400')),
+          money.recordMoney(payload, admin, refund(payment, '400')),
+        ])
+        expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
+        expect((await read()).summary.refundedMinor).toBe(40000)
+      })
+      it('refuses unrelated collection IDs, pre-order dates and refunds before collection time', async () => {
+        const first = await createOrder(),
+          second = await createOrder(),
+          payment = command(first.order.id)
+        await money.recordMoney(payload, admin, payment)
+        await expect(
+          money.recordMoney(payload, admin, {
+            ...refund(payment),
+            orderId: String(second.order.id),
+          }),
+        ).rejects.toThrow('belonging')
+        await expect(
+          money.recordMoney(payload, admin, {
+            ...command(first.order.id),
+            occurredAt: '2020-01-01T00:00:00Z',
+          }),
+        ).rejects.toThrow('creation')
+        const later = {
+          ...command(first.order.id, '10'),
+          occurredAt: new Date(Date.now() + 60000).toISOString(),
+        }
+        await money.recordMoney(payload, admin, later)
+        await expect(money.recordMoney(payload, admin, refund(later, '1'))).rejects.toThrow(
+          'precede its collection',
+        )
+      })
+      it('allows cancellation and refunds, never infers money, and retains funded orders', async () => {
+        const { order } = await createOrder(),
+          payment = command(order.id)
+        await money.recordMoney(payload, admin, payment)
+        await status(order.id, 'cancelled')
+        expect((await read()).summary.refundedMinor).toBe(0)
+        await expect(
+          money.recordMoney(payload, admin, command(order.id, '1')),
+        ).rejects.toMatchObject({ status: 422 })
+        await money.recordMoney(payload, admin, refund(payment, '500'))
+        await expect(
+          payload.delete({
+            collection: 'orders',
+            id: order.id,
+            user: admin,
+            overrideAccess: false,
+          }),
+        ).rejects.toThrow('cannot be deleted')
+        expect(await entryCollection().countDocuments()).toBe(2)
+      })
+      it('freezes financial snapshots but permits ordinary admin notes', async () => {
+        const { order } = await createOrder()
+        await money.recordMoney(payload, admin, command(order.id))
+        await expect(
+          payload.update({
+            collection: 'orders',
+            id: order.id,
+            data: { shippingFee: 300 },
+            user: admin,
+            overrideAccess: false,
+          }),
+        ).rejects.toThrow('locked')
+        await expect(
+          payload.update({
+            collection: 'orders',
+            id: order.id,
+            data: { items: order.items.map((item) => ({ ...item, unitPrice: 999 })) },
+            user: admin,
+            overrideAccess: false,
+          }),
+        ).rejects.toThrow('locked')
+        await payload.update({
+          collection: 'orders',
+          id: order.id,
+          data: { notes: 'Internal QA note' },
+          user: admin,
+          overrideAccess: false,
+        })
+        expect(await entryCollection().countDocuments()).toBe(1)
+      })
+      it('rolls back an entry if writing its derived balance fails', async () => {
+        const { order } = await createOrder(),
+          { db } = commerce.mongoCommerce(payload)
+        const proto = Object.getPrototypeOf(db.collection(money.MONEY.balances))
+        const original = proto.updateOne
+        const spy = vi.spyOn(proto, 'updateOne').mockImplementation(function (
+          this: { collectionName: string },
+          ...args: unknown[]
+        ) {
+          if (this.collectionName === money.MONEY.balances)
+            throw new Error('Synthetic balance failure')
+          return original.apply(this, args)
+        })
+        try {
+          await expect(money.recordMoney(payload, admin, command(order.id))).rejects.toThrow(
+            'Synthetic balance failure',
+          )
+        } finally {
+          spy.mockRestore()
+        }
+        expect(await entryCollection().countDocuments()).toBe(0)
+        expect((await read()).summary.netMovementMinor).toBe(0)
+      })
+      it('reports occurrence dates separately, paginates all matches and exports audited PKR amounts', async () => {
+        const { order } = await createOrder(),
+          payment = command(order.id, '53')
+        await money.recordMoney(payload, admin, payment)
+        for (let i = 0; i < 51; i++) await money.recordMoney(payload, admin, refund(payment, '1'))
+        const report = await read(`orderId=${order.id}`)
+        expect(report.rows).toHaveLength(50)
+        expect(report.summary.records).toBe(52)
+        expect((await read(`orderId=${order.id}&page=2`)).rows).toHaveLength(2)
+        const exported = await read(`orderId=${order.id}&format=csv`)
+        const csv = await reports.moneyCSV(payload, admin, exported)
+        expect(csv.trim().split('\r\n')).toHaveLength(53)
+        expect(csv).toContain('"53.00"')
+        expect(csv).not.toMatch(/fingerprint|paymentProof|test@example|Synthetic test address/)
+        expect(
+          await commerce.mongoCommerce(payload).db.collection(money.MONEY.audit).countDocuments(),
+        ).toBe(1)
+      })
+      it('refuses oversized exports rather than silently truncating', async () => {
+        await entryCollection().insertMany(
+          Array.from({ length: 5001 }, () => ({
+            _id: randomUUID(),
+            occurredAt: new Date(),
+            kind: 'collection',
+            amountMinor: 100,
+          })),
+        )
+        await expect(read('format=csv')).rejects.toMatchObject({ status: 413 })
+      })
+      it('fails closed when export audit persistence fails', async () => {
+        const { order } = await createOrder()
+        await money.recordMoney(payload, admin, command(order.id))
+        const report = await read('format=csv'),
+          { db } = commerce.mongoCommerce(payload)
+        const proto = Object.getPrototypeOf(db.collection(money.MONEY.audit)),
+          original = proto.insertOne
+        const spy = vi.spyOn(proto, 'insertOne').mockImplementation(function (
+          this: { collectionName: string },
+          ...args: unknown[]
+        ) {
+          if (this.collectionName === money.MONEY.audit) throw new Error('Synthetic audit failure')
+          return original.apply(this, args)
+        })
+        try {
+          await expect(reports.moneyCSV(payload, admin, report)).rejects.toThrow(
+            'Synthetic audit failure',
+          )
+        } finally {
+          spy.mockRestore()
+        }
+      })
+      it('uses Karachi occurrence boundaries without filtering all-time order balances', async () => {
+        const { order } = await createOrder(),
+          before = new Date('2026-10-23T18:59:59.999Z'),
+          at = new Date('2026-10-23T19:00:00Z')
+        await entryCollection().insertMany([
+          {
+            _id: randomUUID(),
+            orderId: String(order.id),
+            kind: 'collection',
+            amountMinor: 10000,
+            occurredAt: before,
+            recordedAt: new Date(),
+          },
+          {
+            _id: randomUUID(),
+            orderId: String(order.id),
+            kind: 'refund',
+            amountMinor: 2000,
+            occurredAt: at,
+            recordedAt: new Date(),
+          },
+        ])
+        const report = await read(`orderId=${order.id}&start=2026-10-24&end=2026-10-24`)
+        expect(report.summary).toMatchObject({
+          records: 1,
+          collectedMinor: 0,
+          refundedMinor: 2000,
+          netMovementMinor: -2000,
+        })
+        expect(report.rows[0].occurredAt).toEqual(at)
+        // Raw fixtures are deliberately not a derived balance. Missing balance is explicitly uncovered.
+        expect(report.order?.hasEntries).toBe(false)
+      })
+      it('serializes financial order edits with payment recording', async () => {
+        const { order } = await createOrder()
+        const results = await Promise.allSettled([
+          money.recordMoney(payload, admin, command(order.id)),
+          commerce.commerceTransaction(payload, admin, (req) =>
+            payload.update({
+              collection: 'orders',
+              id: order.id,
+              req,
+              user: admin,
+              overrideAccess: false,
+              data: { shippingFee: 300 },
+            }),
+          ),
+        ])
+        expect(results[0].status).toBe('fulfilled')
+        const current = await payload.findByID({ collection: 'orders', id: order.id, depth: 0 })
+        expect(current.totalAmount).toBe(results[1].status === 'fulfilled' ? 1400 : 1350)
+        expect((await read()).summary.collectedMinor).toBe(50000)
+        await expect(
+          payload.update({
+            collection: 'orders',
+            id: order.id,
+            data: { shippingFee: 350 },
+            user: admin,
+            overrideAccess: false,
+          }),
+        ).rejects.toThrow('locked')
+      })
+      it('fails closed on derived balance drift and still prevents deleting ledger-backed orders', async () => {
+        const { order } = await createOrder(),
+          payment = command(order.id)
+        await money.recordMoney(payload, admin, payment)
+        await commerce.mongoCommerce(payload).db.collection(money.MONEY.balances).deleteMany({})
+        await expect(money.recordMoney(payload, admin, command(order.id, '1'))).rejects.toThrow(
+          'reconciliation',
+        )
+        await status(order.id, 'cancelled')
+        await expect(
+          payload.delete({
+            collection: 'orders',
+            id: order.id,
+            user: admin,
+            overrideAccess: false,
+          }),
+        ).rejects.toThrow('cannot be deleted')
+        expect(await entryCollection().countDocuments()).toBe(1)
       })
     })
     describe('durable order milestones and complete product-write stock ledger', () => {

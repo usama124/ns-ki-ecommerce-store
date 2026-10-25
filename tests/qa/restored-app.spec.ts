@@ -313,3 +313,44 @@ test('QA-22 operations history/setup/backfill deny guests and customers', async 
     for (const path of ['/api/admin/operations/initialize', '/api/admin/operations/baseline']) expect((await customer.post(path, { data: {} })).status()).toBe(403)
   } finally { await customer.dispose() }
 })
+
+test('QA-23 actual admin shell records private synthetic collections/refunds without changing order status', async ({ page, request }) => {
+  const admin = await actor('admin')
+  try {
+    expect((await admin.post('/api/admin/payments/initialize')).status()).toBe(200)
+    const response = await request.post('/api/orders', { headers: { 'Idempotency-Key': randomUUID() }, data: order() })
+    expect(response.status()).toBe(200)
+    const created = await response.json()
+    const payment = { key: randomUUID(), orderId: String(created.orderId), kind: 'collection', amount: '500.25', method: 'cash', reason: 'customer_payment', occurredAt: new Date().toISOString() }
+    expect((await admin.post('/api/admin/payments', { data: payment })).status()).toBe(200)
+    const replay = await admin.post('/api/admin/payments', { data: payment })
+    expect((await replay.json()).replayed).toBe(true)
+    expect((await admin.post('/api/admin/payments', { data: { ...payment, key: randomUUID(), kind: 'refund', reason: 'return', amount: '100.01', refundOf: payment.key, occurredAt: new Date().toISOString() } })).status()).toBe(200)
+    const before = await admin.get(`/api/admin/payments?orderId=${created.orderId}`)
+    expect((await before.json()).summary).toMatchObject({ records: 2, collectedMinor: 50025, refundedMinor: 10001, netMovementMinor: 40024 })
+    const exported = await admin.get(`/api/admin/payments?orderId=${created.orderId}&format=csv`)
+    const csv = await exported.text()
+    expect(exported.status()).toBe(200)
+    expect(csv).not.toMatch(/qa-buyer@example|SYNTHETIC QA STREET|fingerprint|receipt|paymentProof|transactionId/)
+    await page.context().addCookies((await admin.storageState()).cookies)
+    await page.goto('/store-admin/reports')
+    await page.getByText('Recorded payments & refunds (actual money)', { exact: true }).click()
+    await page.getByLabel('Money order ID (optional)').fill(String(created.orderId))
+    await page.getByRole('button', { name: 'Load money report', exact: true }).click()
+    const panel = page.locator('section[aria-label="Recorded payments and refunds"]')
+    await expect(panel.getByRole('heading', { name: /confirmed/ })).toBeVisible()
+    await expect(panel.getByRole('alert')).toHaveCount(0)
+    await expect(panel.getByText('All-time recorded for this order:', { exact: false })).toContainText('500.25')
+    await page.screenshot({ path: '/tmp/nski-money-admin.png', fullPage: true })
+  } finally { await admin.dispose() }
+})
+
+test('QA-24 payment report/record/setup deny guests and customers', async ({ request }) => {
+  for (const path of ['/api/admin/payments', '/api/admin/payments?format=csv', '/api/admin/payments/status']) expect((await request.get(path)).status()).toBe(401)
+  for (const path of ['/api/admin/payments', '/api/admin/payments/initialize']) expect((await request.post(path, { data: {} })).status()).toBe(401)
+  const customer = await actor('customer')
+  try {
+    for (const path of ['/api/admin/payments', '/api/admin/payments?format=csv', '/api/admin/payments/status']) expect((await customer.get(path)).status()).toBe(403)
+    for (const path of ['/api/admin/payments', '/api/admin/payments/initialize']) expect((await customer.post(path, { data: {} })).status()).toBe(403)
+  } finally { await customer.dispose() }
+})

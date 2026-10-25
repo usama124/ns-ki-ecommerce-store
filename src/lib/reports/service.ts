@@ -530,7 +530,7 @@ export async function getOperationalReport(
       pageSize: PAGE_SIZE,
     },
     unavailable: [
-      'Collected cash, refunds, profit and courier settlement are not recorded.',
+      'Actual money entries are in the separate recorded payments & refunds section, not this placement cohort. Profit and courier settlement remain unavailable.',
       'Pre-activation milestones/stock movements cannot be reconstructed; new tracked facts are in Historical operations.',
       'GA4 traffic, product views and cart abandonment are not connected to admin reports.',
     ],

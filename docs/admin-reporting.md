@@ -2,6 +2,8 @@
 
 Update: the history/stock portion of batch 4 is now implemented in a separate expandable history view within Reports. See [historical operations](historical-operations.md) for explicit activation, coverage limitations, rollout and the latest 536-test verification. The cohort/current-state definitions below remain unchanged.
 
+Further update: **Recorded payments & refunds (actual money)** now supports explicitly entered collections/partial refunds, transactional balances and audited CSV. See [payment recording](payment-recording.md) for activation, financial edit/deletion locks, recovery behavior and verification. Money-event reports are separate from the placement cohorts below; settlement/profit and GA4 refunds remain unavailable.
+
 Implemented locally on 25 October 2026. Open **Reports** in the Payload sidebar, or `/store-admin/reports`. Only administrators can use the view, report APIs, suggestions, setup and CSV exports. No Google credentials are needed.
 
 ## Available now

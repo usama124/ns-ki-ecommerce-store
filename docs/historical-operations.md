@@ -2,6 +2,8 @@
 
 Implemented locally on 25 October 2026. In **Reports**, expand **Order history, first milestones & stock ledger**. Tracking is disabled until an administrator explicitly enables it. This batch does not deploy or activate production tracking.
 
+Subsequent update: separate actual-money recording is now implemented; see [payment recording](payment-recording.md). It requires independent explicit activation and does not infer payments from these milestones or execute transfers/refunds. The verification below records the earlier history/stock batch.
+
 ## What is recorded
 
 - Order changes, deletion events and immutable creation-item snapshots: product/title, primary category ID, SKU/variant ID when resolved, size, quantity and accepted unit price. Customer/contact/address, receipt, payment reference and notes are excluded.

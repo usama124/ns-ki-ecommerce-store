@@ -1,6 +1,6 @@
 # Store analytics implementation plan
 
-Status (25 October 2026): batches 1–3 and the history/stock portion of batch 4 are implemented locally. Browser/server analytics remain disabled pending property/privacy review and configuration. Reports now includes an explicitly activated transactional order history, first milestones, inventory ledger/opening baselines and protected history exports. Payment/refund workflows, derived historical trend/aging dashboards and GA4 admin dashboards remain pending. See [analytics setup](analytics-setup.md), [server rollout](analytics-server-rollout.md), [admin reporting guide](admin-reporting.md) and [historical operations rollout](historical-operations.md).
+Status (25 October 2026): browser/server journey instrumentation, operational Reports, history/stock tracking and actual payment/partial-refund recording are implemented locally. Browser/server analytics remain disabled pending property/privacy review and configuration. History and money recording each require explicit admin activation. Derived historical trend/aging dashboards, settlement/reconciliation, GA4 refund allocation and GA4 admin dashboards remain pending. See [analytics setup](analytics-setup.md), [server rollout](analytics-server-rollout.md), [admin reporting guide](admin-reporting.md), [historical operations rollout](historical-operations.md) and [payment recording guide](payment-recording.md).
 
 ## Outcome and current state
 
@@ -249,7 +249,7 @@ Required from deployment: server-only Measurement Protocol credentials and an au
 
 Admin reporting additionally requires agreement on metric/status definitions, payment collection workflow, inventory baseline date, reporting permissions, export contents, and expected data volumes. Optional GA4-in-admin reporting requires Data API credentials/property access; operational reporting does not depend on that connection.
 
-Batches 1–3 and the history/stock portion of batch 4 are implemented in code: consented browser/server journey events, Reports for order cohorts/products/current inventory, and optional durable transactional order milestones/stock history with baselines. Next: explicit payment/refund workflows, derived history/aging reports, GA4 funnels/admin integration, and controlled analytics activation/ingestion validation. Existing reports work without GA credentials. Historical operations requires its own explicit admin activation; external accounts/production tracking remain unchanged until configuration and rollout approval.
+Batches 1–3, historical operations and actual-money recording are implemented in code. Admins can record partial collections/refunds with durable transactional audit history; no money transfer or GA4 refund is initiated. Next: derived history/aging reports, reconciliation/settlement and bookkeeping corrections, GA4 funnels/admin integration, and controlled analytics activation/ingestion validation. Existing reports work without GA credentials. Historical operations and money recording each require explicit activation; external accounts/production tracking remain unchanged until configuration and rollout approval.
 
 ## Primary references
 
