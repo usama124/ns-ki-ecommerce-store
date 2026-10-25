@@ -95,11 +95,30 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
       const { db, adapter } = commerce.mongoCommerce(payload)
       // Minimal synthetic report fixtures, only in this disposable database.
       await db.collection(adapter.collections.orders.collection.collectionName).insertMany(
-        Array.from({ length: 501 }, (_, index) => ({ orderNumber: `QA-REPORT-${index}`, status: index === 500 ? 'cancelled' : 'confirmed', totalAmount: 1000, createdAt: new Date(1700000000000 + index), updatedAt: new Date() })),
+        Array.from({ length: 501 }, (_, index) => ({
+          orderNumber: `QA-REPORT-${index}`,
+          status: index === 500 ? 'cancelled' : 'confirmed',
+          totalAmount: 1000,
+          createdAt: new Date(1700000000000 + index),
+          updatedAt: new Date(),
+        })),
       )
       const { getOrderStats } = await import('@/utilities/orderReport')
-      expect(await getOrderStats(payload, admin)).toMatchObject({ totalOrders: 501, confirmed: 500, cancelled: 1, totalRevenue: 500000 })
-      const page = await payload.find({ collection: 'orders', user: admin, overrideAccess: false, limit: 50, page: 11, depth: 0, sort: 'createdAt' })
+      expect(await getOrderStats(payload, admin)).toMatchObject({
+        totalOrders: 501,
+        confirmed: 500,
+        cancelled: 1,
+        totalRevenue: 500000,
+      })
+      const page = await payload.find({
+        collection: 'orders',
+        user: admin,
+        overrideAccess: false,
+        limit: 50,
+        page: 11,
+        depth: 0,
+        sort: 'createdAt',
+      })
       expect(page.totalDocs).toBe(501)
       expect(page.docs).toHaveLength(1)
     })
@@ -240,10 +259,21 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
     })
     it('derives required totals before validating an administrator-created order', async () => {
       const item = await product(5)
-      const saved = await commerce.commerceTransaction(payload, admin, req => payload.create({
-        collection: 'orders', user: admin, overrideAccess: false, req,
-        data: { customer: input(item.id).customer, items: [{ product: item.id, variantSize: 'M', quantity: 2, unitPrice: 1000 }], shippingFee: 250, codFee: 100, paymentMethod: 'cod' } as never,
-      }))
+      const saved = await commerce.commerceTransaction(payload, admin, (req) =>
+        payload.create({
+          collection: 'orders',
+          user: admin,
+          overrideAccess: false,
+          req,
+          data: {
+            customer: input(item.id).customer,
+            items: [{ product: item.id, variantSize: 'M', quantity: 2, unitPrice: 1000 }],
+            shippingFee: 250,
+            codFee: 100,
+            paymentMethod: 'cod',
+          } as never,
+        }),
+      )
       expect(saved.subtotal).toBe(2000)
       expect(saved.totalAmount).toBe(2350)
       expect(await stock(item.id)).toBe(3)
@@ -252,9 +282,18 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
       const item = await product(5)
       const result = await purchase(input(item.id))
       if (!('orderId' in result)) throw new Error('missing order')
-      await expect(commerce.commerceTransaction(payload, admin, req => payload.update({ collection: 'orders', id: result.orderId, user: admin, overrideAccess: false, req,
-        data: { items: [{ product: item.id, variantSize: 'M', quantity: 3, unitPrice: -1 }] },
-      }))).rejects.toThrow()
+      await expect(
+        commerce.commerceTransaction(payload, admin, (req) =>
+          payload.update({
+            collection: 'orders',
+            id: result.orderId,
+            user: admin,
+            overrideAccess: false,
+            req,
+            data: { items: [{ product: item.id, variantSize: 'M', quantity: 3, unitPrice: -1 }] },
+          }),
+        ),
+      ).rejects.toThrow()
       expect(await stock(item.id)).toBe(4)
       const saved = await payload.findByID({ collection: 'orders', id: result.orderId, depth: 0 })
       expect(saved.totalAmount).toBe(1350)
@@ -406,6 +445,257 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
         .db.collection(commerce.COMMERCE.outbox)
         .findOne({ kind: 'cancelled' })
       expect(job?.html).not.toContain('INTERNAL-ONLY-FRAUD-REVIEW')
+    })
+    describe('consented transactional analytics (all provider traffic mocked)', () => {
+      let analytics: typeof import('@/utilities/orderAnalytics')
+      const attribution = {
+        consent: 'granted',
+        clientId: '123456.789012',
+        sessionId: String(Math.floor(Date.now() / 1000)),
+        token: 'a'.repeat(64),
+      }
+      beforeAll(async () => {
+        analytics = await import('@/utilities/orderAnalytics')
+        await analytics.initializeAnalytics(payload)
+      })
+      beforeEach(async () => {
+        vi.stubEnv('NODE_ENV', 'production')
+        vi.stubEnv('VERCEL_ENV', 'production')
+        vi.stubEnv('NEXT_PUBLIC_SERVER_URL', 'https://store.example')
+        vi.stubEnv('NEXT_PUBLIC_ANALYTICS_ENABLED', 'true')
+        vi.stubEnv('NEXT_PUBLIC_GA4_ID', 'G-TEST123')
+        vi.stubEnv('ANALYTICS_SERVER_ENABLED', 'true')
+        vi.stubEnv('ANALYTICS_DELIVERY_MODE', 'validate')
+        vi.stubEnv('GA4_API_SECRET', 'synthetic-never-sent')
+        for (const name of Object.values(analytics.ANALYTICS))
+          await commerce.mongoCommerce(payload).db.collection(name).deleteMany({})
+      })
+      afterEach(() => {
+        vi.stubEnv('ANALYTICS_SERVER_ENABLED', 'false')
+        vi.stubEnv('NODE_ENV', 'test')
+      })
+      const jobs = () => commerce.mongoCommerce(payload).db.collection(analytics.ANALYTICS.outbox)
+      const withAnalytics = (
+        data: ReturnType<typeof input>,
+        key = checkout.checkoutKey(randomUUID()),
+        context: unknown = attribution,
+      ) => checkout.executeCheckout(payload, data, 1350, key, undefined, context)
+
+      it('concurrent retries queue one immutable event per milestone, never customer data', async () => {
+        const item = await product(5),
+          key = checkout.checkoutKey(randomUUID())
+        const results = await Promise.all([
+          withAnalytics(input(item.id), key),
+          withAnalytics(input(item.id), key),
+        ])
+        expect(results.filter((result) => 'replayed' in result && result.replayed)).toHaveLength(1)
+        expect(await jobs().countDocuments()).toBe(2)
+        const result = results[0]
+        if (!('orderId' in result)) throw new Error('Missing order')
+        await status(result.orderId, 'cancelled')
+        await status(result.orderId, 'confirmed')
+        expect(await jobs().countDocuments()).toBe(2)
+        const saved = await jobs().find().toArray()
+        expect(saved.every((job) => job.attempts === 0 && job.event.params.value === 1000)).toBe(
+          true,
+        )
+        expect(JSON.stringify(saved)).not.toMatch(
+          /Test Buyer|test@example|030011|Synthetic test address/,
+        )
+      })
+      it('does not queue denied, missing, malformed or newly-attributed replayed orders', async () => {
+        const item = await product(5),
+          key = checkout.checkoutKey(randomUUID())
+        await withAnalytics(input(item.id), key, { ...attribution, consent: 'denied' })
+        await withAnalytics(input(item.id), key)
+        await withAnalytics(input(item.id), undefined, {
+          ...attribution,
+          clientId: 'private@example.invalid',
+        })
+        await purchase(input(item.id))
+        expect(await jobs().countDocuments()).toBe(0)
+      })
+      it('rolls back analytics, order and stock together', async () => {
+        const item = await product(5)
+        await expect(
+          commerce.commerceTransaction(payload, null, async (req) => {
+            req.context.orderAnalytics = attribution
+            await payload.create({
+              collection: 'orders',
+              req,
+              draft: false,
+              data: {
+                orderNumber: `QA-${randomUUID()}`,
+                customer: input(item.id).customer,
+                paymentMethod: 'cod',
+                status: 'confirmed',
+                shippingFee: 250,
+                codFee: 100,
+                subtotal: 1000,
+                totalAmount: 1350,
+                items: [{ product: item.id, variantSize: 'M', quantity: 1, unitPrice: 1000 }],
+              },
+            })
+            throw new Error('synthetic rollback')
+          }),
+        ).rejects.toThrow('synthetic rollback')
+        expect(await jobs().countDocuments()).toBe(0)
+        expect((await payload.count({ collection: 'orders' })).totalDocs).toBe(0)
+        expect(await stock(item.id)).toBe(5)
+      })
+      it('delays transfer purchase until confirmation and deduplicates re-confirmation', async () => {
+        const item = await product(5)
+        const data = {
+          ...input(item.id),
+          paymentMethod: 'jazzcash' as const,
+          paymentProof: { transactionId: 'QA12345678', screenshot: undefined },
+        }
+        const result = await checkout.executeCheckout(
+          payload,
+          data,
+          1250,
+          checkout.checkoutKey(randomUUID()),
+          undefined,
+          attribution,
+        )
+        if (!('orderId' in result)) throw new Error('Missing order')
+        expect(await jobs().countDocuments()).toBe(1)
+        await status(result.orderId, 'confirmed')
+        await status(result.orderId, 'cancelled')
+        await status(result.orderId, 'confirmed')
+        expect(await jobs().countDocuments()).toBe(2)
+        const job = await jobs().findOne({ 'event.name': 'purchase' })
+        expect(job?.event.params.payment_status).toBe('transfer_confirmed')
+      })
+      it('validates without collection, then never auto-replays a validated job', async () => {
+        await withAnalytics(input((await product(5)).id))
+        const fetch = vi
+          .fn()
+          .mockResolvedValue({ ok: true, json: async () => ({ validationMessages: [] }) })
+        vi.stubGlobal('fetch', fetch)
+        expect(await analytics.dispatchOrderAnalytics(payload)).toMatchObject({
+          validated: 2,
+          accepted: 0,
+        })
+        expect(fetch).toHaveBeenCalledTimes(2)
+        expect(String(fetch.mock.calls[0][0])).toContain('/debug/mp/collect')
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body).toMatchObject({
+          client_id: attribution.clientId,
+          validation_behavior: 'ENFORCE_RECOMMENDATIONS',
+          consent: { ad_personalization: 'DENIED' },
+        })
+        expect(JSON.stringify(body)).not.toContain(attribution.token)
+        await analytics.dispatchOrderAnalytics(payload)
+        expect(fetch).toHaveBeenCalledTimes(2)
+      })
+      it('quarantines timeout sends without blind retry; expired leases do not resend', async () => {
+        await withAnalytics(input((await product(5)).id))
+        vi.stubEnv('ANALYTICS_DELIVERY_MODE', 'collect')
+        const fetch = vi.fn().mockRejectedValue(new Error('synthetic timeout'))
+        vi.stubGlobal('fetch', fetch)
+        expect(await analytics.dispatchOrderAnalytics(payload, 1)).toMatchObject({ review: 1 })
+        await jobs().updateOne(
+          { state: 'pending' },
+          { $set: { state: 'processing', attempts: 1, availableAt: new Date(0) } },
+        )
+        expect(await analytics.dispatchOrderAnalytics(payload)).toMatchObject({ review: 1 })
+        expect(fetch).toHaveBeenCalledTimes(1)
+      })
+      it('withdrawal blocks pending and future milestones, including revoke-before-checkout', async () => {
+        const item = await product(5)
+        await withAnalytics(input(item.id))
+        await analytics.revokeOrderAnalytics(payload, attribution.token)
+        await withAnalytics(input(item.id))
+        expect(await jobs().countDocuments({ state: 'suppressed' })).toBe(2)
+        const fetch = vi.fn()
+        vi.stubGlobal('fetch', fetch)
+        await analytics.dispatchOrderAnalytics(payload)
+        expect(fetch).not.toHaveBeenCalled()
+      })
+      it('expires old events and withholds stale session attribution', async () => {
+        await withAnalytics(input((await product(5)).id))
+        await jobs().updateOne(
+          { 'event.name': 'order_placed' },
+          { $set: { createdAt: new Date(Date.now() - 71 * 3600000) } },
+        )
+        await jobs().updateMany({}, { $set: { capturedAt: new Date(Date.now() - 25 * 3600000) } })
+        const fetch = vi
+          .fn()
+          .mockResolvedValue({ ok: true, json: async () => ({ validationMessages: [] }) })
+        vi.stubGlobal('fetch', fetch)
+        expect(await analytics.dispatchOrderAnalytics(payload)).toMatchObject({
+          suppressed: 1,
+          validated: 1,
+        })
+        expect(JSON.parse(fetch.mock.calls[0][1].body).events[0].params).not.toHaveProperty(
+          'session_id',
+        )
+      })
+      it('concurrent workers claim different events and persist collection acceptance only', async () => {
+        await withAnalytics(input((await product(5)).id))
+        vi.stubEnv('ANALYTICS_DELIVERY_MODE', 'collect')
+        const fetch = vi.fn().mockResolvedValue({ ok: true })
+        vi.stubGlobal('fetch', fetch)
+        await Promise.all([
+          analytics.dispatchOrderAnalytics(payload),
+          analytics.dispatchOrderAnalytics(payload),
+        ])
+        expect(fetch).toHaveBeenCalledTimes(2)
+        expect(await jobs().countDocuments({ state: 'accepted' })).toBe(2)
+        const events = fetch.mock.calls.map((call) => JSON.parse(call[1].body).events[0].name)
+        expect(new Set(events)).toEqual(new Set(['order_placed', 'purchase']))
+      })
+      it('invalid validation responses and rejected requests require review, not retry', async () => {
+        await withAnalytics(input((await product(5)).id))
+        const fetch = vi
+          .fn()
+          .mockResolvedValueOnce({ ok: false })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ validationMessages: [{ description: 'synthetic' }] }),
+          })
+        vi.stubGlobal('fetch', fetch)
+        expect(await analytics.dispatchOrderAnalytics(payload)).toMatchObject({ review: 2 })
+        expect(await jobs().countDocuments({ state: 'review' })).toBe(2)
+        await analytics.dispatchOrderAnalytics(payload)
+        expect(fetch).toHaveBeenCalledTimes(2)
+      })
+      it('does not claim jobs with incomplete delivery configuration', async () => {
+        await withAnalytics(input((await product(5)).id))
+        vi.stubEnv('GA4_API_SECRET', '')
+        const fetch = vi.fn()
+        vi.stubGlobal('fetch', fetch)
+        await expect(analytics.dispatchOrderAnalytics(payload)).rejects.toThrow(
+          'configuration is incomplete',
+        )
+        expect(await jobs().countDocuments({ state: 'pending', attempts: 0 })).toBe(2)
+        expect(fetch).not.toHaveBeenCalled()
+      })
+      it('does not invent a purchase after its checkout context has expired', async () => {
+        const item = await product(5)
+        const data = {
+          ...input(item.id),
+          paymentMethod: 'jazzcash' as const,
+          paymentProof: { transactionId: 'QA12345678', screenshot: undefined },
+        }
+        const result = await checkout.executeCheckout(
+          payload,
+          data,
+          1250,
+          checkout.checkoutKey(randomUUID()),
+          undefined,
+          attribution,
+        )
+        if (!('orderId' in result)) throw new Error('Missing order')
+        await commerce
+          .mongoCommerce(payload)
+          .db.collection(analytics.ANALYTICS.context)
+          .updateMany({}, { $set: { expiresAt: new Date(0) } })
+        await status(result.orderId, 'confirmed')
+        expect(await jobs().countDocuments()).toBe(1)
+        expect(await jobs().countDocuments({ 'event.name': 'purchase' })).toBe(0)
+      })
     })
   },
 )

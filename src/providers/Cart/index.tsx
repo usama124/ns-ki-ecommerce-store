@@ -1,8 +1,9 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { parseStoredCart } from '@/utilities/cartStorage'
+import { trackCartChange } from '@/lib/analytics/client'
 
 export type CartItem = {
   productId: string
@@ -69,23 +70,34 @@ function isSameVariant(
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const currentItems = useRef<CartItem[]>([])
+  const replaceItems = useCallback((next: CartItem[], userAction = false) => {
+    const previous = currentItems.current
+    currentItems.current = next
+    setItems(next)
+    // Event-handler-owned side effects, never React state-updater side effects.
+    if (userAction) trackCartChange(previous, next)
+  }, [])
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setItems(loadCart())
+    replaceItems(loadCart())
     setMounted(true)
-  }, [])
+  }, [replaceItems])
 
   useEffect(() => {
     if (mounted) saveCart(items)
   }, [items, mounted])
 
-  const addItem = useCallback((newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
-    setItems((prev) => {
+  const addItem = useCallback(
+    (newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
+      const prev = currentItems.current
       const qtyToAdd = newItem.quantity ?? 1
+      if (!Number.isSafeInteger(qtyToAdd) || qtyToAdd < 1 || qtyToAdd > 99) return
       const existingIndex = prev.findIndex((i) => isSameVariant(i, newItem))
       const existingQty = existingIndex >= 0 ? prev[existingIndex].quantity : 0
       const requestedTotal = existingQty + qtyToAdd
+      if (requestedTotal > 99) return
 
       const availableStock = newItem.stock
       const allowBackorder = Boolean(newItem.allowBackorder)
@@ -95,7 +107,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           toast.error(
             `Cannot add to cart. Only ${availableStock} items available in stock (you already have ${existingQty} in your cart).`,
           )
-          return prev
+          return
         }
       }
 
@@ -107,20 +119,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           stock: newItem.stock ?? updated[existingIndex].stock,
           allowBackorder: newItem.allowBackorder ?? updated[existingIndex].allowBackorder,
         }
-        return updated
+        replaceItems(updated, true)
+        return
       }
 
-      return [...prev, { ...newItem, quantity: qtyToAdd }]
-    })
-  }, [])
+      replaceItems([...prev, { ...newItem, quantity: qtyToAdd }], true)
+    },
+    [replaceItems],
+  )
 
   const removeItem = useCallback(
     (productId: string, variantSize: string, variantColor?: string) => {
-      setItems((prev) =>
-        prev.filter((i) => !isSameVariant(i, { productId, variantSize, variantColor })),
+      replaceItems(
+        currentItems.current.filter(
+          (i) => !isSameVariant(i, { productId, variantSize, variantColor }),
+        ),
+        true,
       )
     },
-    [],
+    [replaceItems],
   )
 
   const updateQuantity = useCallback(
@@ -130,34 +147,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       variantColor: string | undefined,
       newQuantity: number,
     ) => {
+      if (!Number.isSafeInteger(newQuantity) || newQuantity > 99) return
       if (newQuantity < 1) {
-        setItems((prev) =>
-          prev.filter((i) => !isSameVariant(i, { productId, variantSize, variantColor })),
+        replaceItems(
+          currentItems.current.filter(
+            (i) => !isSameVariant(i, { productId, variantSize, variantColor }),
+          ),
+          true,
         )
         return
       }
-      setItems((prev) =>
-        prev.map((item) => {
-          if (isSameVariant(item, { productId, variantSize, variantColor })) {
-            const availableStock = item.stock
-            const allowBackorder = Boolean(item.allowBackorder)
+      replaceItems(
+        currentItems.current
+          .map((item) => {
+            if (isSameVariant(item, { productId, variantSize, variantColor })) {
+              const availableStock = item.stock
+              const allowBackorder = Boolean(item.allowBackorder)
 
-            if (
-              availableStock !== undefined &&
-              availableStock !== null &&
-              !allowBackorder &&
-              newQuantity > availableStock
-            ) {
-              toast.error('Max available stock reached')
-              return { ...item, quantity: availableStock }
+              if (
+                availableStock !== undefined &&
+                availableStock !== null &&
+                !allowBackorder &&
+                newQuantity > availableStock
+              ) {
+                toast.error('Max available stock reached')
+                return { ...item, quantity: availableStock }
+              }
+              return { ...item, quantity: newQuantity }
             }
-            return { ...item, quantity: newQuantity }
-          }
-          return item
-        }),
+            return item
+          })
+          .filter((item) => item.quantity > 0),
+        true,
       )
     },
-    [],
+    [replaceItems],
   )
 
   const validateCartStock = useCallback(async (): Promise<{
@@ -184,19 +208,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           )
         })
 
-        setItems(
-          (prev) =>
-            prev
-              .map((item) => {
-                const key = `${item.productId}-${item.variantSize}`
-                if (adjustmentMap.has(key)) {
-                  const newStock = adjustmentMap.get(key)!
-                  if (newStock <= 0) return null
-                  return { ...item, quantity: Math.min(item.quantity, newStock), stock: newStock }
-                }
-                return item
-              })
-              .filter(Boolean) as CartItem[],
+        replaceItems(
+          currentItems.current
+            .map((item) => {
+              const key = `${item.productId}-${item.variantSize}`
+              if (adjustmentMap.has(key)) {
+                const newStock = adjustmentMap.get(key)!
+                if (newStock <= 0) return null
+                return { ...item, quantity: Math.min(item.quantity, newStock), stock: newStock }
+              }
+              return item
+            })
+            .filter(Boolean) as CartItem[],
         )
 
         return { valid: false, adjustments: data.adjustments }
@@ -207,17 +230,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       toast.error('Unable to check current stock. Please try again before checking out.')
       return { valid: false, adjustments: [] }
     }
-  }, [items])
+  }, [items, replaceItems])
 
   const clearCart = useCallback(() => {
-    setItems([])
+    replaceItems([])
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem(CART_STORAGE_KEY)
         localStorage.removeItem(LEGACY_CART_STORAGE_KEY)
-      } catch { /* Storage restrictions must not break a completed checkout. */ }
+      } catch {
+        /* Storage restrictions must not break a completed checkout. */
+      }
     }
-  }, [])
+  }, [replaceItems])
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)

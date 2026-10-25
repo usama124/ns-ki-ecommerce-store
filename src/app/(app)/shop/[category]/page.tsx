@@ -110,7 +110,7 @@ export default async function CategoryPage({ params, searchParams }: Args) {
             </Link>
           </div>
         ) : (
-          <ProductGrid products={products} />
+          <ProductGrid products={products} listId={`collection_${targetCategory.slug}`} />
         )}
         <ProductPagination page={page} totalPages={totalPages} pathname={`/shop/${encodeURIComponent(categorySlug)}`} query={{ category: queryCategory, sort: sortQuery, q }} />
       </div>

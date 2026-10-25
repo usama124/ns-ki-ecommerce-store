@@ -3,6 +3,7 @@ import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { orderOwner } from '@/access/orderOwner'
 import { reconcileOrderInventory, recordInventoryMovement } from '@/utilities/orderInventory'
 import { enqueueOrderEmails } from '@/utilities/orderOutbox'
+import { enqueueOrderAnalytics } from '@/utilities/orderAnalytics'
 import { RequestError } from '@/utilities/apiSecurity'
 import { requireCommerceReady } from '@/utilities/commerceDatabase'
 import { orderAmounts } from '@/utilities/orderAmounts'
@@ -194,6 +195,7 @@ export const Orders: CollectionConfig = {
       async ({ doc, previousDoc, operation, req }) => {
         await recordInventoryMovement(doc, previousDoc, req)
         await enqueueOrderEmails(doc, previousDoc, operation, req)
+        await enqueueOrderAnalytics(doc, previousDoc, operation, req)
       },
     ],
     beforeDelete: [async ({ id, req }) => {

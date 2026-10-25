@@ -10,6 +10,7 @@ import {
 } from './commerceDatabase'
 import { parseCheckout, quoteCheckout } from './checkoutQuote'
 import { RequestError } from './apiSecurity'
+import { parseAnalyticsContext } from '@/lib/analytics/context'
 
 export function checkoutKey(value: string | null) {
   if (
@@ -28,6 +29,7 @@ export async function executeCheckout(
   expectedTotal: unknown,
   key: string,
   user?: User | null,
+  analytics?: unknown,
 ): Promise<
   | { quote: Awaited<ReturnType<typeof quoteCheckout>> }
   | { orderId: string | number; orderNumber: string; replayed: boolean }
@@ -69,6 +71,9 @@ export async function executeCheckout(
       if (expectedTotal !== quote.totalAmount) return { quote }
       // The unique _id is claimed in the SAME transaction as order, stock and outbox.
       await requests.insertOne({ _id: key, fingerprint, createdAt: new Date() }, { session })
+      // Optional attribution is not part of retry identity and is never returned.
+      req.context ||= {}
+      req.context.orderAnalytics = parseAnalyticsContext(analytics)
       const order = await payload.create({
         collection: 'orders',
         overrideAccess: true,

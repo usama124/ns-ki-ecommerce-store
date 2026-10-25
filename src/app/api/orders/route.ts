@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const payload = await getPayload({ config })
     await enforceRequestLimit(payload, req.headers, 'checkout', input.customer.phone.replace(/\D/g, ''))
     const { user } = await payload.auth({ headers: req.headers })
-    const result = await executeCheckout(payload, input, body.expectedTotal, key, user)
+    const result = await executeCheckout(payload, input, body.expectedTotal, key, user, body.analytics)
     // A changed quote requires a new, explicit confirmation from the customer.
     // The supplied amount is only a confirmation token, never the stored price.
     if ('quote' in result) {

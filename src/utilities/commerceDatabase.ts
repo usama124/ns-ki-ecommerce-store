@@ -2,7 +2,8 @@ import type { MongooseAdapter } from '@payloadcms/db-mongodb'
 import type { ClientSession, Db, Document } from 'mongodb'
 import { createLocalReq, type Payload, type PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
-import { randomUUID } from 'node:crypto'
+import { randomInt, randomUUID } from 'node:crypto'
+import { setTimeout as delay } from 'node:timers/promises'
 import { RequestError } from './apiSecurity'
 
 export const COMMERCE = {
@@ -21,11 +22,7 @@ type CommerceAdapter = Omit<MongooseAdapter, 'sessions'> & {
 
 export function mongoCommerce(payload: Payload) {
   const adapter = payload.db as unknown as CommerceAdapter
-  if (
-    adapter.name !== 'mongoose' ||
-    !adapter.connection?.db ||
-    !adapter.transactionOptions
-  )
+  if (adapter.name !== 'mongoose' || !adapter.connection?.db || !adapter.transactionOptions)
     throw new RequestError(
       'Commerce requires transaction-enabled MongoDB. Please contact the store.',
       503,
@@ -71,6 +68,9 @@ export async function commerceTransaction<T>(
 ): Promise<T> {
   const { adapter } = await requireCommerceReady(payload)
   for (let attempt = 0; attempt < 4; attempt++) {
+    // Let a competing transaction commit instead of exhausting all retry slots
+    // immediately while it still owns the same checkout/stock document.
+    if (attempt) await delay(50 * 2 ** (attempt - 1) + randomInt(25))
     const session = adapter.connection.getClient().startSession()
     const id = randomUUID()
     adapter.sessions[id] = session

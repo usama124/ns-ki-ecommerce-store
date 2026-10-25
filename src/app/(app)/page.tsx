@@ -72,6 +72,7 @@ export default async function HomePage() {
         </div>
 
         <ProductGrid
+          listId="homepage_featured"
           products={products}
           emptyMessage="No products published in the featured collection yet."
         />

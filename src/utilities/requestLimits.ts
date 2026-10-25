@@ -5,6 +5,7 @@ import { COMMERCE, requireCommerceReady, type InternalRecord } from './commerceD
 import { RequestError } from './apiSecurity'
 
 const policies = {
+  'analytics-revoke': { subject: 30, ip: 100 },
   checkout: { subject: 15, ip: 60 },
   tracking: { subject: 20, ip: 100 },
   receipt: { subject: 10, ip: 40 },

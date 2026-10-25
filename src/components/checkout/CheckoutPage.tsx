@@ -20,6 +20,9 @@ import { useRouter } from 'next/navigation'
 import React, { useRef, useState } from 'react'
 import { getCheckoutRetryKey } from '@/utilities/checkoutRetryKey'
 import { toast } from 'sonner'
+import { CheckoutView } from '@/components/Analytics/CheckoutView'
+import { checkoutItems, checkoutIntentEligible } from '@/lib/analytics/model'
+import { analyticsReady, captureOrderAnalytics, track } from '@/lib/analytics/client'
 
 export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const { items, subtotal, clearCart } = useCart()
@@ -44,6 +47,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submitting = useRef(false)
+  const trackedSubmission = useRef('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [quote, setQuote] = useState<{ totalAmount: number; subtotal: number; shippingFee: number; codFee: number; items: Array<{ product: string | number; variantSize: string; quantity: number; unitPrice: number }> } | null>(null)
 
@@ -92,8 +96,17 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
     submitting.current = true
     setIsSubmitting(true)
+    const measuredItems = checkoutItems(items, quote?.items)
+    const tier = MAJOR_CITIES.includes(customer.city) ? 'major_city' : 'secondary_city'
+    const intentKey = JSON.stringify([measuredItems, tier, paymentMethod])
+    if (analyticsReady() && measuredItems.length === items.length && measuredItems.length > 0 && checkoutIntentEligible(customer, paymentMethod, transactionId) && trackedSubmission.current !== intentKey) {
+      trackedSubmission.current = intentKey
+      track('add_shipping_info', measuredItems, { shipping_tier: tier })
+      track('add_payment_info', measuredItems, { payment_type: paymentMethod })
+    }
 
     try {
+      const analytics = await captureOrderAnalytics()
       const retry = await getCheckoutRetryKey({ customer, items: items.map(item => ({ productId: item.productId, variantSize: item.variantSize, quantity: item.quantity })), paymentMethod, transactionId: paymentMethod === 'cod' ? '' : transactionId, expectedTotal: totalAmount })
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -116,6 +129,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
           codFee,
           totalAmount,
           expectedTotal: totalAmount,
+          analytics,
         }),
       })
 
@@ -171,6 +185,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
   return (
     <div className="min-h-screen py-6 w-full overflow-x-hidden">
+      <CheckoutView items={items} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="font-serif text-3xl font-normal uppercase tracking-[0.15em] text-foreground text-center mb-10">
           Checkout & Payment
