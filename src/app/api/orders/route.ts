@@ -1,6 +1,8 @@
 import configPromise from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
+import { isStorefrontPaymentMethod, unavailablePaymentMessage } from '@/utilities/storefrontPayments'
+import { validatePakistanLocation } from '@/utilities/pakistanLocations'
 
 function parseProductId(rawId: any): number | string {
   if (typeof rawId === 'object' && rawId !== null) {
@@ -31,6 +33,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required customer details.' }, { status: 400 })
     }
 
+    const locationError = validatePakistanLocation(customer.province, customer.city)
+    if (locationError) return NextResponse.json({ error: locationError }, { status: 400 })
+    customer.city = customer.city.trim().normalize('NFC')
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Cart items cannot be empty.' }, { status: 400 })
     }
@@ -39,25 +45,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Payment method is required.' }, { status: 400 })
     }
 
-    if (paymentMethod !== 'cod') {
-      if (!paymentProof?.transactionId && !paymentProof?.screenshot) {
-        return NextResponse.json(
-          { error: 'Please provide TRX ID or screenshot proof for digital payment.' },
-          { status: 400 },
-        )
-      }
+    const payload = await getPayload({ config: configPromise })
+    let siteSettings
+    try {
+      siteSettings = await payload.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: false })
+    } catch {
+      return NextResponse.json({ error: 'Payment options are temporarily unavailable. Please try again.' }, { status: 503 })
+    }
+    if (!isStorefrontPaymentMethod(paymentMethod, siteSettings)) {
+      return NextResponse.json({ error: unavailablePaymentMessage }, { status: 400 })
     }
 
-    const payload = await getPayload({ config: configPromise })
+    if (paymentMethod !== 'cod' && !paymentProof?.transactionId && !paymentProof?.screenshot) {
+      return NextResponse.json(
+        { error: 'Please provide TRX ID or screenshot proof for digital payment.' },
+        { status: 400 },
+      )
+    }
 
-    let effectiveCodFee = 0
-    if (paymentMethod === 'cod') {
-      if (typeof body.codFee === 'number') {
-        effectiveCodFee = body.codFee
-      } else {
-        const siteSettings = await payload.findGlobal({ slug: 'site-settings' }).catch(() => null)
-        effectiveCodFee = (siteSettings as any)?.shipping?.codFee ?? 250
-      }
+    // Never trust a browser-supplied COD fee when the admin enables COD.
+    const effectiveCodFee = paymentMethod === 'cod' ? siteSettings.shipping?.codFee ?? 250 : 0
+    if (typeof effectiveCodFee !== 'number' || !Number.isFinite(effectiveCodFee) || effectiveCodFee < 0) {
+      return NextResponse.json({ error: 'COD charges are temporarily unavailable. Please choose another payment method.' }, { status: 503 })
     }
 
     const computedTotal = subtotal + shippingFee + effectiveCodFee
@@ -77,7 +86,7 @@ export async function POST(req: Request) {
       customer,
       items: formattedItems,
       paymentMethod,
-      paymentProof: paymentMethod !== 'cod' ? paymentProof : undefined,
+      paymentProof: paymentMethod === 'cod' ? undefined : paymentProof,
       subtotal,
       shippingFee,
       codFee: effectiveCodFee,

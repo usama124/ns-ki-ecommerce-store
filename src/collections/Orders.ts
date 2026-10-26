@@ -1,4 +1,5 @@
 import { adminOnly } from '@/access/adminOnly'
+import { validateOrderPaymentMethod } from '@/utilities/validateOrderPaymentMethod'
 import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
 import {
     sendAdminOrderPlacedAlert,
@@ -35,6 +36,7 @@ export const Orders: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [
+      validateOrderPaymentMethod,
       async ({ data, req, originalDoc }) => {
         if (!data) return data
 

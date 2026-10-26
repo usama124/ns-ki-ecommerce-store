@@ -11,6 +11,8 @@ import * as migration_20260916_010000_media_sizes from './20260916_010000_media_
 import * as migration_20260917_000000_cancellation_reason from './20260917_000000_cancellation_reason'
 import * as migration_20260918_180000_trx_security from './20260918_180000_trx_security'
 import * as migration_20261022_000000_shop_by_video_opt_in from './20261022_000000_shop_by_video_opt_in'
+import * as migration_20261026_000000_payment_method_settings from './20261026_000000_payment_method_settings'
+import * as migration_20261026_010000_payment_qr_codes from './20261026_010000_payment_qr_codes'
 
 export const migrations = [
   {
@@ -77,5 +79,15 @@ export const migrations = [
     up: migration_20261022_000000_shop_by_video_opt_in.up,
     down: migration_20261022_000000_shop_by_video_opt_in.down,
     name: '20261022_000000_shop_by_video_opt_in',
+  },
+  {
+    up: migration_20261026_000000_payment_method_settings.up,
+    down: migration_20261026_000000_payment_method_settings.down,
+    name: '20261026_000000_payment_method_settings',
+  },
+  {
+    up: migration_20261026_010000_payment_qr_codes.up,
+    down: migration_20261026_010000_payment_qr_codes.down,
+    name: '20261026_010000_payment_qr_codes',
   },
 ]

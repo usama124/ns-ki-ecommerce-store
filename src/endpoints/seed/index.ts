@@ -125,7 +125,7 @@ export const seed = async ({
     slug: 'footer',
     data: {
       tagline: 'Pakistani Luxury Fashion',
-      paymentNote: 'We accept Cash on Delivery, Bank Transfer (Meezan Bank), JazzCash & EasyPaisa',
+      paymentNote: 'We accept Bank / Raast Transfer (Meezan Bank) & EasyPaisa',
       copyrightText: "N's KI. All rights reserved.",
       socialLinks: {
         instagram: 'https://instagram.com/nski.pk',

@@ -1,0 +1,20 @@
+# Configurable checkout payment methods
+
+Open **Admin → Settings → Site Settings → Enabled Payment Methods**. Enable/disable Cash on Delivery, Bank / Raast Transfer, JazzCash and EasyPaisa independently, then save.
+
+- Initial/legacy defaults preserve this release's selection: COD off, JazzCash off, Bank/Raast and EasyPaisa on. Missing/null flags use these defaults; an unchecked admin switch saves `false`, not a missing value.
+- Configure the enabled digital methods' real account details in **Payment Account Details** below. COD charges use **Shipping Configuration → Cash on Delivery (COD) Charges**; zero means free COD. The checkout API uses the stored charge, not the browser's submitted fee.
+- Turning all four off pauses new checkout orders. The page shows a clear message and disables submission; the server refuses every method. This does not cancel or modify existing orders.
+- Checkout selects the first enabled method in display order. Only enabled methods are shown. The footer's note and badges are generated from these switches; its older Payment Methods Note field is retained read-only for compatibility and no longer overrides payment availability.
+- Saving invalidates site-settings/storefront cache tags and the storefront layout. Checkout pages and order submission read current settings rather than the public global cache. Already-open pages should be refreshed; stale submissions are rejected server-side if the selected method is now disabled. Requests already in flight when settings change are not retroactively cancelled.
+- Settings lookup failure closes checkout rather than silently enabling default methods. Defaults apply only to successfully read legacy documents without the new fields, not a database error.
+- Generic order creation/payment-method changes are guarded too. Existing orders can retain a now-disabled method during status/fulfillment updates, so historical COD/JazzCash records remain usable. Switching an existing order to a currently disabled method is refused.
+- Only administrators can update Site Settings, using its existing global access control. No credentials or environment variables are added by this feature.
+
+Deploy these code changes once to expose the switches. After that, enabling/disabling methods only requires saving Site Settings—not another deployment. No production deployment or database write was performed while implementing this feature.
+
+For **MongoDB**, no SQL migration is needed; the fields persist when the global is saved and legacy defaults work before that save. For **Postgres**, the registered `20261026_000000_payment_method_settings` migration adds four boolean columns with the same defaults. Apply through the normal backup/migration release process before serving the new schema. Its down migration removes those switch values, so do not run it casually. No production migration was executed; this SQL migration has not been exercised against a live Postgres instance. Other adapter schema workflows remain deployment-specific.
+
+Implementation: `src/globals/SiteSettings.ts`, `src/utilities/storefrontPayments.ts`, `src/utilities/validateOrderPaymentMethod.ts`, checkout/API/footer, and `src/hooks/revalidateSiteSettings.ts`. Payload types were regenerated with isolated dummy configuration; production `.env` was not used. No custom admin components/import-map additions are required.
+
+Verification: **196 unit/integration tests passed**, including every toggle combination, each single-method checkout, all-off pause, admin-only configuration, cache invalidation, default/legacy behavior, stale disabled-method rejection, lookup failure and COD fees (including zero/invalid values). Source TypeScript, targeted new-module lint and whitespace checks passed. The ordinary full-workspace type check encountered stale `.next` route declarations from another branch, so source validation excluded those generated files; no fresh production build or live database/admin-browser test was performed in this batch. Regenerate Next's build artifacts during the normal release build.

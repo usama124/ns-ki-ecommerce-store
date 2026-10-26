@@ -2,7 +2,11 @@
 
 import { useCart } from '@/providers/Cart'
 import { formatPKR } from '@/utilities/formatPKR'
-import { calculateShipping, getShippingLabel, MAJOR_CITIES } from '@/utilities/shipping'
+import { enabledPaymentMethods, isStorefrontPaymentMethod, unavailablePaymentMessage } from '@/utilities/storefrontPayments'
+import { calculateShipping, getShippingLabel } from '@/utilities/shipping'
+import { validatePakistanLocation } from '@/utilities/pakistanLocations'
+import { LocationFields } from './LocationFields'
+import { PaymentQRCode } from './PaymentQRCode'
 import {
     ArrowRight,
     Check,
@@ -22,6 +26,7 @@ import { toast } from 'sonner'
 export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const { items, subtotal, clearCart } = useCart()
   const router = useRouter()
+  const availableMethods = enabledPaymentMethods(siteSettings)
 
   // Form State
   const [customer, setCustomer] = useState({
@@ -33,9 +38,10 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
     address: '',
   })
 
-  const [paymentMethod, setPaymentMethod] = useState<
+  const [selectedPaymentMethod, setPaymentMethod] = useState<
     'cod' | 'bank_transfer' | 'jazzcash' | 'easypaisa'
-  >('cod')
+  >(availableMethods[0] || 'bank_transfer')
+  const paymentMethod = availableMethods.includes(selectedPaymentMethod) ? selectedPaymentMethod : availableMethods[0] || 'bank_transfer'
   const [transactionId, setTransactionId] = useState('')
   const [screenshotMediaId, setScreenshotMediaId] = useState<string | null>(null)
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
@@ -106,10 +112,20 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
+    const locationError = validatePakistanLocation(customer.province, customer.city)
+    if (locationError) {
+      setErrorMessage(locationError)
+      return
+    }
     setErrorMessage(null)
 
     if (items.length === 0) {
       setErrorMessage('Your shopping bag is empty.')
+      return
+    }
+
+    if (!isStorefrontPaymentMethod(paymentMethod, siteSettings)) {
+      setErrorMessage(unavailablePaymentMessage)
       return
     }
 
@@ -130,13 +146,10 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
           customer,
           items,
           paymentMethod,
-          paymentProof:
-            paymentMethod !== 'cod'
-              ? {
-                  transactionId: transactionId || undefined,
-                  screenshot: screenshotMediaId || undefined,
-                }
-              : undefined,
+          paymentProof: paymentMethod === 'cod' ? undefined : {
+            transactionId: transactionId || undefined,
+            screenshot: screenshotMediaId || undefined,
+          },
           subtotal,
           shippingFee,
           codFee,
@@ -245,86 +258,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
-                    City *
-                  </label>
-                  <select
-                    value={customer.city}
-                    onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
-                    className="w-full px-3 py-2.5 text-xs border border-border focus:border-[#648698] focus:outline-hidden bg-[#BDBAB9]/25 dark:bg-[#03171E]/60 text-foreground cursor-pointer rounded-lg"
-                  >
-                    {MAJOR_CITIES.map((c) => (
-                      <option
-                        key={c}
-                        value={c}
-                        className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                      >
-                        {c} (Major City — Rs. 250 Shipping)
-                      </option>
-                    ))}
-                    <option
-                      value="Other"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Other City (Secondary — Rs. 350 Shipping)
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
-                    Province *
-                  </label>
-                  <select
-                    value={customer.province}
-                    onChange={(e) => setCustomer({ ...customer, province: e.target.value })}
-                    className="w-full px-3 py-2.5 text-xs border border-border focus:border-[#648698] focus:outline-hidden bg-[#BDBAB9]/25 dark:bg-[#03171E]/60 text-foreground cursor-pointer rounded-lg"
-                  >
-                    <option
-                      value="Punjab"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Punjab
-                    </option>
-                    <option
-                      value="Sindh"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Sindh
-                    </option>
-                    <option
-                      value="Khyber Pakhtunkhwa"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Khyber Pakhtunkhwa
-                    </option>
-                    <option
-                      value="Balochistan"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Balochistan
-                    </option>
-                    <option
-                      value="Islamabad Capital Territory"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Islamabad Capital Territory
-                    </option>
-                    <option
-                      value="Azad Kashmir"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Azad Kashmir
-                    </option>
-                    <option
-                      value="Gilgit-Baltistan"
-                      className="bg-[#eae7e6] text-[#03171e] dark:bg-[#03171e] dark:text-[#f0f3f4]"
-                    >
-                      Gilgit-Baltistan
-                    </option>
-                  </select>
-                </div>
+                <LocationFields value={customer} onChange={location => setCustomer(previous => ({ ...previous, ...location }))} />
 
                 <div className="sm:col-span-2">
                   <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
@@ -374,7 +308,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                     title: 'EasyPaisa Wallet',
                     desc: 'Transfer via EasyPaisa mobile',
                   },
-                ].map((method) => (
+                ].filter((method) => isStorefrontPaymentMethod(method.id, siteSettings)).map((method) => (
                   <button
                     key={method.id}
                     type="button"
@@ -409,12 +343,13 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
               </div>
 
               {/* Digital Transfer Details Panel */}
-              {paymentMethod !== 'cod' && (
+              {availableMethods.length === 0 && <p role="alert" className="text-sm text-muted-foreground">No payment methods are currently available. Please contact us or try again later.</p>}
+              {availableMethods.length > 0 && paymentMethod !== 'cod' && (
                 <div className="bg-[#BDBAB9]/20 dark:bg-[#03171E]/60 border-2 border-border p-6 rounded-xl mt-4 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-border">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
                       {paymentMethod === 'bank_transfer'
-                        ? 'Meezan Bank & Raast Transfer'
+                        ? `${bankDetails.bankName || 'Bank'} & Raast Transfer`
                         : paymentMethod === 'jazzcash'
                           ? 'JazzCash Wallet Transfer'
                           : 'EasyPaisa Wallet Transfer'}
@@ -557,21 +492,13 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   {/* View 2: QR Code Scanner */}
                   {transferMode === 'qr' && (
                     <div className="flex flex-col items-center justify-center p-5 bg-[#BDBAB9]/25 dark:bg-[#03171E]/60 border border-border rounded-xl text-center mb-6">
-                      <div className="bg-white p-3 rounded-xl border border-stone-300 shadow-md mb-3">
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                            paymentMethod === 'bank_transfer'
-                              ? bankDetails.raastId
-                              : paymentMethod === 'jazzcash'
-                                ? jazzcashDetails.mobileNumber
-                                : easypaisaDetails.mobileNumber,
-                          )}`}
-                          alt="Payment QR Code"
-                          className="w-44 h-44 object-contain"
-                        />
-                      </div>
+                      <PaymentQRCode
+                        key={paymentMethod}
+                        media={(paymentMethod === 'bank_transfer' ? bankDetails : paymentMethod === 'jazzcash' ? jazzcashDetails : easypaisaDetails).qrCode}
+                        method={paymentMethod === 'bank_transfer' ? 'Bank / Raast' : paymentMethod === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'}
+                      />
                       <span className="text-xs font-bold uppercase tracking-wider text-foreground mb-1">
-                        Scan to Transfer via{' '}
+                        Payment via{' '}
                         {paymentMethod === 'bank_transfer'
                           ? 'Raast / Banking App'
                           : paymentMethod === 'jazzcash'
@@ -720,7 +647,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || availableMethods.length === 0}
                 className="w-full mt-8 glass-button-primary py-4 text-xs font-bold uppercase tracking-[0.25em] rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

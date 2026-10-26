@@ -1604,6 +1604,9 @@ export interface Footer {
     youtube?: string | null;
     whatsapp?: string | null;
   };
+  /**
+   * Legacy note retained for compatibility. The visible payment strip is generated automatically from Site Settings → Enabled Payment Methods.
+   */
   paymentNote?: string | null;
   copyrightText?: string | null;
   /**
@@ -1655,7 +1658,7 @@ export interface Homepage {
       }[]
     | null;
   /**
-   * 9:16 vertical video reels for the shoppable video section.
+   * 9:16 vertical reels. Linked products appear only when published and their Show video in homepage Shop by Video checkbox is enabled. Standalone reels are explicitly curated here.
    */
   shoppableVideos?:
     | {
@@ -1676,6 +1679,15 @@ export interface Homepage {
  */
 export interface SiteSetting {
   id: number;
+  /**
+   * Enable methods offered for new orders. Turning every method off pauses checkout. Existing orders are not changed. Account details are configured below.
+   */
+  paymentMethods?: {
+    cod?: boolean | null;
+    bank_transfer?: boolean | null;
+    jazzcash?: boolean | null;
+    easypaisa?: boolean | null;
+  };
   announcementBar?: {
     isActive?: boolean | null;
     text?: string | null;
@@ -1704,16 +1716,28 @@ export interface SiteSetting {
    */
   paymentDetails?: {
     bankTransfer?: {
+      /**
+       * Upload the actual merchant QR supplied by your bank/wallet (PNG, JPEG or WebP). Keep the entire QR and white border; do not crop it. Publicly visible at checkout. Test scanning it before enabling payments.
+       */
+      qrCode?: (number | null) | Media;
       bankName?: string | null;
       accountTitle?: string | null;
       accountNumber?: string | null;
       raastId?: string | null;
     };
     jazzcash?: {
+      /**
+       * Upload the actual merchant QR supplied by your bank/wallet (PNG, JPEG or WebP). Keep the entire QR and white border; do not crop it. Publicly visible at checkout. Test scanning it before enabling payments.
+       */
+      qrCode?: (number | null) | Media;
       mobileNumber?: string | null;
       accountName?: string | null;
     };
     easypaisa?: {
+      /**
+       * Upload the actual merchant QR supplied by your bank/wallet (PNG, JPEG or WebP). Keep the entire QR and white border; do not crop it. Publicly visible at checkout. Test scanning it before enabling payments.
+       */
+      qrCode?: (number | null) | Media;
       mobileNumber?: string | null;
       accountName?: string | null;
     };
@@ -1876,6 +1900,14 @@ export interface HomepageSelect<T extends boolean = true> {
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
+  paymentMethods?:
+    | T
+    | {
+        cod?: T;
+        bank_transfer?: T;
+        jazzcash?: T;
+        easypaisa?: T;
+      };
   announcementBar?:
     | T
     | {
@@ -1903,6 +1935,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         bankTransfer?:
           | T
           | {
+              qrCode?: T;
               bankName?: T;
               accountTitle?: T;
               accountNumber?: T;
@@ -1911,12 +1944,14 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         jazzcash?:
           | T
           | {
+              qrCode?: T;
               mobileNumber?: T;
               accountName?: T;
             };
         easypaisa?:
           | T
           | {
+              qrCode?: T;
               mobileNumber?: T;
               accountName?: T;
             };

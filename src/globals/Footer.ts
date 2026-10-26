@@ -78,7 +78,8 @@ export const Footer: GlobalConfig = {
       name: 'paymentNote',
       type: 'text',
       label: 'Payment Methods Note',
-      defaultValue: 'We accept Cash on Delivery, Bank Transfer, JazzCash & EasyPaisa',
+      admin: { readOnly: true, description: 'Legacy note retained for compatibility. The visible payment strip is generated automatically from Site Settings → Enabled Payment Methods.' },
+      defaultValue: 'We accept Bank / Raast Transfer & EasyPaisa',
     },
     {
       name: 'copyrightText',
