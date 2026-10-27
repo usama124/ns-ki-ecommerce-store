@@ -41,6 +41,7 @@ const base = () => ({
   totalAmount: -198,
 })
 const settings = {
+  paymentMethods: { cod: true, jazzcash: true },
   shipping: {
     freeShippingThreshold: 15000,
     majorCityFee: 250,
@@ -121,7 +122,7 @@ describe('Authoritative checkout quotes', () => {
     mock.findGlobal.mockImplementation(({ slug }) =>
       Promise.resolve(
         slug === 'site-settings'
-          ? { shipping: { ...settings.shipping, majorCityFee: 75, codFee: 0 } }
+          ? { ...settings, shipping: { ...settings.shipping, majorCityFee: 75, codFee: 0 } }
           : { isActive: true, discountPercentage: 25, targetedCategories: ['c1'] },
       ),
     )

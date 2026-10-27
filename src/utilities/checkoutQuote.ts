@@ -3,6 +3,8 @@ import { RequestError, validDocumentID } from './apiSecurity'
 import { getSalePriceDetails } from './getSalePrice'
 import { calculateShipping } from './shipping'
 import { paymentConfigured } from './paymentConfiguration'
+import { validatePakistanLocation } from './pakistanLocations'
+import { isStorefrontPaymentMethod, unavailablePaymentMessage } from './storefrontPayments'
 
 type Line = { productId: string; variantSize: string; quantity: number }
 const text = (value: unknown, max: number, optional = false) => {
@@ -30,10 +32,12 @@ export function parseCheckout(body: Record<string, unknown>) {
     name: text(customer.name, 120),
     phone: text(customer.phone, 30),
     email: text(customer.email, 254, true).toLowerCase(),
-    city: text(customer.city, 100),
+    city: text(customer.city, 120).normalize('NFC'),
     province: text(customer.province, 100),
     address: text(customer.address, 500),
   }
+  const locationError = validatePakistanLocation(details.province, details.city)
+  if (locationError) throw new RequestError(locationError)
   if (
     !/^\+?\d[\d ()-]{8,19}$/.test(details.phone) ||
     !/^\d{10,15}$/.test(details.phone.replace(/\D/g, '')) ||
@@ -117,6 +121,8 @@ export async function quoteCheckout(payload: Payload, input: ReturnType<typeof p
   const sizeMap = new Map(sizes.docs.map(size => [String(size.id), size]))
   if (!settings?.shipping)
     throw new RequestError('Shipping settings are temporarily unavailable.', 503)
+  if (!isStorefrontPaymentMethod(input.paymentMethod, settings))
+    throw new RequestError(unavailablePaymentMessage)
   if (!paymentConfigured(settings, input.paymentMethod))
     throw new RequestError(
       'This payment method is not configured. Please choose another method.',

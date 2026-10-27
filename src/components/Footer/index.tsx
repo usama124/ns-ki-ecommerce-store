@@ -3,6 +3,7 @@ import type { Footer } from '@/payload-types'
 import { CMSLink } from '@/components/Link'
 import { LogoIcon } from '@/components/icons/logo'
 import { getCachedGlobal } from '@/utilities/getGlobals'
+import { closedPaymentSettings, enabledPaymentMethods, getStorefrontPaymentNote, paymentMethodLabels } from '@/utilities/storefrontPayments'
 import Link from 'next/link'
 
 // Social icon SVGs (inline, no extra dep)
@@ -46,15 +47,6 @@ function WhatsAppIcon() {
   )
 }
 
-// COD icon
-function CodBadge() {
-  return (
-    <span className="flex items-center gap-1 rounded border border-[#648698]/40 bg-[#03171E]/50 text-[#CBCCC7] px-2.5 py-1 text-xs font-semibold tracking-wide uppercase backdrop-blur-xs">
-      COD
-    </span>
-  )
-}
-
 // Generic payment badge
 function PayBadge({ label }: { label: string }) {
   return (
@@ -66,6 +58,7 @@ function PayBadge({ label }: { label: string }) {
 
 export async function Footer() {
   const footer: Footer = await getCachedGlobal('footer', 1)()
+  const paymentSettings = await getCachedGlobal('site-settings', 0)().catch(() => closedPaymentSettings)
   const currentYear = new Date().getFullYear()
 
   const social = footer.socialLinks || {}
@@ -220,14 +213,10 @@ export async function Footer() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-[#648698]">
-              {footer.paymentNote ||
-                'We accept Cash on Delivery, Bank Transfer, JazzCash & EasyPaisa'}
+              {getStorefrontPaymentNote(paymentSettings)}
             </p>
             <div className="flex items-center gap-2 flex-wrap justify-center">
-              <CodBadge />
-              <PayBadge label="Bank Transfer" />
-              <PayBadge label="JazzCash" />
-              <PayBadge label="EasyPaisa" />
+              {enabledPaymentMethods(paymentSettings).map(method => <PayBadge key={method} label={paymentMethodLabels[method]} />)}
             </div>
           </div>
         </div>

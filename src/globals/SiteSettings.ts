@@ -1,5 +1,15 @@
 import { adminOnly } from '@/access/adminOnly'
-import type { GlobalConfig } from 'payload'
+import type { GlobalConfig, UploadField } from 'payload'
+import { revalidateSiteSettings } from '@/hooks/revalidateSiteSettings'
+
+const paymentQRField = (): UploadField => ({
+  name: 'qrCode',
+  label: 'Payment QR Code (optional)',
+  type: 'upload',
+  relationTo: 'media',
+  filterOptions: { mimeType: { in: ['image/png', 'image/jpeg', 'image/webp'] } },
+  admin: { description: 'Upload the actual merchant QR supplied by your bank/wallet (PNG, JPEG or WebP). Keep the entire QR and white border; do not crop it. Publicly visible at checkout. Test scanning it before enabling payments.' },
+})
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -11,7 +21,20 @@ export const SiteSettings: GlobalConfig = {
     group: 'Settings',
   },
   label: 'Site Settings',
+  hooks: { afterChange: [revalidateSiteSettings] },
   fields: [
+    {
+      name: 'paymentMethods',
+      type: 'group',
+      label: 'Enabled Payment Methods',
+      admin: { description: 'Enable methods offered for new orders. Turning every method off pauses checkout. Existing orders are not changed. Account details are configured below.' },
+      fields: [
+        { name: 'cod', type: 'checkbox', label: 'Enable Cash on Delivery (COD)', defaultValue: false },
+        { name: 'bank_transfer', type: 'checkbox', label: 'Enable Bank / Raast Transfer', defaultValue: true },
+        { name: 'jazzcash', type: 'checkbox', label: 'Enable JazzCash', defaultValue: false },
+        { name: 'easypaisa', type: 'checkbox', label: 'Enable EasyPaisa', defaultValue: true },
+      ],
+    },
     {
       name: 'announcementBar',
       type: 'group',
@@ -62,6 +85,7 @@ export const SiteSettings: GlobalConfig = {
         {
           name: 'codFee',
           type: 'number',
+          min: 0,
           defaultValue: 250,
           label: 'Cash on Delivery (COD) Charges (PKR)',
           admin: {
@@ -99,6 +123,7 @@ export const SiteSettings: GlobalConfig = {
           type: 'group',
           label: 'Bank / Raast Transfer',
           fields: [
+            paymentQRField(),
             { name: 'bankName', type: 'text', label: 'Bank Name', defaultValue: 'Meezan Bank' },
             {
               name: 'accountTitle',
@@ -125,6 +150,7 @@ export const SiteSettings: GlobalConfig = {
           type: 'group',
           label: 'JazzCash',
           fields: [
+            paymentQRField(),
             {
               name: 'mobileNumber',
               type: 'text',
@@ -144,6 +170,7 @@ export const SiteSettings: GlobalConfig = {
           type: 'group',
           label: 'EasyPaisa',
           fields: [
+            paymentQRField(),
             {
               name: 'mobileNumber',
               type: 'text',

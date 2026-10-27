@@ -9,6 +9,7 @@ import { guardMoneyOrder } from '@/utilities/paymentLedger'
 import { RequestError } from '@/utilities/apiSecurity'
 import { requireCommerceReady } from '@/utilities/commerceDatabase'
 import { orderAmounts } from '@/utilities/orderAmounts'
+import { validateOrderPaymentMethod } from '@/utilities/validateOrderPaymentMethod'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -38,6 +39,7 @@ export const Orders: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [
+      validateOrderPaymentMethod,
       async ({ data, req, originalDoc }) => {
         if (!data) return data
 
