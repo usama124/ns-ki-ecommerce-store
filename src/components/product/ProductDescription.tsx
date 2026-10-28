@@ -5,6 +5,7 @@ import { RichText } from '@/components/RichText'
 import { RotateCcw, ShieldCheck, Sparkles, Truck } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { ProductView } from '@/components/Analytics/ProductView'
 import { SizeSelector, type Variant } from './SizeSelector'
 import { StickyMobileAddToCart } from './StickyMobileAddToCart'
 
@@ -21,6 +22,7 @@ export function ProductDescription({ product }: Props) {
 
   return (
     <>
+      <ProductView product={product} />
       <StickyMobileAddToCart product={product} selectedVariant={selectedVariant} />
       <div className="flex flex-col gap-4 glass-card p-4 sm:p-5 rounded-xl shadow-sm">
         {/* Category & Title */}

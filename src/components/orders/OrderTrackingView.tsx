@@ -1,9 +1,6 @@
 'use client'
 
-import { formatPKR } from '@/utilities/formatPKR'
 import { CheckCircle2, Clock, ExternalLink, Package, Search, Truck, XCircle } from 'lucide-react'
-import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
-import { responsiveMedia } from '@/utilities/responsiveMedia'
 import React, { useState } from 'react'
 
 type OrderStatus =
@@ -315,122 +312,7 @@ export function OrderTrackingView() {
                 </div>
               )}
 
-            {/* Order Items & Customer Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Items List */}
-              <div className="lg:col-span-7 glass-card border border-[#648698]/30 p-6 rounded-2xl">
-                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#03171E] dark:text-[#CBCCC7] mb-4 border-b pb-3 border-[#648698]/20">
-                  Order Items
-                </h3>
-                <div className="space-y-4">
-                  {order.items?.map((item: any, idx: number) => {
-                    const productObj = typeof item.product === 'object' ? item.product : null
-                    const imageObj = productObj?.images?.[0]?.image
-                    const imageUrl = responsiveMedia(imageObj, 'thumbnail').src
-
-                    return (
-                      <div
-                        key={idx}
-                        className="flex gap-4 items-center border-b border-[#648698]/15 pb-3 last:border-0"
-                      >
-                        <div className="relative w-14 h-18 bg-gray-200 dark:bg-[#07242e] flex-shrink-0 rounded overflow-hidden border border-[#648698]/20">
-                          {imageUrl && (
-                            <ResponsiveImage
-                              media={imageObj}
-                              variant="thumbnail"
-                              sizes="56px"
-                              alt={productObj?.title || 'Product'}
-                              fill
-                              className="object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-[#03171E] dark:text-[#f0f3f4]">
-                            {productObj?.title || 'Luxury Outfit'}
-                          </h4>
-                          <p className="text-[11px] text-[#648698] uppercase tracking-widest">
-                            Size: {item.variantSize} | SKU: {item.variantSku || 'N/A'}
-                          </p>
-                          <p className="text-[11px] text-gray-500">
-                            Qty: {item.quantity} × {formatPKR(item.unitPrice)}
-                          </p>
-                        </div>
-                        <div className="text-xs font-bold text-[#03171E] dark:text-[#CBCCC7]">
-                          {formatPKR(item.unitPrice * item.quantity)}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Delivery Address & Payment Summary */}
-              <div className="lg:col-span-5 glass-card border border-[#648698]/30 p-6 rounded-2xl flex flex-col justify-between">
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#03171E] dark:text-[#CBCCC7] mb-4 border-b pb-3 border-[#648698]/20">
-                    Delivery & Billing Details
-                  </h3>
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-[#648698] block">
-                        Recipient
-                      </span>
-                      <span className="font-bold text-[#03171E] dark:text-[#f0f3f4]">
-                        {order.customer?.name}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-[#648698] block">
-                        Phone
-                      </span>
-                      <span className="font-mono text-gray-800 dark:text-gray-200">
-                        {order.customer?.phone}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-[#648698] block">
-                        Shipping Address
-                      </span>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        {order.customer?.address}, {order.customer?.city},{' '}
-                        {order.customer?.province}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-[#648698] block">
-                        Payment Method
-                      </span>
-                      <span className="font-bold uppercase text-[#03171E] dark:text-[#CBCCC7]">
-                        {order.paymentMethod?.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Price Breakdown */}
-                <div className="mt-6 pt-4 border-t border-[#648698]/20 space-y-2 text-xs">
-                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>Subtotal</span>
-                    <span>{formatPKR(order.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>Shipping Fee</span>
-                    <span>{formatPKR(order.shippingFee)}</span>
-                  </div>
-                  {Boolean(order.codFee && order.codFee > 0) && (
-                    <div className="flex justify-between text-[#648698] font-medium">
-                      <span>Cash on Delivery (COD) Fee</span>
-                      <span>+{formatPKR(order.codFee)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm font-bold text-[#03171E] dark:text-[#CBCCC7] border-t pt-2 border-[#648698]/30">
-                    <span>Total Amount</span>
-                    <span>{formatPKR(order.totalAmount)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">For your privacy, this lookup shows status and courier updates only. Use your secure order link or sign in to view delivery and billing details.</p>
           </div>
         )}
       </div>

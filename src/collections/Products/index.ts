@@ -1,4 +1,6 @@
 import { adminOnly } from '@/access/adminOnly'
+import { assertProductUnreserved } from '@/utilities/reservedProductGuard'
+import { recordProductStock } from '@/utilities/operationsHistory'
 import {
     FixedToolbarFeature,
     HeadingFeature,
@@ -31,7 +33,7 @@ export const Products: CollectionConfig = {
   access: {
     create: adminOnly,
     delete: adminOnly,
-    read: () => true,
+    read: ({ req: { user } }) => user?.roles?.includes('admin') ? true : { status: { equals: 'published' } },
     update: adminOnly,
   },
   admin: {
@@ -41,7 +43,11 @@ export const Products: CollectionConfig = {
   },
   hooks: {
     beforeChange: [
-      ({ data }) => {
+      async ({ data, originalDoc, req }) => {
+        if (originalDoc && Array.isArray(data?.variants)) {
+          const kept = new Set(data.variants.map((variant: { id?: string }) => String(variant.id)))
+          if (originalDoc.variants?.some((variant: { id?: string }) => !kept.has(String(variant.id)))) await assertProductUnreserved(originalDoc.id, req)
+        }
         if (data?.variants && Array.isArray(data.variants)) {
           data.variants = data.variants.map((variant: any) => {
             // size is now a relationship — could be populated object { id, name } or just an ID number
@@ -57,7 +63,12 @@ export const Products: CollectionConfig = {
         return data
       },
     ],
-    afterChange: [autoSyncShoppableVideo],
+    afterChange: [autoSyncShoppableVideo, async ({ doc, previousDoc, operation, req }) => { await recordProductStock(doc, operation === 'create' ? undefined : previousDoc, req) }],
+    beforeDelete: [async ({ id, req }) => {
+      await assertProductUnreserved(id, req)
+      const product = await req.payload.findByID({ collection: 'products', id, depth: 0, req, overrideAccess: true })
+      await recordProductStock(product, product, req, true)
+    }],
     afterDelete: [removeShoppableVideoOnDelete],
   },
   fields: [
@@ -246,6 +257,10 @@ export const Products: CollectionConfig = {
                 {
                   name: 'stock',
                   type: 'number',
+                  // A stale product editor must not overwrite stock sold since
+                  // the form opened. Existing-stock writes use Inventory only.
+                  access: { update: ({ req }) => req.context?.commerceInventoryWrite === true },
+                  admin: { description: 'Set initial stock here. To adjust existing stock, use the Inventory dashboard.' },
                   required: true,
                   defaultValue: 10,
                   min: 0,

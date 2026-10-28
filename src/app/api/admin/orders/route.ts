@@ -1,98 +1,25 @@
-import configPromise from '@payload-config'
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import type { Where } from 'payload'
+import { privateJSON, RequestError, requestError, requireAdmin } from '@/utilities/apiSecurity'
+import { getOrderStats, orderStatuses, reportPage } from '@/utilities/orderReport'
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const statusFilter = searchParams.get('status') || 'all'
-    const searchQuery = searchParams.get('q')?.trim() || ''
-
-    const payload = await getPayload({ config: configPromise })
-
-    // Fetch all orders for metrics and filtering
-    const allOrdersRes = await payload.find({
-      collection: 'orders',
-      depth: 2,
-      limit: 500,
-      overrideAccess: true,
-      sort: '-createdAt',
-    })
-
-    const orders = allOrdersRes.docs || []
-
-    // Calculate individual metrics for every status
-    const totalOrders = orders.length
-    const pendingVerification = orders.filter(
-      (o: any) => o.status === 'pending_verification',
-    ).length
-    const confirmed = orders.filter((o: any) => o.status === 'confirmed').length
-    const processing = orders.filter((o: any) => o.status === 'processing').length
-    const shipped = orders.filter((o: any) => o.status === 'shipped').length
-    const delivered = orders.filter((o: any) => o.status === 'delivered').length
-    const cancelled = orders.filter((o: any) => o.status === 'cancelled').length
-
-    // Revenue sum for non-cancelled / non-pending orders
-    const totalRevenue = orders
-      .filter((o: any) => ['confirmed', 'processing', 'shipped', 'delivered'].includes(o.status))
-      .reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0)
-
-    // Filter list by status & search query
-    let filteredOrders = orders
-
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'confirmed_processing') {
-        filteredOrders = filteredOrders.filter(
-          (o: any) => o.status === 'confirmed' || o.status === 'processing',
-        )
-      } else if (statusFilter === 'shipped_delivered') {
-        filteredOrders = filteredOrders.filter(
-          (o: any) => o.status === 'shipped' || o.status === 'delivered',
-        )
-      } else {
-        filteredOrders = filteredOrders.filter((o: any) => o.status === statusFilter)
-      }
-    }
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      filteredOrders = filteredOrders.filter((o: any) => {
-        const orderNum = (o.orderNumber || '').toLowerCase()
-        const custName = (o.customer?.name || '').toLowerCase()
-        const custEmail = (o.customer?.email || '').toLowerCase()
-        const custPhone = (o.customer?.phone || '').toLowerCase()
-        const custCity = (o.customer?.city || '').toLowerCase()
-        const trxId = (o.paymentProof?.transactionId || '').toLowerCase()
-        return (
-          orderNum.includes(q) ||
-          custName.includes(q) ||
-          custEmail.includes(q) ||
-          custPhone.includes(q) ||
-          custCity.includes(q) ||
-          trxId.includes(q)
-        )
-      })
-    }
-
-    return NextResponse.json({
-      success: true,
-      stats: {
-        totalOrders,
-        pendingVerification,
-        confirmed,
-        processing,
-        shipped,
-        delivered,
-        cancelled,
-        totalRevenue,
-      },
-      orders: filteredOrders,
-    })
-  } catch (error: any) {
-    console.error('Error fetching admin orders:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch admin orders.' },
-      { status: 500 },
-    )
-  }
+    const { payload, user, overrideAccess } = await requireAdmin(req)
+    const search = new URL(req.url).searchParams
+    const status = search.get('status') || 'all'
+    const q = search.get('q')?.trim() || ''
+    if (q.length > 100) throw new RequestError('Search is too long.')
+    const groups: Record<string, string[]> = { confirmed_processing: ['confirmed', 'processing'], shipped_delivered: ['shipped', 'delivered'] }
+    const group = Object.hasOwn(groups, status) ? groups[status] : undefined
+    if (status !== 'all' && !orderStatuses.includes(status as typeof orderStatuses[number]) && !group) throw new RequestError('Invalid order status.')
+    const and: Where[] = []
+    if (status !== 'all') and.push({ status: { in: group || [status] } })
+    if (q) and.push({ or: ['orderNumber', 'customer.name', 'customer.email', 'customer.phone', 'customer.city', 'paymentProof.transactionId'].map(field => ({ [field]: { contains: q } })) })
+    const [result, stats] = await Promise.all([
+      payload.find({ collection: 'orders', depth: 2, limit: 50, page: reportPage(search), sort: ['-createdAt', '-id'], where: and.length ? { and } : undefined, user, overrideAccess }),
+      getOrderStats(payload, user),
+    ])
+    return privateJSON({ success: true, stats, statsScope: 'all_orders', orders: result.docs,
+      pagination: { page: result.page || 1, totalPages: result.totalPages || 1, totalDocs: result.totalDocs, hasNextPage: Boolean(result.hasNextPage), hasPrevPage: Boolean(result.hasPrevPage) } })
+  } catch (error) { return requestError(error) }
 }

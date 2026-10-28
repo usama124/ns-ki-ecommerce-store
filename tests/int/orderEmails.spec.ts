@@ -64,10 +64,20 @@ describe('Order Email Templates & Generation', () => {
   it('generates payment confirmed customer email HTML correctly', () => {
     const html = getPaymentConfirmedCustomerEmailHtml(sampleOrder, 'http://localhost:3000')
 
-    expect(html).toContain('PAYMENT VERIFIED')
+    expect(html).toContain('ORDER CONFIRMED')
+    expect(html).toContain('Amount Due on Delivery:')
+    expect(html).not.toContain('PAYMENT VERIFIED')
+    expect(html).not.toContain('Total Paid:')
     expect(html).toContain('Fatima Khan')
     expect(html).toContain('#NKI-889900')
     expect(html).toContain('Rs. 24,350')
+  })
+
+  it.each(['bank_transfer', 'jazzcash', 'easypaisa'])('retains verified payment wording for %s', paymentMethod => {
+    const html = getPaymentConfirmedCustomerEmailHtml({ ...sampleOrder, paymentMethod }, 'http://localhost:3000')
+    expect(html).toContain('PAYMENT VERIFIED')
+    expect(html).toContain('Total Paid:')
+    expect(html).not.toContain('Amount Due on Delivery:')
   })
 
   it('generates order shipped customer email HTML correctly', () => {

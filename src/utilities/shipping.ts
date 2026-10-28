@@ -19,14 +19,22 @@ export const MAJOR_CITY_FEE = 250
 export const SECONDARY_CITY_FEE = 350
 export const FREE_SHIPPING_THRESHOLD = 15000
 
-export function calculateShipping(city: string, subtotal: number): number {
-  if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0
+type ShippingSettings = {
+  freeShippingThreshold?: number | null
+  majorCityFee?: number | null
+  secondaryCityFee?: number | null
+  majorCities?: Array<{ city: string }> | null
+}
 
-  const isMajorCity = MAJOR_CITIES.some(
+export function calculateShipping(city: string, subtotal: number, settings?: ShippingSettings | null): number {
+  if (subtotal >= (settings?.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD)) return 0
+
+  const cities = settings?.majorCities?.length ? settings.majorCities.map(item => item.city) : MAJOR_CITIES
+  const isMajorCity = cities.some(
     (c) => c.toLowerCase() === city.trim().toLowerCase()
   )
 
-  return isMajorCity ? MAJOR_CITY_FEE : SECONDARY_CITY_FEE
+  return isMajorCity ? (settings?.majorCityFee ?? MAJOR_CITY_FEE) : (settings?.secondaryCityFee ?? SECONDARY_CITY_FEE)
 }
 
 export function getShippingLabel(fee: number): string {

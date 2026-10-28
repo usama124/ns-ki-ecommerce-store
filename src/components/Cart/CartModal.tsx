@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { OpenCart } from './OpenCart'
+import { track } from '@/lib/analytics/client'
+import { cartItems } from '@/lib/analytics/model'
 
 export function Cart() {
   const [isOpen, setIsOpen] = useState(false)
@@ -272,7 +274,7 @@ export function Cart() {
   return (
     <>
       {/* Trigger button — stays inside the header */}
-      <OpenCart onClick={() => setIsOpen(true)} />
+      <OpenCart onClick={() => { if (!isOpen) track('view_cart', cartItems(items)); setIsOpen(true) }} />
 
       {/* Drawer & backdrop portalled to document.body — escapes any parent overflow/clip */}
       {mounted && createPortal(drawerContent, document.body)}

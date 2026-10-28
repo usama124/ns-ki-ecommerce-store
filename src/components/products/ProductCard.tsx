@@ -5,9 +5,14 @@ import { Heart } from 'lucide-react'
 import { ResponsiveImage } from '@/components/Media/ResponsiveImage'
 import { responsiveMedia } from '@/utilities/responsiveMedia'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useAnalyticsReady } from '@/lib/analytics/hooks'
+import { productItem } from '@/lib/analytics/model'
+import { track } from '@/lib/analytics/client'
 
 export type ProductCardProps = {
+  listId?: string
+  index?: number
   product: {
     id?: string | number | null
     title?: string | null
@@ -30,8 +35,23 @@ export type ProductCardProps = {
   } & Record<string, any>
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, listId = 'catalog', index = 0 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const element = useRef<HTMLDivElement>(null)
+  const seen = useRef('')
+  const ready = useAnalyticsReady()
+  const impressionKey = `${listId}:${index}:${product.id}`
+  useEffect(() => {
+    if (!ready || !element.current || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(entries => {
+      if (seen.current === impressionKey || document.visibilityState !== 'visible' || !entries.some(entry => entry.intersectionRatio >= 0.5)) return
+      const item = productItem(product, listId, index)
+      if (item) { seen.current = impressionKey; track('view_item_list', [item]) }
+    }, { threshold: 0.5 })
+    observer.observe(element.current)
+    return () => observer.disconnect()
+  }, [ready, impressionKey, product, listId, index])
+  const select = () => { const item = productItem(product, listId, index); if (item) track('select_item', [item]) }
 
   const { title = 'Luxury Product', slug, basePricePKR, pricePKR, images, salePriceDetails } = product
 
@@ -67,10 +87,10 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <div className="group relative flex flex-col h-full rounded-xl md:rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-sm p-2.5 sm:p-3.5 md:p-4 hover:border-emerald-500/40 hover:bg-slate-900/80 transition-all duration-300 shadow-sm hover:shadow-xl overflow-hidden">
+    <div ref={element} className="group relative flex flex-col h-full rounded-xl md:rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-sm p-2.5 sm:p-3.5 md:p-4 hover:border-emerald-500/40 hover:bg-slate-900/80 transition-all duration-300 shadow-sm hover:shadow-xl overflow-hidden">
       {/* Media Container: aspect-[3/4] on mobile & full desktop proportion */}
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg md:rounded-xl bg-[#0A1210]">
-        <Link href={`/products/${slug || ''}`} className="block w-full h-full">
+        <Link href={`/products/${slug || ''}`} onClick={select} className="block w-full h-full">
           {imageUrl ? (
             <ResponsiveImage
               media={firstImg}
@@ -118,7 +138,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Product Title (2-line clamp with min-height for aligned grid rows) */}
           <h3 className="text-xs sm:text-sm md:text-base font-semibold md:font-medium line-clamp-2 text-slate-100 min-h-[2rem] md:min-h-[2.5rem] leading-tight group-hover:text-emerald-300 transition-colors">
-            <Link href={`/products/${slug || ''}`}>{title}</Link>
+            <Link href={`/products/${slug || ''}`} onClick={select}>{title}</Link>
           </h3>
         </div>
 

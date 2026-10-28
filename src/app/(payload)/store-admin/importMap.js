@@ -1,3 +1,4 @@
+import { OrderReceipt } from '@/components/admin/OrderReceipt'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -23,6 +24,8 @@ import { ImageOptimizer as ImageOptimizer_281bfe4bf888fb8dda090fb156500517 } fro
 import { default as default_534076e2c753ea5d539a54b05f456b1b } from '@/components/admin/Icon'
 import { default as default_a44df17d0fc3dcd873dae43dc3bf66bd } from '@/components/admin/Logo'
 import { InventoryNavLink as InventoryNavLink_80f2707f655ba04334b711729c7f5882 } from '@/components/admin/InventoryNavLink'
+import { ReportsNavLink as ReportsNavLink_db1cbc45c59b0b2e6c3ac27bf4990712 } from '@/components/admin/ReportsNavLink'
+import { ReportsView as ReportsView_2700296603fedf8ecc35ba27dbf9f33f } from '@/components/admin/ReportsView'
 import { OrdersDashboardNavLink as OrdersDashboardNavLink_c3709662247da8634bd77922a5bc278f } from '@/components/admin/OrdersDashboardNavLink'
 import { SaleDashboardNavLink as SaleDashboardNavLink_e255651f144f4b3f561619354f3fa3c1 } from '@/components/admin/SaleDashboardNavLink'
 import { BeforeDashboard as BeforeDashboard_1a7510af427896d367a49dbf838d2de6 } from '@/components/BeforeDashboard'
@@ -35,6 +38,9 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "@/components/admin/ReportsNavLink#ReportsNavLink": ReportsNavLink_db1cbc45c59b0b2e6c3ac27bf4990712,
+  "@/components/admin/ReportsView#ReportsView": ReportsView_2700296603fedf8ecc35ba27dbf9f33f,
+  "@/components/admin/OrderReceipt#OrderReceipt": OrderReceipt,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,

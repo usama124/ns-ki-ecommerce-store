@@ -1,22 +1,27 @@
-import configPromise from '@payload-config'
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import { privateJSON, requestError, requireAdmin } from '@/utilities/apiSecurity'
+import { reportPage } from '@/utilities/orderReport'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const payload = await getPayload({ config: configPromise })
+    const { payload, user, overrideAccess } = await requireAdmin(req)
 
     const productsResult = await payload.find({
       collection: 'products',
-      limit: 300,
+      limit: 50,
+      page: reportPage(new URL(req.url).searchParams),
+      sort: 'id',
       depth: 2,
-      overrideAccess: true,
+      user,
+      overrideAccess,
     })
 
     const categoriesResult = await payload.find({
       collection: 'categories',
-      limit: 100,
-      overrideAccess: true,
+      pagination: false,
+      depth: 0,
+      select: { name: true, slug: true },
+      user,
+      overrideAccess,
     })
 
     const inventoryItems: any[] = []
@@ -46,6 +51,7 @@ export async function GET() {
             primaryCategorySlug: primaryCat ? primaryCat.slug : '',
             imageUrl,
             variantIndex: vIdx,
+            variantId: String(v.id || ''),
             sizeName,
             sku: v.sku || `NKI-${product.id}-${vIdx}`,
             stock: typeof v.stock === 'number' ? v.stock : 0,
@@ -56,18 +62,16 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
       totalProducts: productsResult.totalDocs,
       totalVariants: inventoryItems.length,
+      variantsScope: 'current_product_page',
+      pagination: { page: productsResult.page || 1, totalPages: productsResult.totalPages || 1, totalDocs: productsResult.totalDocs },
       categories: categoriesResult.docs.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })),
       inventory: inventoryItems,
     })
-  } catch (error: any) {
-    console.error('Error fetching inventory data:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch inventory data.' },
-      { status: 500 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }

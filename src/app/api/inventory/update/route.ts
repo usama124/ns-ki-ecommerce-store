@@ -1,47 +1,55 @@
-import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
+import { privateJSON, readJSON, RequestError, requestError, requireAdmin, validDocumentID } from '@/utilities/apiSecurity'
+import { COMMERCE, commerceSession, commerceTransaction, mongoCommerce, type InternalRecord } from '@/utilities/commerceDatabase'
+import { randomUUID } from 'node:crypto'
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const payload = await getPayload({ config: configPromise })
+    const { payload, user, overrideAccess } = await requireAdmin(req)
+    const body = await readJSON(req)
+    const reason = body.reason === undefined ? 'manual_adjustment' : body.reason
+    if (typeof reason !== 'string' || !['restock', 'damage', 'correction', 'manual_adjustment'].includes(reason)) throw new RequestError('Invalid stock adjustment reason.')
 
     // Support single item or batch items update
-    const updates: Array<{ productId: string; variantIndex: number; stock: number }> =
+    const updates = (
       Array.isArray(body.updates)
         ? body.updates
         : body.productId !== undefined
-          ? [{ productId: body.productId, variantIndex: body.variantIndex ?? 0, stock: body.stock }]
-          : []
+          ? [{ productId: body.productId, variantIndex: body.variantIndex ?? 0, stock: body.stock, variantId: body.variantId, expectedStock: body.expectedStock }]
+          : []) as Array<{ productId: string | number; variantIndex: number; stock: number; variantId?: string; expectedStock?: number }>
 
-    if (updates.length === 0) {
-      return NextResponse.json({ error: 'No valid inventory updates provided.' }, { status: 400 })
+    if (updates.length === 0 || updates.length > 100 || updates.some(update => !update || !validDocumentID(update.productId) || !Number.isSafeInteger(update.variantIndex) || update.variantIndex < 0 || !Number.isSafeInteger(update.stock) || update.stock < 0 || update.stock > 1_000_000)) {
+      throw new RequestError('Provide 1–100 valid inventory updates with integer stock and variant indexes.')
     }
+    if (updates.some(update => (update.variantId !== undefined && !validDocumentID(update.variantId)) || (update.expectedStock !== undefined && (!Number.isSafeInteger(update.expectedStock) || update.expectedStock < 0)))) throw new RequestError('Invalid inventory concurrency check.')
 
     const results = []
 
     for (const update of updates) {
+      const result = await commerceTransaction(payload, user, async transactionReq => {
       const { productId, variantIndex, stock } = update
       if (!productId || variantIndex === undefined || typeof stock !== 'number' || stock < 0) {
-        continue
+        throw new RequestError('Invalid stock update.')
       }
 
       const product = await payload.findByID({
         collection: 'products',
         id: productId,
         depth: 0,
-        overrideAccess: true,
+        user,
+        overrideAccess,
+        req: transactionReq,
       })
 
       if (!product || !Array.isArray(product.variants)) {
-        continue
+        throw new RequestError('Product unavailable.', 404)
       }
 
       const updatedVariants = [...product.variants]
       if (variantIndex < 0 || variantIndex >= updatedVariants.length) {
-        continue
+        throw new RequestError('Product variant unavailable.', 404)
       }
+      if ((update.variantId !== undefined && String(updatedVariants[variantIndex].id) !== update.variantId) ||
+        (update.expectedStock !== undefined && updatedVariants[variantIndex].stock !== update.expectedStock)) throw new RequestError('Stock or variant changed since this page loaded. Refresh inventory before saving.', 409)
 
       updatedVariants[variantIndex] = {
         ...updatedVariants[variantIndex],
@@ -57,26 +65,32 @@ export async function POST(req: Request) {
             size: typeof v.size === 'object' && v.size !== null ? (v.size.id ?? v.size) : v.size,
           })),
         },
-        overrideAccess: true,
+        user,
+        overrideAccess,
+        req: transactionReq,
+      context: { commerceInventoryWrite: true, stockReason: reason },
       })
+      await mongoCommerce(payload).db.collection<InternalRecord>(COMMERCE.movements).insertOne({
+        _id: randomUUID(), kind: 'manual_adjustment', productId: String(product.id),
+        variantId: String(product.variants[variantIndex].id), actorId: String(user.id),
+        before: product.variants[variantIndex].stock, after: stock, createdAt: new Date(),
+      }, { session: await commerceSession(transactionReq) })
 
-      results.push({
+      return {
         productId,
         variantIndex,
         newStock: updatedVariants[variantIndex].stock,
+      }
       })
+      results.push(result)
     }
 
-    return NextResponse.json({
+    return privateJSON({
       success: true,
       updatedCount: results.length,
       results,
     })
-  } catch (error: any) {
-    console.error('Error updating inventory stock:', error)
-    return NextResponse.json(
-      { error: error?.message || 'Failed to update inventory stock.' },
-      { status: 500 },
-    )
+  } catch (error) {
+    return requestError(error)
   }
 }

@@ -11,6 +11,8 @@ import * as migration_20260916_010000_media_sizes from './20260916_010000_media_
 import * as migration_20260917_000000_cancellation_reason from './20260917_000000_cancellation_reason'
 import * as migration_20260918_180000_trx_security from './20260918_180000_trx_security'
 import * as migration_20261022_000000_shop_by_video_opt_in from './20261022_000000_shop_by_video_opt_in'
+import * as migration_20261023_000000_order_customer_account from './20261023_000000_order_customer_account'
+import * as migration_20261024_000000_order_inventory_state from './20261024_000000_order_inventory_state'
 import * as migration_20261026_000000_payment_method_settings from './20261026_000000_payment_method_settings'
 import * as migration_20261026_010000_payment_qr_codes from './20261026_010000_payment_qr_codes'
 
@@ -79,6 +81,16 @@ export const migrations = [
     up: migration_20261022_000000_shop_by_video_opt_in.up,
     down: migration_20261022_000000_shop_by_video_opt_in.down,
     name: '20261022_000000_shop_by_video_opt_in',
+  },
+  {
+    up: migration_20261023_000000_order_customer_account.up,
+    down: migration_20261023_000000_order_customer_account.down,
+    name: '20261023_000000_order_customer_account',
+  },
+  {
+    up: migration_20261024_000000_order_inventory_state.up,
+    down: migration_20261024_000000_order_inventory_state.down,
+    name: '20261024_000000_order_inventory_state',
   },
   {
     up: migration_20261026_000000_payment_method_settings.up,

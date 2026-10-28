@@ -20,7 +20,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const path = searchParams.get('path')
   const previewSecret = searchParams.get('previewSecret')
 
-  if (previewSecret !== process.env.PREVIEW_SECRET) {
+  if (!process.env.PREVIEW_SECRET || previewSecret !== process.env.PREVIEW_SECRET) {
     return new Response('You are not allowed to preview this page', { status: 403 })
   }
 
@@ -28,17 +28,18 @@ export async function GET(req: NextRequest): Promise<Response> {
     return new Response('Insufficient search params', { status: 404 })
   }
 
-  if (!path.startsWith('/')) {
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\') || /[\u0000-\u001f]/.test(path)) {
     return new Response('This endpoint can only be used for relative previews', { status: 500 })
   }
 
   let user
 
   try {
-    user = await payload.auth({
+    const result = await payload.auth({
       req: req as unknown as PayloadRequest,
       headers: req.headers,
     })
+    user = result.user
   } catch (error) {
     payload.logger.error({ err: error }, 'Error verifying token for live preview')
     return new Response('You are not allowed to preview this page', { status: 403 })
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const draft = await draftMode()
 
-  if (!user) {
+  if (!user?.roles?.includes('admin')) {
     draft.disable()
     return new Response('You are not allowed to preview this page', { status: 403 })
   }

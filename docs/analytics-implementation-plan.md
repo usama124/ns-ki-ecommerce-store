@@ -1,12 +1,12 @@
 # Store analytics implementation plan
 
-Status: proposed; instrumentation is not implemented by this document.
+Status (25 October 2026): browser/server journey instrumentation, operational Reports, history/stock tracking, actual payment/partial-refund recording and derived daily trends/stock inactivity/recorded balances/allocation coverage are implemented locally. Browser/server analytics remain disabled pending property/privacy review and configuration. History, money and insight index/export setup require explicit admin actions. Physical unit aging needs receipt/lot data; settlement/reconciliation, GA4 refund allocation and GA4 admin dashboards remain pending. See [analytics setup](analytics-setup.md), [server rollout](analytics-server-rollout.md), [admin reporting guide](admin-reporting.md), [historical operations rollout](historical-operations.md), [payment recording](payment-recording.md) and [historical insights](historical-insights.md).
 
 ## Outcome and current state
 
 Give the client reliable reports for visitor acquisition and retention, product interest, cart and checkout abandonment, confirmed orders, and campaign performance, together with an integrated Payload admin reporting area for orders, products, inventory, payments, and fulfillment.
 
-The storefront currently loads GA4 measurement ID `G-PRKY09PGEB` from `src/app/(app)/layout.tsx`. No custom ecommerce event instrumentation was found. Adding the tag does not automatically implement product, cart, or purchase tracking. Historical shopping actions before instrumentation cannot be reconstructed in GA4 from the tag alone.
+The initial unconditional GA4 tag has been replaced by a consent-gated direct loader using public configuration for the existing `G-PRKY09PGEB` ID. Product/list/cart and checkout-intent events are instrumented. Backend order/purchase events are implemented but not enabled or verified against Google. Historical shopping actions before instrumentation cannot be reconstructed from the original tag alone.
 
 The cart lives in localStorage through `src/providers/Cart/index.tsx`. Checkout posts to `src/app/api/orders/route.ts`. Payload order hooks deduct inventory, auto-confirm COD orders, and process later status changes. Manual transfers initially await verification. A confirmed COD order represents accepted order value, not collected cash.
 
@@ -74,7 +74,7 @@ Acceptance: identical item IDs throughout; accurate quantity deltas; one success
 
 ## Phase 3 — Checkout and trustworthy purchase reporting
 
-Prerequisite: fix server-authoritative order pricing in `src/app/api/orders/route.ts` and enforce it in a shared order creation path/collection validation so the public Payload collection API cannot bypass it. Resolve current published products and valid variants, validate positive integer quantities, calculate current sale prices, shipping, and COD charges from trusted settings, and save immutable item/amount snapshots. Reject unknown variants and invalid products. The current API accepts prices and fees supplied by the browser.
+Prerequisite update: server-authoritative checkout pricing, published-product/variant/quantity validation, trusted sale/shipping/COD calculations, idempotency and transactionally consistent administrator-edited totals have been implemented and locally verified during QA remediation. Generic order creation is administrator-only. Batch 2 now reuses these server snapshots with restricted context and a transactional analytics outbox; production activation and real ingestion remain pending. The following contract remains the rollout acceptance checklist.
 
 Checkout events in `src/components/checkout/CheckoutPage.tsx`:
 
@@ -91,7 +91,7 @@ Purchase delivery:
 - Create an admin-only analytics outbox collection and a durable worker/cron. Store a unique event key, trusted payload snapshot, occurred-at time, attempt count, dispatch state, and sanitized error details. Ensure database uniqueness supports idempotent enqueueing.
 - The order mutation and enqueue should share the Payload request/transaction where supported. Add a reconciliation job for eligible orders without an outbox entry so failures do not silently drop reporting.
 - Send backend events through GA4 Measurement Protocol with a server-only API secret. Validate requests using Google's validation endpoint during QA. Apply documented time/session-attribution limits: a payment verified days later cannot be assumed to belong to the original browsing session.
-- Use stable transaction IDs and persistent dispatch state; repeated updates, worker retries, and cancelled-to-confirmed transitions must not intentionally create another purchase for the same order. A network timeout leaves delivery uncertain, so describe delivery as retried and deduplicated, not guaranteed exactly once.
+- Use stable transaction IDs and persistent dispatch state; repeated updates, worker claims, and cancelled-to-confirmed transitions must not intentionally create another purchase for the same order. A network timeout leaves delivery uncertain: batch 2 quarantines ambiguous sends for manual review instead of blindly retrying. Do not claim guaranteed exactly-once delivery.
 - Respect consent and missing identifiers: record why an event was skipped, do not invent visitor identities or claim full coverage. Operational order totals remain the reference.
 - Keep reporting annotations for cancellations and refunds; purchase count is a historical milestone and not the current count of valid orders.
 
@@ -120,11 +120,13 @@ Acceptance: dashboard totals have clear definitions, date windows and currency; 
 
 ## Phase 5 — Integrated admin reporting
 
+Batch 3 implements delivery batches 1–2 below using existing trustworthy fields. The Reports shell has all five sections, but Payments & Fulfillment currently shows placed-cohort/current-status breakdowns only. It deliberately does not infer cash collection, refunds, event timestamps or complete stock history. Exports are synchronous and explicitly limited to 5,000 rows; background exports remain future work. MongoDB is the supported reporting adapter for this release. See [admin-reporting.md](admin-reporting.md) for precise scope and limitations.
+
 ### Entry point and architecture
 
 Add a Reports navigation entry at `/store-admin/reports` with Overview, Orders, Products, Inventory, and Payments & Fulfillment views. Reuse the existing Payload admin shell and design tokens. Keep inventory editing and order processing in their existing dashboards; report rows link to the relevant records/screens for action.
 
-Use Payload/MongoDB as the authoritative source for operational reports. GA4 supplies visitor and behavioral metrics only. Existing orders/inventory dashboards are starting points, not a complete reporting layer: current endpoints cap result sets at 500 orders or 300 products and calculate some totals in memory. New reporting totals must cover the full matching dataset, independently of detail-table pagination.
+Use Payload/MongoDB as the authoritative source for operational reports. GA4 supplies visitor and behavioral metrics only. Existing orders/inventory dashboards remain starting points, not a complete reporting layer: the old 500-order/300-product caps were replaced during QA remediation by pagination and full-history order summaries; inventory counters/filters are explicitly page-scoped. New reporting totals must cover the full matching dataset, independently of detail-table pagination.
 
 Proposed implementation locations:
 
@@ -192,7 +194,7 @@ Proposed implementation locations:
 
 ### Authorization and performance
 
-- Authenticate and require the admin role on every reporting, export, and supporting operational endpoint; the current custom endpoints need authorization fixes before reuse. Protect requests server-side even when the admin navigation is hidden.
+- Authenticate and require the admin role on every reporting, export, and supporting operational endpoint. Existing endpoint access fixes are implemented; preserve them and protect every new endpoint independently, even when admin navigation is hidden.
 - Use explicit access behavior for Local API operations; authenticate first and pass the user with `overrideAccess: false` where acting on behalf of that user. Define access for reporting collections and sensitive payment/export data.
 - Validate filter/sort/date inputs, use fixed aggregation stages, and limit expensive synchronous report windows. Never accept arbitrary database aggregation from the browser.
 - Aggregate in the database and paginate detail rows. For MongoDB, implement optimized pipelines/indexes for actual collection shapes; isolate adapter-specific logic if Postgres/SQLite support remains a requirement.
@@ -247,7 +249,7 @@ Required from deployment: server-only Measurement Protocol credentials and an au
 
 Admin reporting additionally requires agreement on metric/status definitions, payment collection workflow, inventory baseline date, reporting permissions, export contents, and expected data volumes. Optional GA4-in-admin reporting requires Data API credentials/property access; operational reporting does not depend on that connection.
 
-Recommended first implementation batch: typed analytics helper, safe/consented page tracking, product impressions/views, and centralized cart actions. Secure operational endpoints and define shared report calculations early; core operational reports can proceed independently of GA4. Then implement trusted order pricing, the purchase outbox, and historical reporting data. No external analytics configuration or production data changes are performed by this plan.
+Operational history, actual-money recording and derived trends/stock inactivity/recorded balances/allocation estimates are implemented in code. Physical unit aging/sell-through is not inferred without receipt/lot/demand facts. Next: reconciliation/settlement and bookkeeping corrections, optional receipt/lot workflows, GA4 funnels/admin integration, and controlled analytics activation/ingestion validation. Existing reports work without GA credentials. History/money activation and insight setup remain explicit; external accounts/production tracking remain unchanged until configuration and rollout approval.
 
 ## Primary references
 

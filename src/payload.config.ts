@@ -31,6 +31,7 @@ import { SaleSettings } from '@/globals/SaleSettings'
 import { SiteSettings } from '@/globals/SiteSettings'
 import { plugins } from './plugins'
 import { getDatabaseOptions } from '@/utilities/databaseOptions'
+import { afterOpenMongoConnection } from '@/utilities/mongoPoolLifecycle'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -51,6 +52,7 @@ const db = isMongo
   ? mongooseAdapter({
       url: mongoUrl,
       connectOptions: databaseOptions.mongo,
+      afterOpenConnection: afterOpenMongoConnection,
     })
   : dbAdapterType === 'turso' || dbAdapterType === 'sqlite' || dbAdapterType === 'libsql'
     ? sqliteAdapter({
@@ -81,11 +83,16 @@ export default buildConfig({
       beforeLogin: ['@/components/BeforeLogin#BeforeLogin'],
       beforeDashboard: ['@/components/BeforeDashboard#BeforeDashboard'],
       afterNavLinks: [
+        '@/components/admin/ReportsNavLink#ReportsNavLink',
         '@/components/admin/InventoryNavLink#InventoryNavLink',
         '@/components/admin/OrdersDashboardNavLink#OrdersDashboardNavLink',
         '@/components/admin/SaleDashboardNavLink#SaleDashboardNavLink',
       ],
       views: {
+        reports: {
+          Component: '@/components/admin/ReportsView#ReportsView',
+          path: '/reports',
+        },
         inventory: {
           Component: '@/components/admin/InventoryView#InventoryView',
           path: '/inventory',

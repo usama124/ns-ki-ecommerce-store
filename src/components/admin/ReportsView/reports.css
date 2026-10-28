@@ -1,0 +1,222 @@
+.nski-reports {
+  padding: clamp(16px, 3vw, 32px);
+  color: #f8fafc;
+  background: #0a1210;
+  min-height: 100%;
+  font-family: system-ui, sans-serif;
+}
+.nski-reports header,
+.report-table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.nski-reports h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+.nski-reports h2 {
+  font-size: 19px;
+  margin: 0 0 10px;
+}
+.nski-reports h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.nski-reports p {
+  line-height: 1.6;
+  margin: 6px 0 12px;
+}
+.report-eyebrow {
+  color: #d4af37;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+.nski-reports nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.nski-reports button {
+  border: 1px solid #687463;
+  border-radius: 7px;
+  color: #f8fafc;
+  background: #14231d;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.nski-reports button[aria-current='page'],
+.nski-reports .report-primary {
+  background: #d4af37;
+  color: #10160f;
+  border-color: #d4af37;
+  font-weight: 650;
+}
+.nski-reports button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.nski-reports button:focus-visible,
+.nski-reports input:focus-visible,
+.nski-reports select:focus-visible,
+.nski-reports a:focus-visible,
+.nski-reports summary:focus-visible {
+  outline: 2px solid #f3e5ab;
+  outline-offset: 3px;
+}
+.report-panel {
+  background: #101f1b;
+  border: 1px solid #435144;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.report-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: end;
+  gap: 14px;
+}
+.nski-reports label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: #d9e3de;
+}
+.nski-reports input,
+.nski-reports select {
+  color-scheme: dark;
+  background: #0b1713;
+  color: #f8fafc;
+  border: 1px solid #657166;
+  border-radius: 6px;
+  padding: 10px;
+  min-width: 0;
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+}
+.nski-reports input::placeholder {
+  color: #a2b5a9;
+}
+.nski-reports .money-attestation {
+  flex-direction: row;
+  align-items: center;
+  margin: 14px 0;
+}
+.nski-reports .money-entry-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+.nski-reports .money-attestation input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+}
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+.report-metrics .report-panel {
+  margin: 0 0 14px;
+}
+.nski-reports .report-value {
+  font-size: 25px;
+  font-weight: 650;
+  color: #f3e5ab;
+  margin: 10px 0;
+}
+.nski-reports small,
+.report-note {
+  color: #bacac1;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.report-filters .report-note {
+  grid-column: 1 / -1;
+}
+.report-table-scroll {
+  overflow-x: auto;
+  max-height: 540px;
+  margin-top: 16px;
+}
+.nski-reports table {
+  color: #f8fafc;
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+}
+.nski-reports th {
+  position: sticky;
+  top: 0;
+  background: #182b22;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.nski-reports th,
+.nski-reports td {
+  color: #f8fafc;
+  padding: 12px;
+  border-bottom: 1px solid #34463c;
+  vertical-align: top;
+}
+.nski-reports td {
+  min-width: 82px;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+}
+.nski-reports a {
+  color: #f3e5ab;
+}
+.report-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+  font-size: 13px;
+}
+.nski-reports summary {
+  cursor: pointer;
+  padding: 3px;
+  font-weight: 600;
+}
+.report-error {
+  border-color: #f87171;
+}
+@media (max-width: 600px) {
+  .nski-reports header {
+    align-items: start;
+  }
+  .report-filters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .report-filters > label:first-child,
+  .report-filters > button {
+    grid-column: 1 / -1;
+  }
+  .report-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .report-metrics .report-panel {
+    padding: 12px;
+    min-width: 0;
+  }
+  .nski-reports .report-value {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+}

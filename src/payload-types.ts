@@ -825,6 +825,19 @@ export interface Form {
  */
 export interface Order {
   id: number;
+  /**
+   * System-owned stock allocations. Legacy orders require manual reconciliation before cancellation or item edits.
+   */
+  inventoryState?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  customerAccount?: (number | null) | User;
   orderNumber: string;
   status?: ('pending_verification' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled') | null;
   paymentMethod: 'cod' | 'bank_transfer' | 'jazzcash' | 'easypaisa';
@@ -838,6 +851,9 @@ export interface Order {
   };
   paymentProof?: {
     transactionId?: string | null;
+    /**
+     * Legacy public-media receipts only. New receipts are stored separately in the private bucket.
+     */
     screenshot?: (number | null) | Media;
   };
   fulfillment?: {
@@ -1297,6 +1313,8 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  inventoryState?: T;
+  customerAccount?: T;
   orderNumber?: T;
   status?: T;
   paymentMethod?: T;

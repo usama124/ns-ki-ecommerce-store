@@ -18,7 +18,7 @@ export function getSalePriceDetails(
   variantPrice?: number | null,
 ): SalePriceDetails {
   const basePrice =
-    typeof variantPrice === 'number' && variantPrice > 0
+    typeof variantPrice === 'number' && variantPrice >= 0
       ? variantPrice
       : (product?.basePricePKR ?? 0)
 

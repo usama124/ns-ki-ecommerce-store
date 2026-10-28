@@ -1,11 +1,19 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ getPayload: vi.fn(), create: vi.fn(), findGlobal: vi.fn() }))
+const mocks = vi.hoisted(() => ({ getPayload: vi.fn(), create: vi.fn(), findGlobal: vi.fn(), auth: vi.fn(), find: vi.fn() }))
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof import('payload')>()),
   getPayload: mocks.getPayload,
 }))
+vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+vi.mock('@/utilities/commerceDatabase', () => ({
+  commerceSession: vi.fn().mockResolvedValue({}),
+  commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) => work({}),
+  mongoCommerce: () => ({ db: { collection: () => ({ findOne: async () => null, insertOne: vi.fn(), updateOne: vi.fn() }) } }),
+  COMMERCE: { checkout: 'test-checkout' },
+}))
+import { paymentDetails } from '../helpers/paymentSettings'
 import { POST } from '@/app/api/orders/route'
 import { validateOrderPaymentMethod } from '@/utilities/validateOrderPaymentMethod'
 import {
@@ -28,11 +36,13 @@ const body = {
   codFee: 999,
   paymentProof: { transactionId: 'TEST1234' },
 }
-const request = (method: unknown, proof: unknown = body.paymentProof) =>
+const settings = { paymentDetails, shipping: { codFee: 250, majorCityFee: 250, secondaryCityFee: 350, freeShippingThreshold: 15000, majorCities: [] } }
+const headers = { 'Content-Type': 'application/json', Origin: 'https://store.example', 'Idempotency-Key': 'd380dd57-0d67-47ad-8273-e89de578ad59' }
+const request = (method: unknown, proof: unknown = body.paymentProof, expectedTotal = method === 'cod' ? 1425 : 1250) =>
   new Request('https://store.example/api/orders', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...body, paymentMethod: method, paymentProof: proof }),
+    headers,
+    body: JSON.stringify({ ...body, expectedTotal, paymentMethod: method, paymentProof: proof }),
   })
 const validate = (
   data: Record<string, unknown>,
@@ -47,8 +57,10 @@ const validate = (
   } as never)
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.getPayload.mockResolvedValue({ create: mocks.create, findGlobal: mocks.findGlobal })
-  mocks.findGlobal.mockResolvedValue({ shipping: { codFee: 250 } })
+  mocks.getPayload.mockResolvedValue({ ...mocks, config: { secret: 'synthetic-checkout-test-secret' } })
+  mocks.auth.mockResolvedValue({ user: null })
+  mocks.find.mockImplementation(({ collection }) => Promise.resolve({ docs: collection === 'sizes' ? [] : [{ id: 'product-1', title: 'QA', basePricePKR: 1000, variants: [{ size: { id: 'size-1', name: 'M' }, sku: 'QA', stock: 100 }] }] }))
+  mocks.findGlobal.mockImplementation(({ slug }) => Promise.resolve(slug === 'site-settings' ? settings : { isActive: false }))
   mocks.create.mockResolvedValue({ id: 'order-1', orderNumber: '#QA-1' })
 })
 describe('disabled storefront payment methods', () => {
@@ -60,8 +72,8 @@ describe('disabled storefront payment methods', () => {
     ['Punjab', 'Other', 400],
   ])('validates region %s and city %s before order creation', async (province, city, status) => {
     const response = await POST(new Request('https://store.example/api/orders', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...body, customer: { ...body.customer, province, city }, paymentMethod: 'bank_transfer' }),
+      method: 'POST', headers,
+      body: JSON.stringify({ ...body, expectedTotal: city === 'QA unlisted village' ? 1350 : 1250, customer: { ...body.customer, province, city }, paymentMethod: 'bank_transfer' }),
     }))
     expect(response.status).toBe(status)
     expect(mocks.create).toHaveBeenCalledTimes(status === 200 ? 1 : 0)
@@ -140,8 +152,9 @@ describe('disabled storefront payment methods', () => {
   )
   it.each(['cod', 'jazzcash'])('admin can enable %s without a code change', async (method) => {
     mocks.findGlobal.mockResolvedValue({
+      ...settings,
       paymentMethods: { cod: true, jazzcash: true },
-      shipping: { codFee: 175 },
+      shipping: { ...settings.shipping, codFee: 175 },
     })
     expect((await POST(request(method, method === 'cod' ? null : body.paymentProof))).status).toBe(
       200,
@@ -168,6 +181,7 @@ describe('disabled storefront payment methods', () => {
     'admin can disable previously enabled %s',
     async (method) => {
       mocks.findGlobal.mockResolvedValue({
+        ...settings,
         paymentMethods: { bank_transfer: false, easypaisa: false },
       })
       expect((await POST(request(method))).status).toBe(400)
@@ -197,6 +211,7 @@ describe('disabled storefront payment methods', () => {
   })
   it.each(storefrontPaymentMethods)('blocks %s when admin pauses all methods', async (method) => {
     mocks.findGlobal.mockResolvedValue({
+      ...settings,
       paymentMethods: { cod: false, bank_transfer: false, jazzcash: false, easypaisa: false },
     })
     expect((await POST(request(method))).status).toBe(400)
@@ -204,13 +219,13 @@ describe('disabled storefront payment methods', () => {
     expect(mocks.create).not.toHaveBeenCalled()
   })
   it('respects a free COD fee and refuses invalid stored COD charges', async () => {
-    mocks.findGlobal.mockResolvedValue({ paymentMethods: { cod: true }, shipping: { codFee: 0 } })
-    expect((await POST(request('cod', null))).status).toBe(200)
+    mocks.findGlobal.mockResolvedValue({ ...settings, paymentMethods: { cod: true }, shipping: { ...settings.shipping, codFee: 0 } })
+    expect((await POST(request('cod', null, 1250))).status).toBe(200)
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ codFee: 0, totalAmount: 1250 }) }),
     )
     mocks.create.mockClear()
-    mocks.findGlobal.mockResolvedValue({ paymentMethods: { cod: true }, shipping: { codFee: -1 } })
+    mocks.findGlobal.mockResolvedValue({ ...settings, paymentMethods: { cod: true }, shipping: { ...settings.shipping, codFee: -1 } })
     expect((await POST(request('cod', null))).status).toBe(503)
     expect(mocks.create).not.toHaveBeenCalled()
   })

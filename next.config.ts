@@ -57,6 +57,16 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  async headers() {
+    return ['/api/:path*', '/orders/:path*', '/account/:path*', '/checkout/:path*', '/find-order', '/track-order', '/store-admin/:path*'].map(source => ({
+      source,
+      headers: [
+        { key: 'Cache-Control', value: 'private, no-store' },
+        { key: 'Referrer-Policy', value: 'no-referrer' },
+        { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+      ],
+    }))
+  },
   redirects,
   experimental: {
     globalNotFound: true,

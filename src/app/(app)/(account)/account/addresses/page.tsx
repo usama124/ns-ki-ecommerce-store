@@ -30,7 +30,7 @@ export default async function AddressesPage() {
       overrideAccess: false,
       pagination: false,
       where: {
-        customer: {
+        customerAccount: {
           equals: user?.id,
         },
       },

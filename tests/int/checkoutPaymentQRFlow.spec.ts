@@ -1,6 +1,7 @@
 import React from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '../helpers/checkoutDOM'
+import { paymentDetails } from '../helpers/paymentSettings'
 vi.mock('@/providers/Cart', () => ({ useCart: () => ({
   items: [{ productId: 'qa', title: 'QA suit', price: 1000, quantity: 1 }],
   subtotal: 1000, clearCart: vi.fn(),
@@ -17,7 +18,7 @@ function clickPayment(text: string) {
 it('uses the selected method QR without reusing another method image', () => {
   render(React.createElement(CheckoutPage, { siteSettings: {
     paymentMethods: { cod: true, bank_transfer: true, jazzcash: true, easypaisa: true },
-    paymentDetails: { bankTransfer: { bankName: 'QA Bank', qrCode: media('/bank-qr.png') }, jazzcash: { qrCode: media('/jazz-qr.png') }, easypaisa: {} },
+    paymentDetails: { bankTransfer: { ...paymentDetails.bankTransfer, bankName: 'QA Bank', qrCode: media('/bank-qr.png') }, jazzcash: { ...paymentDetails.jazzcash, qrCode: media('/jazz-qr.png') }, easypaisa: paymentDetails.easypaisa },
   } }))
   expect(document.querySelector('img[alt$="payment QR code"]')).toBeNull() // COD default
   clickPayment('Bank / Raast Transfer')

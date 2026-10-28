@@ -1,11 +1,15 @@
 import { adminOnly } from '@/access/adminOnly'
+import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { orderOwner } from '@/access/orderOwner'
+import { reconcileOrderInventory, recordInventoryMovement } from '@/utilities/orderInventory'
+import { enqueueOrderEmails } from '@/utilities/orderOutbox'
+import { enqueueOrderAnalytics } from '@/utilities/orderAnalytics'
+import { recordOrderHistory } from '@/utilities/operationsHistory'
+import { guardMoneyOrder } from '@/utilities/paymentLedger'
+import { RequestError } from '@/utilities/apiSecurity'
+import { requireCommerceReady } from '@/utilities/commerceDatabase'
+import { orderAmounts } from '@/utilities/orderAmounts'
 import { validateOrderPaymentMethod } from '@/utilities/validateOrderPaymentMethod'
-import { restoreOrderStock, validateAndDeductStock } from '@/utilities/inventory'
-import {
-    sendAdminOrderPlacedAlert,
-    sendCustomerOrderConfirmedEmail,
-    sendStatusUpdateEmail,
-} from '@/utilities/sendOrderEmails'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -27,10 +31,9 @@ export const Orders: CollectionConfig = {
     ],
   },
   access: {
-    // Anyone can create orders (guest checkout)
-    create: () => true,
-    // Only admins can read/update/delete
-    read: adminOnly,
+    // Guest checkout uses the validated server command, never generic GraphQL create.
+    create: adminOnly,
+    read: orderOwner,
     update: adminOnly,
     delete: adminOnly,
   },
@@ -40,11 +43,17 @@ export const Orders: CollectionConfig = {
       async ({ data, req, originalDoc }) => {
         if (!data) return data
 
+        // Supply derived required fields before Payload validates an admin-created
+        // order; read-only subtotal/total inputs must never need manual entry.
+        if (!originalDoc || ['items', 'shippingFee', 'codFee', 'paymentMethod', 'subtotal', 'totalAmount'].some(key => Object.hasOwn(data, key))) {
+          Object.assign(data, orderAmounts(data, originalDoc))
+        }
+
         const paymentMethod = data.paymentMethod || originalDoc?.paymentMethod
         const isDigital = paymentMethod && paymentMethod !== 'cod'
 
         // Extract raw trxId from data.trxId OR data.paymentProof?.transactionId
-        let rawTrxId = data.trxId || data.paymentProof?.transactionId
+        const rawTrxId = data.trxId || data.paymentProof?.transactionId
 
         if (isDigital && rawTrxId) {
           // 1. Sanitize input: Strip whitespace, dashes, special characters, convert to UPPERCASE
@@ -71,7 +80,7 @@ export const Orders: CollectionConfig = {
           }
 
           // 2. Compute compositeTrxKey
-          const todayDate = new Date().toISOString().slice(0, 10)
+          const todayDate = new Date(originalDoc?.createdAt || Date.now()).toISOString().slice(0, 10)
           const compositeTrxKey = `${paymentMethod}-${todayDate}-${cleanTrxId}`
           data.compositeTrxKey = compositeTrxKey
 
@@ -84,7 +93,9 @@ export const Orders: CollectionConfig = {
                 ...(originalDoc?.id ? { id: { not_equals: originalDoc.id } } : {}),
               },
               limit: 1,
+              pagination: false,
               overrideAccess: true,
+              req,
             })
 
             if (existingComposite.docs.length > 0) {
@@ -112,6 +123,7 @@ export const Orders: CollectionConfig = {
                 collection: 'media',
                 id: mediaId,
                 overrideAccess: true,
+                req,
               })
 
               if (mediaDoc) {
@@ -140,7 +152,9 @@ export const Orders: CollectionConfig = {
                 ...(originalDoc?.id ? { id: { not_equals: originalDoc.id } } : {}),
               },
               limit: 1,
+              pagination: false,
               overrideAccess: true,
+              req,
             })
 
             if (existingHash.docs.length > 0) {
@@ -161,66 +175,56 @@ export const Orders: CollectionConfig = {
     ],
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
-        if (req.context?.skipStockHook) return data
-
+        await requireCommerceReady(req.payload)
         if (operation === 'create') {
           // COD orders are auto-confirmed by default; digital payments require verification
-          if (data?.paymentMethod === 'cod') {
+          if (data?.paymentMethod === 'cod' && !data.status) {
             data.status = 'confirmed'
           } else if (!data?.status) {
             data.status = 'pending_verification'
           }
 
-          if (data?.items && Array.isArray(data.items)) {
-            await validateAndDeductStock({ items: data.items, req })
-          }
-        } else if (operation === 'update') {
-          const oldStatus = originalDoc?.status
-          const newStatus = data?.status
-
-          // Status changed from active -> cancelled: restore stock
-          if (oldStatus && oldStatus !== 'cancelled' && newStatus === 'cancelled') {
-            const items = data?.items || originalDoc?.items
-            if (items && Array.isArray(items)) {
-              await restoreOrderStock({ items, req })
-            }
-          }
-
-          // Status changed from cancelled -> active: re-deduct stock
-          if (oldStatus === 'cancelled' && newStatus && newStatus !== 'cancelled') {
-            const items = data?.items || originalDoc?.items
-            if (items && Array.isArray(items)) {
-              await validateAndDeductStock({ items, req })
-            }
-          }
         }
-
+        // Derive totals before inventory writes in the same transaction. Status-only
+        // updates preserve historical amounts; explicit edits use accepted price/fee snapshots.
+        if (operation === 'create' || ['items', 'shippingFee', 'codFee', 'paymentMethod', 'subtotal', 'totalAmount'].some(key => Object.hasOwn(data, key))) {
+          Object.assign(data, orderAmounts(data, originalDoc))
+        }
+        if (operation !== 'create' && originalDoc) await guardMoneyOrder(originalDoc, data, req)
+        // Never accept a supplied allocation ledger from REST/GraphQL/admin forms.
+        data.inventoryState = await reconcileOrderInventory(data, operation === 'create' ? undefined : originalDoc, req)
         return data
       },
     ],
     afterChange: [
-      ({ doc, previousDoc, operation }) => {
-        if (operation === 'create') {
-          // Send instant alert email to store admin on every order creation
-          void sendAdminOrderPlacedAlert(doc).catch((err) => {
-            console.warn('[Orders] Background admin alert dispatch error:', err)
-          })
-
-          // COD orders are auto-confirmed at creation; send customer confirmation email immediately
-          if (doc.status === 'confirmed') {
-            void sendCustomerOrderConfirmedEmail(doc).catch((err) => {
-              console.warn('[Orders] Background customer confirmation error:', err)
-            })
-          }
-        } else if (operation === 'update') {
-          void sendStatusUpdateEmail(doc, previousDoc?.status).catch((err) => {
-            console.warn('[Orders] Background status email dispatch error:', err)
-          })
-        }
+      async ({ doc, previousDoc, operation, req }) => {
+        await recordInventoryMovement(doc, previousDoc, req)
+        await recordOrderHistory(doc, previousDoc, operation, req)
+        await enqueueOrderEmails(doc, previousDoc, operation, req)
+        await enqueueOrderAnalytics(doc, previousDoc, operation, req)
       },
     ],
+    beforeDelete: [async ({ id, req }) => {
+      const order = await req.payload.findByID({ collection: 'orders', id, depth: 0, req, overrideAccess: true })
+      if (order.status !== 'cancelled') throw new RequestError('Cancel and reconcile the order before deleting it.', 409)
+      await guardMoneyOrder(order, null, req)
+      await recordOrderHistory(order, order, 'update', req, true)
+    }],
   },
   fields: [
+    {
+      name: 'inventoryState', type: 'json',
+      access: { create: () => false, update: () => false, read: adminOnlyFieldAccess },
+      admin: { readOnly: true, description: 'System-owned stock allocations. Legacy orders require manual reconciliation before cancellation or item edits.' },
+    },
+    {
+      name: 'customerAccount',
+      type: 'relationship',
+      relationTo: 'users',
+      index: true,
+      admin: { readOnly: true, position: 'sidebar' },
+      access: { create: adminOnlyFieldAccess, update: () => false },
+    },
     {
       name: 'orderNumber',
       type: 'text',
@@ -313,6 +317,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'paymentProof',
       type: 'group',
+      access: { read: adminOnlyFieldAccess },
       label: 'Payment Proof (Digital Payments)',
       admin: {
         condition: (data) => data?.paymentMethod !== 'cod',
@@ -328,6 +333,13 @@ export const Orders: CollectionConfig = {
           type: 'upload',
           relationTo: 'media',
           label: 'Payment Proof Screenshot',
+          access: { create: () => false, update: () => false },
+          admin: { readOnly: true, description: 'Legacy public-media receipts only. New receipts are stored separately in the private bucket.' },
+        },
+        {
+          name: 'privateReceipt',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/OrderReceipt#OrderReceipt' } },
         },
       ],
     },
@@ -398,6 +410,8 @@ export const Orders: CollectionConfig = {
           type: 'number',
           required: true,
           min: 1,
+          max: 99,
+          validate: (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 99 || 'Quantity must be a whole number between 1 and 99.',
         },
         {
           name: 'unitPrice',
@@ -412,6 +426,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       label: 'Subtotal (PKR)',
+      admin: { readOnly: true, description: 'Calculated from order item quantities and accepted unit prices.' },
     },
     {
       name: 'shippingFee',
@@ -430,6 +445,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       label: 'Total Amount (PKR)',
+      admin: { readOnly: true, description: 'Calculated from subtotal, shipping and COD fees.' },
     },
     {
       name: 'cancellationReason',
@@ -462,6 +478,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'paymentProofHash',
       type: 'text',
+      access: { read: adminOnlyFieldAccess },
       index: true,
       admin: {
         readOnly: true,
@@ -471,6 +488,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'notes',
       type: 'textarea',
+      access: { read: adminOnlyFieldAccess },
       label: 'Order Notes (Admin)',
     },
   ],

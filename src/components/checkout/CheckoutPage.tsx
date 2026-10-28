@@ -2,8 +2,10 @@
 
 import { useCart } from '@/providers/Cart'
 import { formatPKR } from '@/utilities/formatPKR'
+import { calculateShipping, getShippingLabel, MAJOR_CITIES } from '@/utilities/shipping'
+import { paymentConfigured } from '@/utilities/paymentConfiguration'
+import { receiptFileError, uploadOrderReceipt } from '@/components/orders/PrivateReceipt'
 import { enabledPaymentMethods, isStorefrontPaymentMethod, unavailablePaymentMessage } from '@/utilities/storefrontPayments'
-import { calculateShipping, getShippingLabel } from '@/utilities/shipping'
 import { validatePakistanLocation } from '@/utilities/pakistanLocations'
 import { LocationFields } from './LocationFields'
 import { PaymentQRCode } from './PaymentQRCode'
@@ -15,13 +17,16 @@ import {
     QrCode,
     ShieldCheck,
     Truck,
-    Upload,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
+import { getCheckoutRetryKey } from '@/utilities/checkoutRetryKey'
 import { toast } from 'sonner'
+import { CheckoutView } from '@/components/Analytics/CheckoutView'
+import { checkoutItems, checkoutIntentEligible } from '@/lib/analytics/model'
+import { analyticsReady, captureOrderAnalytics, track } from '@/lib/analytics/client'
 
 export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const { items, subtotal, clearCart } = useCart()
@@ -43,35 +48,31 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   >(availableMethods[0] || 'bank_transfer')
   const paymentMethod = availableMethods.includes(selectedPaymentMethod) ? selectedPaymentMethod : availableMethods[0] || 'bank_transfer'
   const [transactionId, setTransactionId] = useState('')
-  const [screenshotMediaId, setScreenshotMediaId] = useState<string | null>(null)
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
+  const [receipt, setReceipt] = useState<File | null>(null)
   const [transferMode, setTransferMode] = useState<'details' | 'qr'>('details')
-  const [uploading, setUploading] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const submitting = useRef(false)
+  const trackedSubmission = useRef('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [quote, setQuote] = useState<{ totalAmount: number; subtotal: number; shippingFee: number; codFee: number; items: Array<{ product: string | number; variantSize: string; quantity: number; unitPrice: number }> } | null>(null)
 
-  // Account details defaults (matching Pakistani banking standards or site settings)
+  // No template payment destinations: unavailable methods remain disabled.
   const bankDetails = siteSettings?.paymentDetails?.bankTransfer || {
-    bankName: 'Meezan Bank',
-    accountTitle: "N's KI LUXURY FASHION",
-    accountNumber: 'PK00MEZN0001020304050607',
-    raastId: '03001234567',
+    bankName: '', accountTitle: '', accountNumber: '', raastId: '',
   }
   const jazzcashDetails = siteSettings?.paymentDetails?.jazzcash || {
-    mobileNumber: '03001234567',
-    accountName: "N's KI CLOTHING",
+    mobileNumber: '', accountName: '',
   }
   const easypaisaDetails = siteSettings?.paymentDetails?.easypaisa || {
-    mobileNumber: '03001234567',
-    accountName: "N's KI CLOTHING",
+    mobileNumber: '', accountName: '',
   }
 
   // Shipping & COD calculation
   const codFeeFromAdmin = siteSettings?.shipping?.codFee ?? 250
-  const shippingFee = calculateShipping(customer.city, subtotal)
-  const codFee = paymentMethod === 'cod' ? codFeeFromAdmin : 0
-  const totalAmount = subtotal + shippingFee + codFee
+  const shippingFee = quote?.shippingFee ?? calculateShipping(customer.city, subtotal, siteSettings?.shipping)
+  const codFee = quote?.codFee ?? (paymentMethod === 'cod' ? codFeeFromAdmin : 0)
+  const totalAmount = quote?.totalAmount ?? (subtotal + shippingFee + codFee)
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -80,44 +81,19 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
     setTimeout(() => setCopiedField(null), 2000)
   }
 
-  // Screenshot File Upload to Payload Media
-  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('alt', `Payment proof from ${customer.name || 'customer'}`)
-
-    try {
-      const res = await fetch('/api/media', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!res.ok) {
-        throw new Error('Upload failed')
-      }
-
-      const data = await res.json()
-      setScreenshotMediaId(data.doc?.id || data.id)
-      toast.success('Screenshot proof uploaded successfully!')
-    } catch (err) {
-      toast.error('Failed to upload screenshot. Please try again.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting.current) return
     const locationError = validatePakistanLocation(customer.province, customer.city)
     if (locationError) {
       setErrorMessage(locationError)
       return
     }
     setErrorMessage(null)
+    if (!paymentConfigured(siteSettings, paymentMethod)) {
+      setErrorMessage('This payment method is unavailable. Please choose another method.')
+      return
+    }
 
     if (items.length === 0) {
       setErrorMessage('Your shopping bag is empty.')
@@ -129,47 +105,77 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
       return
     }
 
-    if (paymentMethod !== 'cod' && !transactionId && !screenshotMediaId) {
-      setErrorMessage('Please enter TRX ID or upload screenshot proof for digital transfer.')
+    if (paymentMethod !== 'cod' && !transactionId) {
+      setErrorMessage('Please enter the transaction reference for your digital transfer.')
       return
     }
 
+    submitting.current = true
     setIsSubmitting(true)
+    const measuredItems = checkoutItems(items, quote?.items)
+    const tier = MAJOR_CITIES.includes(customer.city) ? 'major_city' : 'secondary_city'
+    const intentKey = JSON.stringify([measuredItems, tier, paymentMethod])
+    if (analyticsReady() && measuredItems.length === items.length && measuredItems.length > 0 && checkoutIntentEligible(customer, paymentMethod, transactionId) && trackedSubmission.current !== intentKey) {
+      trackedSubmission.current = intentKey
+      track('add_shipping_info', measuredItems, { shipping_tier: tier })
+      track('add_payment_info', measuredItems, { payment_type: paymentMethod })
+    }
 
     try {
+      const analytics = await captureOrderAnalytics()
+      const retry = await getCheckoutRetryKey({ customer, items: items.map(item => ({ productId: item.productId, variantSize: item.variantSize, quantity: item.quantity })), paymentMethod, transactionId: paymentMethod === 'cod' ? '' : transactionId, expectedTotal: totalAmount })
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Idempotency-Key': retry.key,
         },
         body: JSON.stringify({
           customer,
           items,
           paymentMethod,
-          paymentProof: paymentMethod === 'cod' ? undefined : {
-            transactionId: transactionId || undefined,
-            screenshot: screenshotMediaId || undefined,
-          },
+          paymentProof:
+            paymentMethod !== 'cod'
+              ? {
+                  transactionId: transactionId || undefined,
+                }
+              : undefined,
           subtotal,
           shippingFee,
           codFee,
           totalAmount,
+          expectedTotal: totalAmount,
+          analytics,
         }),
       })
 
       const data = await res.json()
 
+      if (res.status === 409 && data.code === 'QUOTE_CHANGED' && data.quote) {
+        setQuote(data.quote)
+        setErrorMessage('Prices or fees have changed. Review the updated order summary, then confirm the total to place your order.')
+        return
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Failed to place order.')
       }
 
+      // Order already exists: an upload failure must never resubmit checkout.
+      let receiptFailed = false
+      if (paymentMethod !== 'cod' && receipt) {
+        try { await uploadOrderReceipt(data.orderId, data.accessToken, receipt) }
+        catch { receiptFailed = true; toast.error('Order received, but receipt upload failed. Retry from your secure order details page.') }
+      }
       clearCart()
+      retry.clear()
       toast.success('Order placed successfully!')
-      router.push(`/checkout/confirm-order/${encodeURIComponent(data.orderNumber)}`)
+      router.push(`/checkout/confirm-order/${encodeURIComponent(data.orderNumber)}?orderId=${encodeURIComponent(data.orderId)}&token=${encodeURIComponent(data.accessToken)}${receiptFailed ? '&receiptFailed=1' : ''}`)
     } catch (err: any) {
       setErrorMessage(err.message || 'An error occurred while placing order.')
       toast.error(err.message || 'Order submission failed')
     } finally {
+      submitting.current = false
       setIsSubmitting(false)
     }
   }
@@ -195,13 +201,14 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
   return (
     <div className="min-h-screen py-6 w-full overflow-x-hidden">
+      <CheckoutView items={items} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="font-serif text-3xl font-normal uppercase tracking-[0.15em] text-foreground text-center mb-10">
           Checkout & Payment
         </h1>
 
         {errorMessage && (
-          <div className="mb-8 p-4 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-medium uppercase tracking-wider rounded-lg">
+          <div role="alert" className="mb-8 p-4 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-medium uppercase tracking-wider rounded-lg">
             {errorMessage}
           </div>
         )}
@@ -218,10 +225,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-name" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Full Name *
                   </label>
                   <input
+                    id="checkout-name"
+                    autoComplete="name"
                     type="text"
                     required
                     value={customer.name}
@@ -232,10 +241,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-phone" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Phone Number (+92) *
                   </label>
                   <input
+                    id="checkout-phone"
+                    autoComplete="tel"
                     type="text"
                     required
                     value={customer.phone}
@@ -246,10 +257,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-email" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Email Address (For Order Receipts)
                   </label>
                   <input
+                    id="checkout-email"
+                    autoComplete="email"
                     type="email"
                     value={customer.email}
                     onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
@@ -261,10 +274,12 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                 <LocationFields value={customer} onChange={location => setCustomer(previous => ({ ...previous, ...location }))} />
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
+                  <label htmlFor="checkout-address" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
                     Street Address / House # / Area *
                   </label>
                   <textarea
+                    id="checkout-address"
+                    autoComplete="street-address"
                     required
                     rows={3}
                     value={customer.address}
@@ -312,8 +327,10 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   <button
                     key={method.id}
                     type="button"
+                    disabled={!paymentConfigured(siteSettings, method.id)}
+                    title={!paymentConfigured(siteSettings, method.id) ? 'Temporarily unavailable' : undefined}
                     onClick={() => setPaymentMethod(method.id as any)}
-                    className={`p-4 text-left border-2 transition-all rounded-lg flex flex-col justify-between ${
+                    className={`p-4 text-left border-2 transition-all rounded-lg flex flex-col justify-between disabled:opacity-40 disabled:cursor-not-allowed ${
                       paymentMethod === method.id
                         ? 'border-[#03171e] dark:border-[#648698] bg-[#648698]/20 shadow-xs'
                         : 'border-border bg-[#BDBAB9]/20 dark:bg-[#03171E]/40 hover:border-[#648698]'
@@ -526,10 +543,11 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   {/* Proof Inputs */}
                   <div className="space-y-5 pt-4 border-t border-border">
                     <div>
-                      <label className="block text-xs uppercase tracking-widest font-bold text-foreground mb-1.5">
+                      <label htmlFor="checkout-reference" className="block text-xs uppercase tracking-widest font-bold text-foreground mb-1.5">
                         Transaction / Reference ID (TRX ID)
                       </label>
                       <input
+                        id="checkout-reference"
                         type="text"
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
@@ -542,45 +560,15 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                       </p>
                     </div>
 
-                    <div>
-                      <label className="block text-xs uppercase tracking-widest font-bold text-foreground mb-2">
-                        Upload Transfer Screenshot Proof
-                      </label>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                        <label className="cursor-pointer inline-flex items-center gap-2 glass-button-primary px-5 py-3 rounded-lg text-xs uppercase tracking-widest font-bold transition-all shadow-sm">
-                          <Upload className="h-4 w-4 text-secondary flex-shrink-0" />
-                          <span className="font-bold">
-                            {uploading ? 'Uploading Proof...' : 'Choose Screenshot File'}
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              if (e.target.files?.[0]) {
-                                setSelectedFileName(e.target.files[0].name)
-                              }
-                              handleScreenshotUpload(e)
-                            }}
-                            className="hidden"
-                          />
-                        </label>
-
-                        {selectedFileName && (
-                          <div className="flex items-center gap-2 text-xs font-semibold text-foreground bg-[#BDBAB9]/30 dark:bg-[#03171E]/60 px-3.5 py-2.5 rounded-lg border border-border">
-                            <span className="truncate max-w-[200px]">{selectedFileName}</span>
-                            {screenshotMediaId ? (
-                              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                                <Check className="h-4 w-4" /> Uploaded
-                              </span>
-                            ) : uploading ? (
-                              <span className="text-amber-600 dark:text-amber-400 font-bold animate-pulse">
-                                Uploading...
-                              </span>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <label className="block text-xs text-foreground space-y-2">
+                      <span>Payment receipt (optional; JPEG, PNG or WebP, up to 3 MB)</span>
+                      <input type="file" aria-label="Payment receipt" accept="image/jpeg,image/png,image/webp" disabled={isSubmitting} onChange={event => {
+                        const file = event.target.files?.[0] || null
+                        const error = file ? receiptFileError(file) : null
+                        setErrorMessage(error); setReceipt(error ? null : file)
+                      }} />
+                      <span className="block text-muted-foreground">Stored privately after your order is placed. One receipt per order; you can also attach it from your secure order details link.</span>
+                    </label>
                   </div>
                 </div>
               )}
@@ -610,7 +598,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                         Size: {item.variantSize} × {item.quantity}
                       </p>
                       <p className="text-xs font-semibold text-foreground mt-1">
-                        {formatPKR(item.price * item.quantity)}
+                            {formatPKR((quote?.items.find(line => String(line.product) === String(item.productId) && line.variantSize.toLowerCase() === item.variantSize.toLowerCase())?.unitPrice ?? item.price) * item.quantity)}
                       </p>
                     </div>
                   </div>
@@ -620,7 +608,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
               <div className="space-y-3 text-xs border-t pt-4 border-border">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-foreground">{formatPKR(subtotal)}</span>
+                  <span className="font-semibold text-foreground">{formatPKR(quote?.subtotal ?? subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Shipping Fee ({customer.city})</span>
@@ -634,7 +622,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                     <span>+{formatPKR(codFee)}</span>
                   </div>
                 )}
-                {subtotal >= 15000 && (
+                {(quote?.subtotal ?? subtotal) >= (siteSettings?.shipping?.freeShippingThreshold ?? 15000) && (
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
                     ✓ You unlocked FREE Shipping nationwide!
                   </p>
@@ -654,7 +642,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   'Processing Order...'
                 ) : (
                   <>
-                    Complete Order <ArrowRight className="h-4 w-4" />
+                    {quote ? 'Confirm Updated Total' : 'Complete Order'} <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>

@@ -24,6 +24,7 @@ export function LocationFields({
         </label>
         <select
           id="checkout-province"
+          autoComplete="address-level1"
           required
           className={control}
           value={value.province}
@@ -45,6 +46,7 @@ export function LocationFields({
         </label>
         <select
           id="checkout-city"
+          autoComplete="address-level2"
           className={control}
           required
           disabled={!value.province}

@@ -52,7 +52,7 @@ describe('Preview refresh regression', () => {
 describe('Database connection budgets', () => {
   it('sets bounded idle pools and connection waits for both supported pooled adapters', () => {
     const options = getDatabaseOptions({})
-    expect(options.mongo.maxPoolSize).toBe(10)
+    expect(options.mongo.maxPoolSize).toBe(5)
     expect(options.mongo.minPoolSize).toBe(0)
     expect(options.mongo.waitQueueTimeoutMS).toBe(10000)
     expect(options.postgres.max).toBe(5)

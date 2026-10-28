@@ -5,12 +5,14 @@ export type ProductGridProps = {
   products: any[]
   className?: string
   emptyMessage?: string
+  listId?: string
 }
 
 export function ProductGrid({
   products = [],
   className = '',
   emptyMessage = 'No products found in this collection.',
+  listId = 'catalog',
 }: ProductGridProps) {
   if (!products || products.length === 0) {
     return (
@@ -27,8 +29,8 @@ export function ProductGrid({
       <div
         className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 px-3 sm:px-6 ${className}`}
       >
-        {products.map((product) => (
-          <ProductCard key={product.id || product.slug} product={product} />
+        {products.map((product, index) => (
+          <ProductCard key={product.id || product.slug} product={product} listId={listId} index={index} />
         ))}
       </div>
     </div>

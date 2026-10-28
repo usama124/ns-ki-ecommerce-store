@@ -214,6 +214,7 @@ export function SalePageClient({
 
         {/* PRODUCT GRID */}
         <ProductGrid
+          listId="sale"
           products={filteredProducts}
           emptyMessage="No products found matching this filter category."
         />

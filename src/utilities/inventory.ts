@@ -48,7 +48,7 @@ export async function validateAndDeductStock({
 
   for (const item of items) {
     const productId = typeof item.product === 'object' ? item.product.id : item.product
-    if (!productId) continue
+    if (!productId || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 99) throw new Error('Invalid order item or quantity.')
 
     const product = await req.payload.findByID({
       collection: 'products',
@@ -58,7 +58,7 @@ export async function validateAndDeductStock({
       overrideAccess: true,
     })
 
-    if (!product || !Array.isArray(product.variants)) continue
+    if (!product || product.status !== 'published' || !Array.isArray(product.variants)) throw new Error('Selected product is unavailable.')
 
     let stockDeducted = false
     const updatedVariants = product.variants.map((variant: any) => {
@@ -84,6 +84,7 @@ export async function validateAndDeductStock({
       }
     })
 
+    if (!stockDeducted) throw new Error('Selected product size is unavailable.')
     if (stockDeducted) {
       await req.payload.update({
         collection: 'products',

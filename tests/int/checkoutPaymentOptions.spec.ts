@@ -1,6 +1,7 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it, vi } from 'vitest'
+import { paymentDetails } from '../helpers/paymentSettings'
 vi.mock('@/providers/Cart', () => ({
   useCart: () => ({
     items: [
@@ -14,7 +15,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 import { CheckoutPage } from '@/components/checkout/CheckoutPage'
 it('shows only Bank/Raast and EasyPaisa and defaults to bank details without COD charges', () => {
   const markup = renderToStaticMarkup(
-    React.createElement(CheckoutPage, { siteSettings: { shipping: { codFee: 250 } } }),
+    React.createElement(CheckoutPage, { siteSettings: { paymentDetails, shipping: { codFee: 250 } } }),
   )
   expect(markup).toContain('Bank / Raast Transfer')
   expect(markup).toContain('EasyPaisa Wallet')
@@ -29,7 +30,7 @@ it.each(['cod', 'bank_transfer', 'jazzcash', 'easypaisa'])(
     )
     const markup = renderToStaticMarkup(
       React.createElement(CheckoutPage, {
-        siteSettings: { paymentMethods, shipping: { codFee: 175 } },
+        siteSettings: { paymentMethods, paymentDetails, shipping: { codFee: 175 } },
       }),
     )
     const document = new DOMParser().parseFromString(markup, 'text/html')
