@@ -330,6 +330,31 @@ export function OrdersDashboardClient() {
     }
   }
 
+  const handleDeleteOrder = async (order: OrderDoc) => {
+    if (updating || order.status !== 'cancelled') return
+    if (!window.confirm(`Permanently delete order ${order.orderNumber}? This cannot be undone. Financial and audit history will be retained. Orders with recorded payments cannot be deleted.`)) return
+    setUpdating(true)
+    try {
+      const response = await fetch('/api/admin/orders/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to delete order')
+      setActiveDetailOrder(null)
+      setQuickVerifyOrder(null)
+      setSelectedIds([])
+      toast.success(`Order ${order.orderNumber} deleted`)
+      if (orders.length === 1 && page > 1) setPage(p => p - 1)
+      else await fetchOrders()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete order')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   // Multi-select handlers
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -1392,6 +1417,20 @@ export function OrdersDashboardClient() {
                     <option value="delivered">🎉 Delivered</option>
                     <option value="cancelled">✕ Cancelled (Restores Stock)</option>
                   </select>
+                </div>
+
+                <div style={{ ...glassCard, padding: '16px', marginBottom: '18px', borderColor: C.dangerBorder }}>
+                  <button
+                    type="button"
+                    disabled={updating || activeDetailOrder.status !== 'cancelled'}
+                    onClick={() => handleDeleteOrder(activeDetailOrder)}
+                    style={{ ...btnDanger, width: '100%' }}
+                  >
+                    Delete order permanently
+                  </button>
+                  <p style={{ fontSize: '12px', color: C.textSecondary, margin: '10px 0 0' }}>
+                    Admin only. Cancel the order first to reconcile stock. Orders with recorded payments cannot be deleted. Audit history is retained.
+                  </p>
                 </div>
 
                 {/* Customer Info */}
