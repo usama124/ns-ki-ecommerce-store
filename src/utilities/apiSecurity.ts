@@ -38,16 +38,34 @@ export function requireSameOrigin(request: Request) {
   const site = request.headers.get('sec-fetch-site')
   // Behind Next/reverse proxies request.url can use an internal bind hostname.
   // Trust deployment configuration, never arbitrary Host/X-Forwarded-* headers.
-  const configured = process.env.NEXT_PUBLIC_SERVER_URL || process.env.PAYLOAD_PUBLIC_SERVER_URL
-  let expected = new URL(request.url).origin
-  if (configured) {
+  const allowed = new Set<string>()
+  const addConfiguredOrigin = (value: string, originOnly = false) => {
     try {
-      const url = new URL(configured)
-      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error()
-      expected = url.origin
+      const url = new URL(value)
+      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.hostname.includes('*')) throw new Error()
+      if (originOnly && (url.pathname !== '/' || url.search || url.hash)) throw new Error()
+      allowed.add(url.origin)
     } catch { throw new RequestError('Store origin configuration is invalid.', 503) }
   }
-  if (site === 'cross-site' || (origin && origin !== expected)) {
+  const configured = process.env.NEXT_PUBLIC_SERVER_URL || process.env.PAYLOAD_PUBLIC_SERVER_URL
+  if (configured) addConfiguredOrigin(configured)
+  // Platform-owned exact hostnames, not Host/X-Forwarded-Host supplied by a caller.
+  // A preview can legitimately have a different origin from the canonical site URL.
+  if (process.env.VERCEL === '1') {
+    for (const hostname of [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]) {
+      if (!hostname) continue
+      if (!/^[a-zA-Z0-9.-]+(?::\d{1,5})?$/.test(hostname))
+        throw new RequestError('Store origin configuration is invalid.', 503)
+      addConfiguredOrigin(`https://${hostname}`, true)
+    }
+  }
+  for (const alias of (process.env.APP_TRUSTED_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean)) {
+    addConfiguredOrigin(alias, true)
+  }
+  // Local/unconfigured servers retain same-request-origin behavior. When trusted
+  // deployment origins exist, never add the possibly internal/proxy request URL.
+  if (allowed.size === 0) allowed.add(new URL(request.url).origin)
+  if (site === 'cross-site' || (origin !== null && !allowed.has(origin))) {
     throw new RequestError('Cross-origin requests are not allowed.', 403)
   }
   // Origin may be absent for CLI/API clients. They must still pass authentication

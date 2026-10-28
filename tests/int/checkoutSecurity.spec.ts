@@ -75,6 +75,17 @@ beforeEach(() => {
   mock.create.mockResolvedValue({ id: 'order1', orderNumber: '#NKI-123456' })
 })
 describe('Authoritative checkout quotes', () => {
+  it.each(['nski-preview.vercel.app', 'nski-git-develop-team.vercel.app'])('accepts a valid checkout on assigned preview hostname %s despite a different canonical URL', async hostname => {
+    vi.stubEnv('NEXT_PUBLIC_SERVER_URL', 'https://www.siblingsbynski.com')
+    vi.stubEnv('VERCEL', '1')
+    vi.stubEnv('VERCEL_URL', 'nski-preview.vercel.app')
+    vi.stubEnv('VERCEL_BRANCH_URL', 'nski-git-develop-team.vercel.app')
+    try {
+      const result = await POST(request({ ...base(), expectedTotal: 8350 }, `https://${hostname}`))
+      expect(result.status).toBe(200)
+      expect(mock.create).toHaveBeenCalledOnce()
+    } finally { vi.unstubAllEnvs() }
+  })
   it('ignores forged prices, fees, status, notes and account identity', async () => {
     const result = await POST(
       request({

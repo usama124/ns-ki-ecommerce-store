@@ -65,6 +65,22 @@ const signed = (options = {}) =>
     mime: 'image/png',
     ...options,
   })
+it.each(['nski-preview.vercel.app', 'nski-git-develop-team.vercel.app'])('uploads an authorized receipt from assigned preview hostname %s despite a different canonical URL', async hostname => {
+  vi.stubEnv('NEXT_PUBLIC_SERVER_URL', 'https://www.siblingsbynski.com')
+  vi.stubEnv('VERCEL', '1')
+  vi.stubEnv('VERCEL_URL', 'nski-preview.vercel.app')
+  vi.stubEnv('VERCEL_BRANCH_URL', 'nski-git-develop-team.vercel.app')
+  expect((await POST(signed({ origin: `https://${hostname}` }), context())).status).toBe(201)
+  expect(mock.findByID).toHaveBeenCalled()
+})
+it('rejects an unrelated Vercel origin before receipt authorization or storage work', async () => {
+  vi.stubEnv('NEXT_PUBLIC_SERVER_URL', 'https://www.siblingsbynski.com')
+  vi.stubEnv('VERCEL', '1')
+  vi.stubEnv('VERCEL_URL', 'nski-preview.vercel.app')
+  expect((await POST(signed({ origin: 'https://other-team.vercel.app' }), context())).status).toBe(403)
+  expect(mock.getPayload).not.toHaveBeenCalled()
+  expect(mock.send).not.toHaveBeenCalled()
+})
 beforeEach(async () => {
   vi.resetAllMocks()
   vi.stubEnv('R2_BUCKET', 'public-catalog')
