@@ -31,6 +31,7 @@ import { SaleSettings } from '@/globals/SaleSettings'
 import { SiteSettings } from '@/globals/SiteSettings'
 import { plugins } from './plugins'
 import { getDatabaseOptions } from '@/utilities/databaseOptions'
+import { afterOpenMongoConnection } from '@/utilities/mongoPoolLifecycle'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -51,6 +52,7 @@ const db = isMongo
   ? mongooseAdapter({
       url: mongoUrl,
       connectOptions: databaseOptions.mongo,
+      afterOpenConnection: afterOpenMongoConnection,
     })
   : dbAdapterType === 'turso' || dbAdapterType === 'sqlite' || dbAdapterType === 'libsql'
     ? sqliteAdapter({

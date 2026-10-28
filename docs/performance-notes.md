@@ -2,6 +2,9 @@
 
 Date: 22 October 2026. These changes require a new production deployment.
 
+Update, 28 October: the historical ten-connection MongoDB default below is superseded
+by [environment-specific MongoDB budgets and Vercel lifecycle integration](mongodb-connection-management.md).
+
 ## Implemented
 
 - Normal storefront requests no longer mount Payload's preview refresh listener. In draft preview, the library's initial mount refresh is suppressed while subsequent document-change refreshes remain enabled. This removes the mount/remount refresh path that can repeatedly retrigger not-found rendering.
