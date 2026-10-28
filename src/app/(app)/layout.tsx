@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
 import { Footer } from '@/components/Footer'
+import { GoogleTagManagerNoScript, GoogleTagManagerScript } from '@/components/GoogleTagManager'
 import { Header } from '@/components/Header'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { Providers } from '@/providers'
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        <GoogleTagManagerScript />
         <script
           id="theme-script"
           dangerouslySetInnerHTML={{
@@ -58,6 +60,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
       </head>
       <body suppressHydrationWarning>
+        <GoogleTagManagerNoScript />
         <Providers>
           <AdminBar />
           {isPreview && <LivePreviewListener />}

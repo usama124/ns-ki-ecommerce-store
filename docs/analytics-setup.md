@@ -1,6 +1,10 @@
 # User-journey analytics — batch 1
 
-Implemented 25 October 2026. Direct GA4 is the selected transport. GTM is **not installed**: the owner has not created a container yet. No Google accounts were created or changed by this implementation.
+Historical direct-GA4 guide: the owner subsequently selected main's GTM installation.
+See [the GTM merge notes](gtm-main-merge.md) for the active storefront behavior.
+The direct-GA4 component described below is retained but no longer mounted.
+
+Implemented 25 October 2026. At that time, direct GA4 was the selected transport and no GTM container had been provided. No Google accounts were created or changed by this implementation.
 
 ## Current implementation
 
