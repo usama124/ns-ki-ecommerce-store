@@ -7,6 +7,7 @@ vi.mock('payload', async (importOriginal) => ({
   getPayload: mocks.getPayload,
 }))
 vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+vi.mock('@/utilities/checkoutEmailDelivery', () => ({ sendCheckoutEmails: vi.fn() }))
 vi.mock('@/utilities/commerceDatabase', () => ({
   commerceSession: vi.fn().mockResolvedValue({}),
   commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) => work({}),

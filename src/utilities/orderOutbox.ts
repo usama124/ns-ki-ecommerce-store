@@ -93,7 +93,7 @@ export async function enqueueOrderEmails(
 }
 
 /** Provider acceptance is not proof of inbox delivery. Never log email bodies/recipients. */
-export async function dispatchOrderEmails(payload: Payload, maximum = 3) {
+export async function dispatchOrderEmails(payload: Payload, maximum = 3, orderId?: string | number) {
   const { db } = await requireCommerceReady(payload)
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.FROM_EMAIL
@@ -106,7 +106,11 @@ export async function dispatchOrderEmails(payload: Payload, maximum = 3) {
     const now = new Date()
     const lease = randomUUID()
     const job = await outbox.findOneAndUpdate(
-      { state: { $in: ['pending', 'processing'] }, availableAt: { $lte: now } },
+      {
+        state: { $in: ['pending', 'processing'] },
+        availableAt: { $lte: now },
+        ...(orderId !== undefined ? { orderId: String(orderId) } : {}),
+      },
       [
         {
           $set: {

@@ -11,6 +11,7 @@ const mock = vi.hoisted(() => ({
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
 vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+vi.mock('@/utilities/checkoutEmailDelivery', () => ({ sendCheckoutEmails: vi.fn() }))
 vi.mock('@/utilities/commerceDatabase', () => ({
   commerceSession: vi.fn().mockResolvedValue({}),
   commerceTransaction: async (_payload: unknown, _user: unknown, work: (req: unknown) => unknown) => work({}),

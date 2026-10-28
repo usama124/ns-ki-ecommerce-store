@@ -5,6 +5,10 @@ import { parseCheckout } from '@/utilities/checkoutQuote'
 import { signOrderAccess } from '@/utilities/orderAccess'
 import { checkoutKey, executeCheckout } from '@/utilities/checkoutCommand'
 import { enforceRequestLimit } from '@/utilities/requestLimits'
+import { sendCheckoutEmails } from '@/utilities/checkoutEmailDelivery'
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +25,9 @@ export async function POST(req: Request) {
     if ('quote' in result) {
       return privateJSON({ error: 'Please review and confirm the current order total.', code: 'QUOTE_CHANGED', quote: result.quote }, 409)
     }
+    // executeCheckout has committed (or returned a committed idempotent replay).
+    // Only this order's due, unsent jobs are eligible; failed sends stay queued.
+    sendCheckoutEmails(payload, result.orderId)
     return privateJSON({ success: true, ...result,
       accessToken: signOrderAccess(result.orderId, payload.config.secret) })
   } catch (error) { return requestError(error) }
