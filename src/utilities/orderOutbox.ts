@@ -141,7 +141,11 @@ export async function dispatchOrderEmails(payload: Payload, maximum = 3, orderId
     }
     const delivery = job.delivery || {
       from: `N's KI <${from}>`,
-      to: job.kind === 'admin' ? admin : job.customerEmail,
+      // Only the new-order admin alert gets the additional recipient. Never
+      // change a previously attempted delivery snapshot (provider idempotency).
+      to: job.kind === 'admin'
+        ? ['nskipakistan@gmail.com', 'raheemkhan2812@gmail.com']
+        : job.customerEmail,
       subject: job.subject,
       html: job.html,
     }

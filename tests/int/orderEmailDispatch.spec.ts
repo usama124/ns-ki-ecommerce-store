@@ -19,6 +19,31 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 const job = () => ({ _id: 'email-1', lease: 'lease', kind: 'placed', customerEmail: 'customer@example.invalid', attempts: 1, firstAttemptAt: new Date(), subject: 'test', html: '<p>test</p>' })
 describe('scoped email queue delivery', () => {
+  it('sends the new-order admin alert to both requested administrators', async () => {
+    // New-order routing is explicitly scoped, not a global ADMIN_EMAIL change.
+    vi.stubEnv('ADMIN_EMAIL', 'other-admin@example.invalid')
+    mock.claim.mockResolvedValueOnce({ ...job(), kind: 'admin' })
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: 'provider-1' })))
+    await dispatchOrderEmails(payload, 2, 'order-1')
+    const delivery = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string)
+    expect(delivery.to).toEqual(['nskipakistan@gmail.com', 'raheemkhan2812@gmail.com'])
+  })
+  it.each(['placed', 'confirmed', 'cancelled', 'shipped'])('does not copy %s customer emails to the extra administrator', async kind => {
+    mock.claim.mockResolvedValueOnce({ ...job(), kind })
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: 'provider-1' })))
+    await dispatchOrderEmails(payload, 2, 'order-1')
+    const delivery = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string)
+    expect(delivery.to).toBe('customer@example.invalid')
+    expect(delivery).not.toHaveProperty('cc')
+    expect(delivery).not.toHaveProperty('bcc')
+  })
+  it('keeps previously attempted admin delivery snapshots unchanged on retry', async () => {
+    const delivery = { from: 'original@example.invalid', to: 'nskipakistan@gmail.com', subject: 'original', html: 'original' }
+    mock.claim.mockResolvedValueOnce({ ...job(), kind: 'admin', delivery })
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: 'provider-1' })))
+    await dispatchOrderEmails(payload, 2, 'order-1')
+    expect(JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string)).toEqual(delivery)
+  })
   it('claims only due, unsent jobs belonging to the committed checkout', async () => {
     await dispatchOrderEmails(payload, 2, 42)
     expect(mock.claim.mock.calls[0][0]).toEqual({
