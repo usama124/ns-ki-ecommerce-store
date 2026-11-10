@@ -92,7 +92,7 @@ export function PrivateReceipt({
       {!readOnly && info?.path === path && info.canUpload && (
         <>
           <label>
-            Attach receipt (optional; JPEG, PNG or WebP, up to 3 MB)
+            Attach payment receipt (JPEG, PNG or WebP, up to 3 MB)
             <input
               aria-label="Payment receipt"
               type="file"

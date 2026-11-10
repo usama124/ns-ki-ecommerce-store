@@ -7,6 +7,12 @@ vi.mock('payload', async (importOriginal) => ({
   getPayload: mocks.getPayload,
 }))
 vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+// These tests exercise payment/location validation, not receipt decoding/R2.
+vi.mock('@/utilities/checkoutReceipt', () => ({
+  readCheckoutRequest: async (request: Request) => ({ body: await request.json(), receipt: {} }),
+  validateCheckoutReceipt: vi.fn().mockResolvedValue(Buffer.from('validated-image')),
+  attachCheckoutReceipt: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('@/utilities/checkoutEmailDelivery', () => ({ sendCheckoutEmails: vi.fn() }))
 vi.mock('@/utilities/commerceDatabase', () => ({
   commerceSession: vi.fn().mockResolvedValue({}),

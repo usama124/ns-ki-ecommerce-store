@@ -4,7 +4,7 @@ const mock = vi.hoisted(() => ({ execute: vi.fn(), send: vi.fn(), getPayload: vi
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
 vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
-vi.mock('@/utilities/checkoutQuote', () => ({ parseCheckout: () => ({ customer: { phone: '03001234567' } }) }))
+vi.mock('@/utilities/checkoutQuote', () => ({ parseCheckout: () => ({ customer: { phone: '03001234567' }, paymentMethod: 'cod' }) }))
 vi.mock('@/utilities/checkoutCommand', () => ({ checkoutKey: () => 'key', executeCheckout: mock.execute }))
 vi.mock('@/utilities/checkoutEmailDelivery', () => ({ sendCheckoutEmails: mock.send }))
 import { POST } from '@/app/api/orders/route'

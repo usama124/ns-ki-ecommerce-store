@@ -209,7 +209,7 @@ describe('Authoritative checkout quotes', () => {
     expect(result.status).toBe(400)
     expect(mock.getPayload).not.toHaveBeenCalled()
   })
-  it('accepts reference-only digital payments but always keeps them pending verification', async () => {
+  it('rejects reference-only digital payments without creating an order', async () => {
     mock.findGlobal.mockImplementation(({ slug }) =>
       Promise.resolve(
         slug === 'site-settings'
@@ -231,11 +231,8 @@ describe('Authoritative checkout quotes', () => {
         status: 'delivered',
       }),
     )
-    expect(result.status).toBe(200)
-    expect(mock.create.mock.calls[0][0].data).toMatchObject({
-      paymentProof: { transactionId: 'ABC123' },
-      status: 'pending_verification',
-    })
+    expect(result.status).toBe(400)
+    expect(mock.create).not.toHaveBeenCalled()
   })
   it('validates input before database calls', async () => {
     for (const quantity of [-1, 0, 1.5, 100, '2']) {

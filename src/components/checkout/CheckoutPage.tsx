@@ -49,6 +49,8 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const paymentMethod = availableMethods.includes(selectedPaymentMethod) ? selectedPaymentMethod : availableMethods[0] || 'bank_transfer'
   const [transactionId, setTransactionId] = useState('')
   const [receipt, setReceipt] = useState<File | null>(null)
+  const receiptInput = useRef<HTMLInputElement>(null)
+  const [pendingReceipt, setPendingReceipt] = useState<{ orderId: string; orderNumber: string; accessToken: string; clear: () => void } | null>(null)
   const [transferMode, setTransferMode] = useState<'details' | 'qr'>('details')
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -84,6 +86,28 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     if (submitting.current) return
+    if (pendingReceipt) {
+      if (!receipt) { setErrorMessage('Select your payment receipt to finish the saved order.'); return }
+      submitting.current = true
+      setIsSubmitting(true)
+      try {
+        try { await uploadOrderReceipt(pendingReceipt.orderId, pendingReceipt.accessToken, receipt) }
+        catch (error) {
+          // An earlier upload may have committed despite a lost response.
+          const info = await fetch(`/api/orders/${encodeURIComponent(pendingReceipt.orderId)}/receipt?info=1`, {
+            cache: 'no-store', headers: { 'x-order-token': pendingReceipt.accessToken },
+          })
+          if (!info.ok || !(await info.json()).exists) throw error
+        }
+        pendingReceipt.clear()
+        clearCart()
+        toast.success('Receipt uploaded. Order placed successfully!')
+        router.push(`/checkout/confirm-order/${encodeURIComponent(pendingReceipt.orderNumber)}?orderId=${encodeURIComponent(pendingReceipt.orderId)}&token=${encodeURIComponent(pendingReceipt.accessToken)}`)
+      } catch {
+        setErrorMessage('Receipt upload is not confirmed. Your order is already saved; retry the receipt upload here without placing another order.')
+      } finally { submitting.current = false; setIsSubmitting(false) }
+      return
+    }
     const locationError = validatePakistanLocation(customer.province, customer.city)
     if (locationError) {
       setErrorMessage(locationError)
@@ -109,6 +133,11 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
       setErrorMessage('Please enter the transaction reference for your digital transfer.')
       return
     }
+    if (paymentMethod !== 'cod' && (!receipt || receiptFileError(receipt))) {
+      setErrorMessage(receipt ? receiptFileError(receipt) : 'Upload your payment receipt before completing the order.')
+      receiptInput.current?.focus()
+      return
+    }
 
     submitting.current = true
     setIsSubmitting(true)
@@ -124,13 +153,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
     try {
       const analytics = await captureOrderAnalytics()
       const retry = await getCheckoutRetryKey({ customer, items: items.map(item => ({ productId: item.productId, variantSize: item.variantSize, quantity: item.quantity })), paymentMethod, transactionId: paymentMethod === 'cod' ? '' : transactionId, expectedTotal: totalAmount })
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': retry.key,
-        },
-        body: JSON.stringify({
+      const checkout = JSON.stringify({
           customer,
           items,
           paymentMethod,
@@ -146,7 +169,16 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
           totalAmount,
           expectedTotal: totalAmount,
           analytics,
-        }),
+        })
+      const form = paymentMethod !== 'cod' && receipt ? new FormData() : null
+      if (form && receipt) {
+        form.append('checkout', checkout)
+        form.append('receipt', receipt)
+      }
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': retry.key, ...(!form ? { 'Content-Type': 'application/json' } : {}) },
+        body: form || checkout,
       })
 
       const data = await res.json()
@@ -158,19 +190,17 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
       }
 
       if (!res.ok) {
+        if (data.code === 'RECEIPT_UPLOAD_PENDING' && data.orderId && data.accessToken) {
+          setPendingReceipt({ orderId: String(data.orderId), orderNumber: data.orderNumber, accessToken: data.accessToken, clear: retry.clear })
+        }
         throw new Error(data.error || 'Failed to place order.')
       }
 
-      // Order already exists: an upload failure must never resubmit checkout.
-      let receiptFailed = false
-      if (paymentMethod !== 'cod' && receipt) {
-        try { await uploadOrderReceipt(data.orderId, data.accessToken, receipt) }
-        catch { receiptFailed = true; toast.error('Order received, but receipt upload failed. Retry from your secure order details page.') }
-      }
+      // Digital success means the server has confirmed private receipt storage.
       clearCart()
       retry.clear()
       toast.success('Order placed successfully!')
-      router.push(`/checkout/confirm-order/${encodeURIComponent(data.orderNumber)}?orderId=${encodeURIComponent(data.orderId)}&token=${encodeURIComponent(data.accessToken)}${receiptFailed ? '&receiptFailed=1' : ''}`)
+      router.push(`/checkout/confirm-order/${encodeURIComponent(data.orderNumber)}?orderId=${encodeURIComponent(data.orderId)}&token=${encodeURIComponent(data.accessToken)}`)
     } catch (err: any) {
       setErrorMessage(err.message || 'An error occurred while placing order.')
       toast.error(err.message || 'Order submission failed')
@@ -327,9 +357,15 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   <button
                     key={method.id}
                     type="button"
-                    disabled={!paymentConfigured(siteSettings, method.id)}
+                    disabled={isSubmitting || !!pendingReceipt || !paymentConfigured(siteSettings, method.id)}
                     title={!paymentConfigured(siteSettings, method.id) ? 'Temporarily unavailable' : undefined}
-                    onClick={() => setPaymentMethod(method.id as any)}
+                    onClick={() => {
+                      if (method.id !== paymentMethod) {
+                        setReceipt(null)
+                        if (receiptInput.current) receiptInput.current.value = ''
+                      }
+                      setPaymentMethod(method.id as any)
+                    }}
                     className={`p-4 text-left border-2 transition-all rounded-lg flex flex-col justify-between disabled:opacity-40 disabled:cursor-not-allowed ${
                       paymentMethod === method.id
                         ? 'border-[#03171e] dark:border-[#648698] bg-[#648698]/20 shadow-xs'
@@ -560,15 +596,23 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                       </p>
                     </div>
 
-                    <label className="block text-xs text-foreground space-y-2">
-                      <span>Payment receipt (optional; JPEG, PNG or WebP, up to 3 MB)</span>
-                      <input type="file" aria-label="Payment receipt" accept="image/jpeg,image/png,image/webp" disabled={isSubmitting} onChange={event => {
+                    <div className="rounded-xl border-2 border-[#648698] bg-[#648698]/10 p-4 space-y-3">
+                      <label htmlFor="checkout-receipt" className="block text-sm font-bold text-foreground">Payment receipt <span className="text-red-500">* Required</span></label>
+                      <p id="receipt-help" className="text-xs text-foreground">Upload a clear bank or wallet receipt to complete your order. JPEG, PNG or WebP, up to 3 MB.</p>
+                      <input ref={receiptInput} id="checkout-receipt" type="file" aria-label="Payment receipt" aria-describedby="receipt-help" required accept="image/jpeg,image/png,image/webp" disabled={isSubmitting}
+                        className="block w-full min-h-12 rounded-lg border border-[#648698] bg-background p-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-[#648698] file:px-4 file:py-3 file:font-bold file:text-[#03171E] file:cursor-pointer"
+                        onChange={event => {
                         const file = event.target.files?.[0] || null
                         const error = file ? receiptFileError(file) : null
                         setErrorMessage(error); setReceipt(error ? null : file)
+                        if (error) event.target.value = ''
                       }} />
-                      <span className="block text-muted-foreground">Stored privately after your order is placed. One receipt per order; you can also attach it from your secure order details link.</span>
-                    </label>
+                      <button type="button" disabled={isSubmitting} onClick={() => receiptInput.current?.click()} className="w-full rounded-lg bg-[#648698] px-5 py-3 text-sm font-bold text-[#03171E] disabled:opacity-50">
+                        {receipt ? 'Change payment receipt' : 'Upload payment receipt'}
+                      </button>
+                      {receipt && <p role="status" className="break-all text-sm font-semibold text-foreground">Selected: {receipt.name}</p>}
+                      <span className="block text-xs text-muted-foreground">Stored privately, never as a public product image. Your order cannot complete until the upload succeeds.</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -635,17 +679,18 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
               <button
                 type="submit"
-                disabled={isSubmitting || availableMethods.length === 0}
+                disabled={isSubmitting || availableMethods.length === 0 || (paymentMethod !== 'cod' && !receipt)}
                 className="w-full mt-8 glass-button-primary py-4 text-xs font-bold uppercase tracking-[0.25em] rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   'Processing Order...'
                 ) : (
                   <>
-                    {quote ? 'Confirm Updated Total' : 'Complete Order'} <ArrowRight className="h-4 w-4" />
+                    {pendingReceipt ? 'Retry Receipt Upload' : quote ? 'Confirm Updated Total' : 'Complete Order'} <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
+              {paymentMethod !== 'cod' && !receipt && <p className="mt-3 text-sm font-semibold text-foreground">Upload your payment receipt in Payment Options to enable Complete Order.</p>}
 
               <div className="mt-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
