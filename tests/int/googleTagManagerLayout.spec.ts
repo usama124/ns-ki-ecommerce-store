@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 vi.mock('next/headers', () => ({ draftMode: async () => ({ isEnabled: false }) }))
+vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
 vi.mock('geist/font/mono', () => ({ GeistMono: { variable: 'mono' } }))
 vi.mock('geist/font/sans', () => ({ GeistSans: { variable: 'sans' } }))
 vi.mock('@/components/AdminBar', () => ({ AdminBar: () => null }))
@@ -35,6 +36,9 @@ function assertTags(markup: string) {
   expect(document.querySelectorAll('iframe[src*="googletagmanager.com/ns.html"]')).toHaveLength(1)
   expect(markup).not.toContain('gtag/js')
   expect(markup).not.toContain("gtag('config'")
+  expect(document.head.querySelectorAll('#meta-pixel')).toHaveLength(1)
+  expect(document.querySelector('#meta-pixel')?.textContent).toContain('1123550367331651')
+  expect(markup.match(/facebook\.com\/tr\?id=1123550367331651/g)).toHaveLength(1)
 }
 
 it('places exactly one GTM loader before other head scripts and its matching noscript first in body', async () => {

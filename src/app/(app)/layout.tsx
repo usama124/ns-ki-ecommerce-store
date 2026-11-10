@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { AdminBar } from '@/components/AdminBar'
 import { Footer } from '@/components/Footer'
 import { GoogleTagManagerNoScript, GoogleTagManagerScript } from '@/components/GoogleTagManager'
+import { MetaPixelNoScript, MetaPixelScript } from '@/components/MetaPixel'
+import { MetaPixelPageViews } from '@/components/MetaPixel/PageViews'
 import { Header } from '@/components/Header'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { Providers } from '@/providers'
@@ -50,6 +52,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <head>
         <GoogleTagManagerScript />
+        <MetaPixelScript />
         <script
           id="theme-script"
           dangerouslySetInnerHTML={{
@@ -61,6 +64,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body suppressHydrationWarning>
         <GoogleTagManagerNoScript />
+        <MetaPixelNoScript />
+        <MetaPixelPageViews />
         <Providers>
           <AdminBar />
           {isPreview && <LivePreviewListener />}

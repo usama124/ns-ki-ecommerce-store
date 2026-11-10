@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { GoogleTagManagerNoScript, GoogleTagManagerScript } from '@/components/GoogleTagManager'
+import { MetaPixelNoScript, MetaPixelScript } from '@/components/MetaPixel'
 import './(app)/globals.css'
 
 export const metadata: Metadata = {
@@ -14,9 +15,11 @@ export default function GlobalNotFound() {
     <html lang="en" data-theme="dark">
       <head>
         <GoogleTagManagerScript />
+        <MetaPixelScript />
       </head>
       <body>
         <GoogleTagManagerNoScript />
+        <MetaPixelNoScript />
         <main className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
           <h1 className="text-4xl font-semibold">404</h1>
           <p>This page could not be found.</p>
