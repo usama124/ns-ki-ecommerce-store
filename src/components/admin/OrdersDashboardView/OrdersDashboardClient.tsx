@@ -1,6 +1,7 @@
 'use client'
 import { PrivateReceipt } from '@/components/orders/PrivateReceipt'
 import { CommerceOutbox } from '@/components/admin/CommerceOutbox'
+import { InstaWorldBooking } from '@/components/admin/InstaWorldBooking'
 
 import { toast } from '@payloadcms/ui'
 import React, { useEffect, useRef, useState } from 'react'
@@ -1376,6 +1377,7 @@ export function OrdersDashboardClient() {
 
               {/* RIGHT COLUMN: Customer, Courier & Actions */}
               <div>
+                <InstaWorldBooking key={activeDetailOrder.id} orderId={activeDetailOrder.id} status={activeDetailOrder.status} paymentMethod={activeDetailOrder.paymentMethod} city={activeDetailOrder.customer.city} itemLabels={activeDetailOrder.items.map(item => `${item.variantSku || item.variantSize} × ${item.quantity}`)} />
                 {/* Status Control */}
                 <div
                   style={{

@@ -172,9 +172,11 @@ export const seed = async ({
     data: {
       announcementBar: {
         isActive: true,
-        text: 'FREE EXPRESS SHIPPING ACROSS PAKISTAN ON ORDERS ABOVE RS. 15,000',
+        text: 'NATIONWIDE SHIPPING — RS. 250 FLAT RATE',
       },
       shipping: {
+        flatShippingFee: 250,
+        freeShippingEnabled: false,
         freeShippingThreshold: 15000,
         majorCityFee: 250,
         secondaryCityFee: 350,
