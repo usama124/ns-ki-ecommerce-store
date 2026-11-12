@@ -11,6 +11,8 @@ import {
 import { parseCheckout, quoteCheckout } from './checkoutQuote'
 import { RequestError } from './apiSecurity'
 import { parseAnalyticsContext } from '@/lib/analytics/context'
+import { getCodCoverage } from './instaworldCities'
+import { codCity } from './codCoverage'
 
 export function checkoutKey(value: string | null) {
   if (
@@ -34,6 +36,9 @@ export async function executeCheckout(
   | { quote: Awaited<ReturnType<typeof quoteCheckout>> }
   | { orderId: string | number; orderNumber: string; replayed: boolean }
 > {
+  // Load/cache reference data before the transaction; never hold a DB session
+  // open during a courier HTTP request. Existing committed retries still replay.
+  const coverage = input.paymentMethod === 'cod' ? await getCodCoverage(payload).catch(() => null) : null
   const normalized = {
     ...input,
     lines: [...input.lines].sort((a, b) =>
@@ -67,6 +72,8 @@ export async function executeCheckout(
           replayed: true,
         }
       }
+      if (input.paymentMethod === 'cod' && !coverage) throw new RequestError('COD city coverage is unavailable. Please choose another payment method.', 503)
+      if (input.paymentMethod === 'cod' && !codCity(coverage, input.customer.province, input.customer.city)) throw new RequestError('Cash on Delivery is not available for the selected city. Select an InstaWorld-supported city or another payment method.')
       const quote = await quoteCheckout(payload, input, req)
       if (expectedTotal !== quote.totalAmount) return { quote }
       // The unique _id is claimed in the SAME transaction as order, stock and outbox.

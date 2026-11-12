@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { citiesForRegion, pakistanRegions } from '@/utilities/pakistanLocations'
+import { cityKey, type CodCoverage } from '@/utilities/codCoverage'
 
 type Location = { province: string; city: string }
 const control =
@@ -11,11 +12,18 @@ const label = 'block text-[11px] uppercase tracking-widest font-semibold text-fo
 export function LocationFields({
   value,
   onChange,
+  codCoverage,
+  restrictToCod = false,
 }: {
   value: Location
   onChange: (location: Location) => void
+  codCoverage?: CodCoverage | null
+  restrictToCod?: boolean
 }) {
-  const cities = citiesForRegion(value.province)
+  const cities = restrictToCod
+    ? (codCoverage?.cities || []).filter(city => city.province === value.province).map(city => ({ name: city.name, label: city.label }))
+    : citiesForRegion(value.province).map(name => ({ name, label: name }))
+  const selected = cities.find(city => cityKey(city.name) === cityKey(value.city))?.name || ''
   return (
     <>
       <div>
@@ -49,17 +57,18 @@ export function LocationFields({
           autoComplete="address-level2"
           className={control}
           required
-          disabled={!value.province}
-          value={value.city}
+          disabled={!value.province || (restrictToCod && cities.length === 0)}
+          value={selected}
           onChange={(event) => onChange({ province: value.province, city: event.target.value })}
         >
           <option value="">Select city / town</option>
           {cities.map((city) => (
-            <option key={city} value={city}>
-              {city}
+            <option key={city.name} value={city.name}>
+              {city.label}
             </option>
           ))}
         </select>
+        {restrictToCod && <p className="mt-2 text-xs text-foreground">{!codCoverage ? 'COD delivery cities are temporarily unavailable. Choose another payment method or refresh checkout.' : cities.length ? 'Only InstaWorld-supported COD destinations are shown.' : 'No verified InstaWorld COD destinations are available in this province / region.'}</p>}
       </div>
     </>
   )

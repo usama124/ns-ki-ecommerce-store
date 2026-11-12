@@ -7,6 +7,7 @@ import { paymentConfigured } from '@/utilities/paymentConfiguration'
 import { receiptFileError, uploadOrderReceipt } from '@/components/orders/PrivateReceipt'
 import { enabledPaymentMethods, isStorefrontPaymentMethod, unavailablePaymentMessage } from '@/utilities/storefrontPayments'
 import { validatePakistanLocation } from '@/utilities/pakistanLocations'
+import { codCity, type CodCoverage } from '@/utilities/codCoverage'
 import { LocationFields } from './LocationFields'
 import { PaymentQRCode } from './PaymentQRCode'
 import {
@@ -28,7 +29,7 @@ import { CheckoutView } from '@/components/Analytics/CheckoutView'
 import { checkoutItems, checkoutIntentEligible } from '@/lib/analytics/model'
 import { analyticsReady, captureOrderAnalytics, track } from '@/lib/analytics/client'
 
-export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
+export function CheckoutPage({ siteSettings, codCoverage }: { siteSettings?: any; codCoverage?: CodCoverage | null }) {
   const { items, subtotal, clearCart } = useCart()
   const router = useRouter()
   const availableMethods = enabledPaymentMethods(siteSettings)
@@ -108,6 +109,10 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
       } finally { submitting.current = false; setIsSubmitting(false) }
       return
     }
+    if (paymentMethod === 'cod' && !codCity(codCoverage, customer.province, customer.city)) {
+      setErrorMessage('Select an InstaWorld-supported COD city for your province, or choose another payment method.')
+      return
+    }
     const locationError = validatePakistanLocation(customer.province, customer.city)
     if (locationError) {
       setErrorMessage(locationError)
@@ -152,9 +157,10 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
     try {
       const analytics = await captureOrderAnalytics()
-      const retry = await getCheckoutRetryKey({ customer, items: items.map(item => ({ productId: item.productId, variantSize: item.variantSize, quantity: item.quantity })), paymentMethod, transactionId: paymentMethod === 'cod' ? '' : transactionId, expectedTotal: totalAmount })
+      const checkoutCustomer = paymentMethod === 'cod' ? { ...customer, city: codCity(codCoverage, customer.province, customer.city)!.name } : customer
+      const retry = await getCheckoutRetryKey({ customer: checkoutCustomer, items: items.map(item => ({ productId: item.productId, variantSize: item.variantSize, quantity: item.quantity })), paymentMethod, transactionId: paymentMethod === 'cod' ? '' : transactionId, expectedTotal: totalAmount })
       const checkout = JSON.stringify({
-          customer,
+          customer: checkoutCustomer,
           items,
           paymentMethod,
           paymentProof:
@@ -301,7 +307,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   />
                 </div>
 
-                <LocationFields value={customer} onChange={location => setCustomer(previous => ({ ...previous, ...location }))} />
+                <LocationFields value={customer} codCoverage={codCoverage} restrictToCod={paymentMethod === 'cod'} onChange={location => setCustomer(previous => ({ ...previous, ...location }))} />
 
                 <div className="sm:col-span-2">
                   <label htmlFor="checkout-address" className="block text-[11px] uppercase tracking-widest font-semibold text-foreground mb-1">
@@ -679,7 +685,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
 
               <button
                 type="submit"
-                disabled={isSubmitting || availableMethods.length === 0 || (paymentMethod !== 'cod' && !receipt)}
+                disabled={isSubmitting || availableMethods.length === 0 || (paymentMethod !== 'cod' && !receipt) || (paymentMethod === 'cod' && !codCity(codCoverage, customer.province, customer.city))}
                 className="w-full mt-8 glass-button-primary py-4 text-xs font-bold uppercase tracking-[0.25em] rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

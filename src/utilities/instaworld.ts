@@ -3,6 +3,7 @@ import type { Order, User } from '@/payload-types'
 import { randomUUID, createHash } from 'node:crypto'
 import { RequestError } from './apiSecurity'
 import { checkRole } from '@/access/utilities'
+import { cityKey } from './codCoverage'
 import { MONEY } from './paymentLedger'
 import { COMMERCE, commerceSession, commerceTransaction, mongoCommerce, requireCommerceReady, type InternalRecord } from './commerceDatabase'
 import { InstaError, instaReferences, instaRequest, safeEvents, safeShipment, type InstaTracking } from './instaworldClient'
@@ -29,7 +30,7 @@ export function bookingBody(order: Order, input: Record<string, unknown>, refere
   // Exact city only: operator explicitly chooses the provider destination. No
   // fuzzy town/province guesses. Show both stored and provider city in admin.
   if (typeof input.city !== 'string' || !references.cities.includes(input.city)) throw new RequestError('Select a serviceable InstaWorld destination city.')
-  if (input.city.trim().toLowerCase() !== order.customer.city.trim().toLowerCase()) throw new RequestError('Destination must match the order city. Correct the order address before booking.')
+  if (cityKey(input.city) !== cityKey(order.customer.city)) throw new RequestError('Destination must match the order city. Correct the order address before booking.')
   if (!order.customer.name?.trim() || order.customer.name.length > 120 || !order.items?.length) throw new RequestError('Order customer name and items need review before booking.')
   if (!order.customer.address?.trim() || order.customer.address.length > 200) throw new RequestError('InstaWorld requires an address of 1–200 characters. Correct the order address first.')
   if (!/^(?:\+92|0)3\d{9}$/.test(order.customer.phone.replace(/[\s()-]/g, ''))) throw new RequestError('A valid Pakistani mobile number is required for booking.')

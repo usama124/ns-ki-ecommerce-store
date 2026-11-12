@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { InstaReferences, InstaTracking } from '@/utilities/instaworldClient'
+import { cityKey } from '@/utilities/codCoverage'
 import { C, btnPrimary, btnSecondary, glassCard, inputStyle } from '../adminTheme'
 
 type Props = { orderId: string; status: string; paymentMethod: string; city: string; itemLabels: string[] }
@@ -65,7 +66,7 @@ export function InstaWorldBooking({ orderId, status, paymentMethod, city, itemLa
               if (!response.ok) throw new Error(data.error || 'References unavailable.')
               setReferences(data)
               setLocation(data.locations[0] ? String(data.locations[0].id) : '')
-              setDestination(data.cities.find((name: string) => name.toLowerCase() === city.trim().toLowerCase()) || '')
+              setDestination(data.cities.find((name: string) => cityKey(name) === cityKey(city)) || '')
             } catch (error) { setMessage(error instanceof Error ? error.message : 'References unavailable.') }
             finally { setBusy(false) }
           }}>Load pickup locations and serviceable cities</button>
@@ -74,9 +75,7 @@ export function InstaWorldBooking({ orderId, status, paymentMethod, city, itemLa
               <option value="">Select pickup</option>{references.locations.map(l => <option key={l.id} value={l.id}>{l.name} — {l.city}</option>)}
             </select></label>
             <p>Order destination: {city}. Provider destination must match; correct the order address if unsupported.</p>
-            <label>InstaWorld destination<select aria-label="InstaWorld destination" style={inputStyle} value={destination} onChange={e => setDestination(e.target.value)} disabled={busy}>
-              <option value="">Select city</option>{references.cities.map(c => <option key={c} value={c}>{c}</option>)}
-            </select></label>
+            <p>InstaWorld destination: <strong>{destination || 'No exact supported match. Do not substitute a nearby city.'}</strong></p>
             {itemLabels.map((label, index) => <label key={index}>Item {index + 1}: {label} — weight per unit (kg)<input aria-label={`Item ${index + 1} weight kg`} style={inputStyle} type="number" min="0.001" max="100" step="0.001" value={weights[index] || ''} onChange={e => setWeights(values => { const next = [...values]; next[index] = e.target.value; return next })} disabled={busy} /></label>)}
           </>}
         </>}

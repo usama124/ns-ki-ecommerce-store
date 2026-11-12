@@ -7,6 +7,7 @@ vi.mock('payload', async (importOriginal) => ({
   getPayload: mocks.getPayload,
 }))
 vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+vi.mock('@/utilities/instaworldCities', () => ({ getCodCoverage: async () => ({ cities: [{ province: 'Punjab', name: 'LAHORE', label: 'Lahore' }], checkedAt: new Date().toISOString() }) }))
 // These tests exercise payment/location validation, not receipt decoding/R2.
 vi.mock('@/utilities/checkoutReceipt', () => ({
   readCheckoutRequest: async (request: Request) => ({ body: await request.json(), receipt: {} }),

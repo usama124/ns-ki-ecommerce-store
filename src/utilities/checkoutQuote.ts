@@ -5,6 +5,7 @@ import { calculateShipping, FLAT_SHIPPING_FEE, FREE_SHIPPING_THRESHOLD } from '.
 import { paymentConfigured } from './paymentConfiguration'
 import { validatePakistanLocation } from './pakistanLocations'
 import { isStorefrontPaymentMethod, unavailablePaymentMessage } from './storefrontPayments'
+import { normalizeStreetAddress } from './streetAddress'
 
 type Line = { productId: string; variantSize: string; quantity: number }
 const text = (value: unknown, max: number, optional = false) => {
@@ -28,13 +29,15 @@ export function parseCheckout(body: Record<string, unknown>) {
   const customer = body.customer as Record<string, unknown> | undefined
   if (!customer || typeof customer !== 'object' || Array.isArray(customer))
     throw new RequestError('Customer details are required.')
+  const address = normalizeStreetAddress(customer.address)
+  if (address === null) throw new RequestError('Provide a street address of 1–500 characters without invalid symbols or control characters.')
   const details = {
     name: text(customer.name, 120),
     phone: text(customer.phone, 30),
     email: text(customer.email, 254, true).toLowerCase(),
     city: text(customer.city, 120).normalize('NFC'),
     province: text(customer.province, 100),
-    address: text(customer.address, 500),
+    address,
   }
   const locationError = validatePakistanLocation(details.province, details.city)
   if (locationError) throw new RequestError(locationError)

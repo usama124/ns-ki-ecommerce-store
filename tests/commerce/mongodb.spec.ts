@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import type { User } from '@/payload-types'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 
 // No .env, remote host, dynamic database name or production service is accepted.
 const URL =
@@ -25,6 +25,7 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
       vi.stubEnv('PAYLOAD_DROP_DATABASE', 'false')
       vi.stubEnv('R2_BUCKET', '')
       vi.stubEnv('RESEND_API_KEY', '')
+      vi.stubEnv('INSTAWORLD_API_KEY', 'disposable-cities-fixture-only')
       const { getPayload } = await import('payload')
       const { default: config } = await import('@/payload.config')
       const sanitized = await config
@@ -36,6 +37,11 @@ describe.skipIf(process.env.RUN_COMMERCE_DB_TESTS !== '1')(
       // Only this explicitly named disposable database is cleaned.
       for (const collection of await db.collections()) await collection.deleteMany({})
       await commerce.initializeCommerce(payload)
+      // Preload synthetic coverage; this DB suite must never call a real courier.
+      await db.collection<import('@/utilities/commerceDatabase').InternalRecord>(commerce.COMMERCE.config).insertOne({
+        _id: `instaworld:cities:${createHash('sha256').update('disposable-cities-fixture-only').digest('hex')}`,
+        cities: ['LAHORE'], checkedAt: new Date(), expiresAt: new Date(Date.now() + 86400000), lockUntil: new Date(0),
+      })
       const cat = await payload.create({
         collection: 'categories',
         data: { name: 'Test', type: 'main', slug: 'test' },

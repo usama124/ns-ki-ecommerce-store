@@ -1,3 +1,5 @@
+import { normalizeStreetAddress } from '@/utilities/streetAddress'
+
 export type AnalyticsItem = {
   item_id: string
   item_name: string
@@ -98,13 +100,13 @@ export function checkoutIntentEligible(
   if (!['cod', 'bank_transfer', 'jazzcash', 'easypaisa'].includes(method)) return false
   for (const [value, max] of [
     [customer.name, 120],
-    [customer.address, 500],
     [customer.city, 100],
     [customer.province, 100],
   ] as const) {
     if (!value.trim() || value.length > max || /[\u0000-\u001f<>]/.test(value)) return false
   }
   return (
+    normalizeStreetAddress(customer.address) !== null &&
     /^\+?\d[\d ()-]{8,19}$/.test(customer.phone) &&
     /^\d{10,15}$/.test(customer.phone.replace(/\D/g, '')) &&
     customer.email.length <= 254 &&

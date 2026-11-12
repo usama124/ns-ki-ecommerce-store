@@ -11,6 +11,7 @@ const mock = vi.hoisted(() => ({
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('payload', () => ({ getPayload: mock.getPayload }))
 vi.mock('@/utilities/requestLimits', () => ({ enforceRequestLimit: vi.fn() }))
+vi.mock('@/utilities/instaworldCities', () => ({ getCodCoverage: async () => ({ cities: [{ province: 'Punjab', name: 'LAHORE', label: 'Lahore' }], checkedAt: new Date().toISOString() }) }))
 vi.mock('@/utilities/checkoutEmailDelivery', () => ({ sendCheckoutEmails: vi.fn() }))
 vi.mock('@/utilities/commerceDatabase', () => ({
   commerceSession: vi.fn().mockResolvedValue({}),
@@ -76,6 +77,11 @@ beforeEach(() => {
   mock.create.mockResolvedValue({ id: 'order1', orderNumber: '#NKI-123456' })
 })
 describe('Authoritative checkout quotes', () => {
+  it.each(['\n', '\r\n', '\r'])('accepts a multiline COD street address with %j line endings', async newline => {
+    const result = await POST(request({ ...base(), expectedTotal: 8350, customer: { ...customer, address: `House 12${newline}Street 3${newline}Block A` } }))
+    expect(result.status).toBe(200)
+    expect(mock.create.mock.calls[0][0].data.customer.address).toBe('House 12\nStreet 3\nBlock A')
+  })
   it.each(['nski-preview.vercel.app', 'nski-git-develop-team.vercel.app'])('accepts a valid checkout on assigned preview hostname %s despite a different canonical URL', async hostname => {
     vi.stubEnv('NEXT_PUBLIC_SERVER_URL', 'https://www.siblingsbynski.com')
     vi.stubEnv('VERCEL', '1')

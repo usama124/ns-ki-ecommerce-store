@@ -11,7 +11,7 @@ import { CheckoutPage } from '@/components/checkout/CheckoutPage'
 const settings = { paymentMethods: { bank_transfer: true, easypaisa: true, jazzcash: true, cod: true }, paymentDetails }
 const file = () => new File(['proof'], 'payment.png', { type: 'image/png' })
 function setup() {
-  const view = render(React.createElement(CheckoutPage, { siteSettings: settings }))
+  const view = render(React.createElement(CheckoutPage, { siteSettings: settings, codCoverage: { cities: [{ province: 'Punjab', name: 'LAHORE', label: 'Lahore' }], checkedAt: new Date().toISOString() } }))
   fireEvent.click(screen.getByRole('button', { name: /Bank \/ Raast Transfer/ }))
   fireEvent.change(screen.getByLabelText('Full Name *'), { target: { value: 'Test Customer' } })
   fireEvent.change(screen.getByLabelText('Phone Number (+92) *'), { target: { value: '03001234567' } })
@@ -71,6 +71,14 @@ describe('required checkout receipt control', () => {
     fireEvent.click(screen.getByRole('button', { name: /Cash on Delivery/ }))
     expect(screen.queryByLabelText('Payment receipt')).toBeNull()
     expect((screen.getByRole('button', { name: /Complete Order/ }) as HTMLButtonElement).disabled).toBe(false)
+  })
+  it('sends the matched exact provider city when COD checkout is submitted', async () => {
+    setup()
+    fireEvent.click(screen.getByRole('button', { name: /Cash on Delivery/ }))
+    fireEvent.submit(document.querySelector('form')!)
+    await waitFor(() => expect(mock.push).toHaveBeenCalledOnce())
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    expect(JSON.parse(options!.body as string).customer.city).toBe('LAHORE')
   })
   it('requires a new receipt selection when switching payment methods', () => {
     setup()
