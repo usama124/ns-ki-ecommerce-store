@@ -80,7 +80,7 @@ describe('disabled storefront payment methods', () => {
   ])('validates region %s and city %s before order creation', async (province, city, status) => {
     const response = await POST(new Request('https://store.example/api/orders', {
       method: 'POST', headers,
-      body: JSON.stringify({ ...body, expectedTotal: city === 'QA unlisted village' ? 1350 : 1250, customer: { ...body.customer, province, city }, paymentMethod: 'bank_transfer' }),
+      body: JSON.stringify({ ...body, expectedTotal: 1250, customer: { ...body.customer, province, city }, paymentMethod: 'bank_transfer' }),
     }))
     expect(response.status).toBe(status)
     expect(mocks.create).toHaveBeenCalledTimes(status === 200 ? 1 : 0)

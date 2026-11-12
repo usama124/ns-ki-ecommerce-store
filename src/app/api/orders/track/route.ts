@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import { privateJSON, RequestError, requestError } from '@/utilities/apiSecurity'
 import { getPayload } from 'payload'
 import { enforceRequestLimit } from '@/utilities/requestLimits'
+import { instaOrderTracking } from '@/utilities/instaworld'
 
 export async function GET(req: Request) {
   try {
@@ -54,9 +55,11 @@ export async function GET(req: Request) {
       )
     }
 
+    const shipping = payload.db?.name === 'mongoose' ? await instaOrderTracking(payload, order.id, true).catch(() => null) : null
     return privateJSON({
       success: true,
       order: {
+        ...(shipping ? { shipping } : {}),
         orderNumber: order.orderNumber, status: order.status, createdAt: order.createdAt,
         fulfillment: order.fulfillment ? {
           courierName: order.fulfillment.courierName,

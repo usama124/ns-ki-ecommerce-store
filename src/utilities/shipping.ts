@@ -1,5 +1,5 @@
 /**
- * Pakistani city-based shipping calculator
+ * Nationwide flat shipping. Legacy city fields are ignored.
  */
 
 export const MAJOR_CITIES = [
@@ -18,23 +18,20 @@ export const MAJOR_CITIES = [
 export const MAJOR_CITY_FEE = 250
 export const SECONDARY_CITY_FEE = 350
 export const FREE_SHIPPING_THRESHOLD = 15000
+export const FLAT_SHIPPING_FEE = 250
 
 type ShippingSettings = {
+  flatShippingFee?: number | null
+  freeShippingEnabled?: boolean | null
   freeShippingThreshold?: number | null
   majorCityFee?: number | null
   secondaryCityFee?: number | null
   majorCities?: Array<{ city: string }> | null
 }
 
-export function calculateShipping(city: string, subtotal: number, settings?: ShippingSettings | null): number {
-  if (subtotal >= (settings?.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD)) return 0
-
-  const cities = settings?.majorCities?.length ? settings.majorCities.map(item => item.city) : MAJOR_CITIES
-  const isMajorCity = cities.some(
-    (c) => c.toLowerCase() === city.trim().toLowerCase()
-  )
-
-  return isMajorCity ? (settings?.majorCityFee ?? MAJOR_CITY_FEE) : (settings?.secondaryCityFee ?? SECONDARY_CITY_FEE)
+export function calculateShipping(_city: string, subtotal: number, settings?: ShippingSettings | null): number {
+  if (settings?.freeShippingEnabled === true && subtotal >= (settings.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD)) return 0
+  return settings?.flatShippingFee ?? FLAT_SHIPPING_FEE
 }
 
 export function getShippingLabel(fee: number): string {

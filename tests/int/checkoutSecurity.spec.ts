@@ -134,7 +134,7 @@ describe('Authoritative checkout quotes', () => {
     mock.findGlobal.mockImplementation(({ slug }) =>
       Promise.resolve(
         slug === 'site-settings'
-          ? { ...settings, shipping: { ...settings.shipping, majorCityFee: 75, codFee: 0 } }
+          ? { ...settings, shipping: { ...settings.shipping, flatShippingFee: 75, codFee: 0 } }
           : { isActive: true, discountPercentage: 25, targetedCategories: ['c1'] },
       ),
     )
@@ -197,6 +197,17 @@ describe('Authoritative checkout quotes', () => {
   it('does not let cross-origin requests invoke checkout', async () => {
     expect((await POST(request(base(), 'https://attacker.example'))).status).toBe(403)
     expect(mock.getPayload).not.toHaveBeenCalled()
+  })
+  it('uses the flat default nationwide, ignoring old tier rates even above the old free threshold', async () => {
+    const item = product()
+    item.variants[0].pricePKR = 10000
+    mock.find.mockResolvedValue({ docs: [item] })
+    const result = await quoteCheckout(mock as unknown as Payload, parseCheckout({ ...base(), customer: { ...customer, city: 'QA unlisted village' } }))
+    expect(result).toMatchObject({ subtotal: 20000, shippingFee: 250, codFee: 100, totalAmount: 20350 })
+  })
+  it.each([-1, NaN, Infinity, 250.001])('rejects invalid flat shipping configuration %s', async flatShippingFee => {
+    mock.findGlobal.mockImplementation(({ slug }) => Promise.resolve(slug === 'site-settings' ? { ...settings, shipping: { ...settings.shipping, flatShippingFee } } : { isActive: false }))
+    await expect(quoteCheckout(mock as unknown as Payload, parseCheckout(base()))).rejects.toThrow()
   })
   it('rejects screenshots rather than writing new receipts into public media', async () => {
     const result = await POST(

@@ -166,6 +166,15 @@ export function OrderTrackingView() {
         {/* Order Details Result */}
         {order && (
           <div className="space-y-8">
+            {order.shipping && (
+              <section aria-label="Courier shipping status" className="glass-card p-6 rounded-2xl space-y-3">
+                <h2 className="font-semibold">InstaWorld shipping status</h2>
+                <p>Tracking number: <strong>{order.shipping.trackingNumber}</strong></p>
+                <p>{order.shipping.status.replace(/_/g, ' ')}</p>
+                <p className="text-sm">Last checked: {new Date(order.shipping.checkedAt).toLocaleString('en-PK')}. Updates may be delayed; delivery does not confirm COD settlement.</p>
+                {order.shipping.events?.length > 0 && <ol className="space-y-2 text-sm">{order.shipping.events.map((event: { status: string; recordedAt: string | null }, index: number) => <li key={index}>{event.status.replace(/_/g, ' ')}{event.recordedAt ? ` — ${new Date(event.recordedAt).toLocaleString('en-PK')}` : ''}</li>)}</ol>}
+              </section>
+            )}
             {/* Status Header */}
             <div className="bg-[#03171E] text-[#CBCCC7] p-6 rounded-2xl border border-[#648698]/40 shadow-xl flex flex-wrap items-center justify-between gap-4">
               <div>

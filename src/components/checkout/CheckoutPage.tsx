@@ -2,7 +2,7 @@
 
 import { useCart } from '@/providers/Cart'
 import { formatPKR } from '@/utilities/formatPKR'
-import { calculateShipping, getShippingLabel, MAJOR_CITIES } from '@/utilities/shipping'
+import { calculateShipping, getShippingLabel } from '@/utilities/shipping'
 import { paymentConfigured } from '@/utilities/paymentConfiguration'
 import { receiptFileError, uploadOrderReceipt } from '@/components/orders/PrivateReceipt'
 import { enabledPaymentMethods, isStorefrontPaymentMethod, unavailablePaymentMessage } from '@/utilities/storefrontPayments'
@@ -142,7 +142,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
     submitting.current = true
     setIsSubmitting(true)
     const measuredItems = checkoutItems(items, quote?.items)
-    const tier = MAJOR_CITIES.includes(customer.city) ? 'major_city' : 'secondary_city'
+    const tier = 'flat_rate'
     const intentKey = JSON.stringify([measuredItems, tier, paymentMethod])
     if (analyticsReady() && measuredItems.length === items.length && measuredItems.length > 0 && checkoutIntentEligible(customer, paymentMethod, transactionId) && trackedSubmission.current !== intentKey) {
       trackedSubmission.current = intentKey
@@ -655,7 +655,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                   <span className="font-semibold text-foreground">{formatPKR(quote?.subtotal ?? subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Shipping Fee ({customer.city})</span>
+                  <span>Shipping Fee (Nationwide)</span>
                   <span className="font-semibold text-foreground">
                     {getShippingLabel(shippingFee)}
                   </span>
@@ -666,7 +666,7 @@ export function CheckoutPage({ siteSettings }: { siteSettings?: any }) {
                     <span>+{formatPKR(codFee)}</span>
                   </div>
                 )}
-                {(quote?.subtotal ?? subtotal) >= (siteSettings?.shipping?.freeShippingThreshold ?? 15000) && (
+                {shippingFee === 0 && (
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
                     ✓ You unlocked FREE Shipping nationwide!
                   </p>

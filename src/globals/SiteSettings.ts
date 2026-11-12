@@ -49,7 +49,7 @@ export const SiteSettings: GlobalConfig = {
         {
           name: 'text',
           type: 'text',
-          defaultValue: 'FREE EXPRESS SHIPPING ACROSS PAKISTAN ON ORDERS ABOVE RS. 15,000',
+          defaultValue: 'NATIONWIDE SHIPPING — RS. 250 FLAT RATE',
           label: 'Announcement Text',
         },
         {
@@ -65,22 +65,43 @@ export const SiteSettings: GlobalConfig = {
       label: 'Shipping Configuration',
       fields: [
         {
+          name: 'flatShippingFee',
+          type: 'number',
+          min: 0,
+          max: 1000000,
+          defaultValue: 250,
+          label: 'Flat Shipping Fee — All Cities (PKR)',
+          validate: (value: unknown) => value == null || (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= 1000000) || 'Enter a whole-rupee amount between 0 and 1,000,000.',
+          admin: { description: 'The same shipping charge applies nationwide. Existing orders retain their recorded charges. COD handling is separate.' },
+        },
+        {
+          name: 'freeShippingEnabled',
+          type: 'checkbox',
+          defaultValue: false,
+          label: 'Enable Free Shipping Above Threshold',
+          admin: { description: 'Off by default so the flat charge applies to all order sizes.' },
+        },
+        {
           name: 'freeShippingThreshold',
           type: 'number',
+          min: 0,
           defaultValue: 15000,
           label: 'Free Shipping Threshold (PKR)',
+          admin: { condition: data => data?.shipping?.freeShippingEnabled === true },
         },
         {
           name: 'majorCityFee',
           type: 'number',
           defaultValue: 250,
           label: 'Major City Shipping Fee (PKR)',
+          admin: { hidden: true },
         },
         {
           name: 'secondaryCityFee',
           type: 'number',
           defaultValue: 350,
           label: 'Secondary City Shipping Fee (PKR)',
+          admin: { hidden: true },
         },
         {
           name: 'codFee',
@@ -98,6 +119,7 @@ export const SiteSettings: GlobalConfig = {
           type: 'array',
           label: 'Major Cities',
           admin: {
+            hidden: true,
             description: 'Cities that qualify for the lower shipping rate.',
           },
           fields: [

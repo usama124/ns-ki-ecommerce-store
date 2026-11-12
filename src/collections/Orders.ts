@@ -6,6 +6,7 @@ import { enqueueOrderEmails } from '@/utilities/orderOutbox'
 import { enqueueOrderAnalytics } from '@/utilities/orderAnalytics'
 import { recordOrderHistory } from '@/utilities/operationsHistory'
 import { guardMoneyOrder } from '@/utilities/paymentLedger'
+import { guardInstaOrder } from '@/utilities/instaworld'
 import { RequestError } from '@/utilities/apiSecurity'
 import { requireCommerceReady } from '@/utilities/commerceDatabase'
 import { orderAmounts } from '@/utilities/orderAmounts'
@@ -191,6 +192,7 @@ export const Orders: CollectionConfig = {
           Object.assign(data, orderAmounts(data, originalDoc))
         }
         if (operation !== 'create' && originalDoc) await guardMoneyOrder(originalDoc, data, req)
+        if (operation !== 'create' && originalDoc) await guardInstaOrder(originalDoc, data, req)
         // Never accept a supplied allocation ledger from REST/GraphQL/admin forms.
         data.inventoryState = await reconcileOrderInventory(data, operation === 'create' ? undefined : originalDoc, req)
         return data
@@ -206,6 +208,7 @@ export const Orders: CollectionConfig = {
     ],
     beforeDelete: [async ({ id, req }) => {
       const order = await req.payload.findByID({ collection: 'orders', id, depth: 0, req, overrideAccess: true })
+      await guardInstaOrder(order, null, req)
       if (order.status !== 'cancelled') throw new RequestError('Cancel and reconcile the order before deleting it.', 409)
       await guardMoneyOrder(order, null, req)
       await recordOrderHistory(order, order, 'update', req, true)

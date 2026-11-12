@@ -1,7 +1,7 @@
 import type { Payload, PayloadRequest } from 'payload'
 import { RequestError, validDocumentID } from './apiSecurity'
 import { getSalePriceDetails } from './getSalePrice'
-import { calculateShipping } from './shipping'
+import { calculateShipping, FLAT_SHIPPING_FEE, FREE_SHIPPING_THRESHOLD } from './shipping'
 import { paymentConfigured } from './paymentConfiguration'
 import { validatePakistanLocation } from './pakistanLocations'
 import { isStorefrontPaymentMethod, unavailablePaymentMessage } from './storefrontPayments'
@@ -129,13 +129,9 @@ export async function quoteCheckout(payload: Payload, input: ReturnType<typeof p
       503,
     )
   const shipping = settings.shipping
-  for (const value of [
-    shipping.freeShippingThreshold,
-    shipping.majorCityFee,
-    shipping.secondaryCityFee,
-    shipping.codFee,
-  ])
-    money(value)
+  money(shipping.flatShippingFee ?? FLAT_SHIPPING_FEE)
+  if (shipping.freeShippingEnabled === true) money(shipping.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD)
+  if (input.paymentMethod === 'cod') money(shipping.codFee)
   const items = input.lines.map((line) => {
     const product = result.docs.find((product) => String(product.id) === line.productId)
     const variants = product?.variants?.filter((variant) => {

@@ -530,6 +530,9 @@ export interface Product {
          * Format: NKI-XXXX-SZ-XXX. Leave blank to auto-generate.
          */
         sku?: string | null;
+        /**
+         * Set initial stock here. To adjust existing stock, use the Inventory dashboard.
+         */
         stock: number;
         allowBackorder?: boolean | null;
         /**
@@ -870,9 +873,15 @@ export interface Order {
     unitPrice: number;
     id?: string | null;
   }[];
+  /**
+   * Calculated from order item quantities and accepted unit prices.
+   */
   subtotal: number;
   shippingFee: number;
   codFee?: number | null;
+  /**
+   * Calculated from subtotal, shipping and COD fees.
+   */
   totalAmount: number;
   /**
    * Provide a reason to inform the customer why their order was rejected/cancelled.
@@ -1712,6 +1721,14 @@ export interface SiteSetting {
     link?: string | null;
   };
   shipping?: {
+    /**
+     * The same shipping charge applies nationwide. Existing orders retain their recorded charges. COD handling is separate.
+     */
+    flatShippingFee?: number | null;
+    /**
+     * Off by default so the flat charge applies to all order sizes.
+     */
+    freeShippingEnabled?: boolean | null;
     freeShippingThreshold?: number | null;
     majorCityFee?: number | null;
     secondaryCityFee?: number | null;
@@ -1936,6 +1953,8 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   shipping?:
     | T
     | {
+        flatShippingFee?: T;
+        freeShippingEnabled?: T;
         freeShippingThreshold?: T;
         majorCityFee?: T;
         secondaryCityFee?: T;

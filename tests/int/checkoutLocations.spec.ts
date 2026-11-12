@@ -45,8 +45,8 @@ describe('Pakistan location catalog and validation', () => {
   })
   it('leaves tariff classification separate from location coverage', () => {
     for (const city of MAJOR_CITIES) expect(calculateShipping(city, 1000)).toBe(250)
-    expect(calculateShipping('QA unlisted village', 1000)).toBe(350)
-    expect(calculateShipping('QA unlisted village', 15000)).toBe(0)
+    expect(calculateShipping('QA unlisted village', 1000)).toBe(250)
+    expect(calculateShipping('QA unlisted village', 15000)).toBe(250)
   })
 })
 describe('linked checkout fields', () => {
