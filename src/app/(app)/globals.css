@@ -351,8 +351,9 @@ select option {
   background-color: #bdbab9;
 }
 
-/* Keep browser-saved credentials readable against the active theme. */
-input:autofill {
+/* Keep saved credentials and addresses readable against the active theme. */
+input:autofill,
+textarea:autofill {
   color: var(--foreground);
   background-color: var(--background);
   -webkit-text-fill-color: var(--foreground);
@@ -362,7 +363,11 @@ input:autofill {
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px var(--background) inset;
   -webkit-text-fill-color: var(--foreground);
   caret-color: var(--foreground);
