@@ -239,6 +239,9 @@ export function OrdersDashboardClient() {
 
   // Modals state
   const [activeDetailOrder, setActiveDetailOrder] = useState<OrderDoc | null>(null)
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<{ orderId: string; message: string } | null>(null)
+  const deleteInFlight = useRef(false)
   const [quickVerifyOrder, setQuickVerifyOrder] = useState<OrderDoc | null>(null)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const [zoomScale, setZoomScale] = useState(1)
@@ -297,6 +300,8 @@ export function OrdersDashboardClient() {
     newStatus: string,
     extraData?: { courierName?: string; trackingNumber?: string; trackingUrl?: string },
   ) => {
+    setDeleteConfirmationId(null)
+    setDeleteError(null)
     setUpdating(true)
     try {
       const res = await fetch('/api/admin/orders/update-status', {
@@ -332,8 +337,9 @@ export function OrdersDashboardClient() {
   }
 
   const handleDeleteOrder = async (order: OrderDoc) => {
-    if (updating || order.status !== 'cancelled') return
-    if (!window.confirm(`Permanently delete order ${order.orderNumber}? This cannot be undone. Financial and audit history will be retained. Orders with recorded payments cannot be deleted.`)) return
+    if (updating || deleteInFlight.current || order.status !== 'cancelled' || deleteConfirmationId !== order.id) return
+    deleteInFlight.current = true
+    setDeleteError(null)
     setUpdating(true)
     try {
       const response = await fetch('/api/admin/orders/delete', {
@@ -346,12 +352,16 @@ export function OrdersDashboardClient() {
       setActiveDetailOrder(null)
       setQuickVerifyOrder(null)
       setSelectedIds([])
+      setDeleteConfirmationId(null)
       toast.success(`Order ${order.orderNumber} deleted`)
       if (orders.length === 1 && page > 1) setPage(p => p - 1)
       else await fetchOrders()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete order')
+      const message = error instanceof Error ? error.message : 'Failed to delete order'
+      setDeleteError({ orderId: order.id, message })
+      toast.error(message)
     } finally {
+      deleteInFlight.current = false
       setUpdating(false)
     }
   }
@@ -812,6 +822,8 @@ export function OrdersDashboardClient() {
                         <button
                           onClick={() => {
                             setActiveDetailOrder(order)
+                            setDeleteConfirmationId(null)
+                            setDeleteError(null)
                             setCourierName(order.fulfillment?.courierName || 'TCS')
                             setTrackingNumber(order.fulfillment?.trackingNumber || '')
                             setTrackingUrl(order.fulfillment?.trackingUrl || '')
@@ -1425,11 +1437,23 @@ export function OrdersDashboardClient() {
                   <button
                     type="button"
                     disabled={updating || activeDetailOrder.status !== 'cancelled'}
-                    onClick={() => handleDeleteOrder(activeDetailOrder)}
+                    onClick={() => { setDeleteConfirmationId(activeDetailOrder.id); setDeleteError(null) }}
                     style={{ ...btnDanger, width: '100%' }}
                   >
                     Delete order permanently
                   </button>
+                  {deleteConfirmationId === activeDetailOrder.id && activeDetailOrder.status === 'cancelled' && (
+                    <section aria-label="Confirm order deletion" style={{ marginTop: '12px', display: 'grid', gap: '10px' }}>
+                      <p style={{ color: C.dangerText, margin: 0 }}>
+                        Permanently delete {activeDetailOrder.orderNumber}? This cannot be undone. Audit history is retained; orders with recorded payments or protected courier bookings cannot be deleted.
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <button type="button" autoFocus disabled={updating} style={btnSecondary} onClick={() => { setDeleteConfirmationId(null); setDeleteError(null) }}>Keep order</button>
+                        <button type="button" disabled={updating} style={btnDanger} onClick={() => handleDeleteOrder(activeDetailOrder)}>{updating ? 'Deleting order…' : 'Confirm permanent deletion'}</button>
+                      </div>
+                    </section>
+                  )}
+                  {deleteError?.orderId === activeDetailOrder.id && <p role="alert" style={{ color: C.dangerText, margin: '12px 0 0' }}>{deleteError.message}</p>}
                   <p style={{ fontSize: '12px', color: C.textSecondary, margin: '10px 0 0' }}>
                     Admin only. Cancel the order first to reconcile stock. Orders with recorded payments cannot be deleted. Audit history is retained.
                   </p>

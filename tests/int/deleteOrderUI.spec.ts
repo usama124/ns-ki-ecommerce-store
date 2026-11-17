@@ -13,7 +13,8 @@ let orders = [order]
 beforeEach(() => {
   vi.resetAllMocks()
   orders = [order]
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  // Embedded/sandboxed browsers can silently suppress native dialogs.
+  vi.spyOn(window, 'confirm').mockReturnValue(false)
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
     if (url === '/api/admin/orders/delete') { orders = []; return response({ success: true, deletedId: order.id }) }
     return response({ orders, pagination: { totalPages: 1, totalDocs: orders.length } })
@@ -28,15 +29,19 @@ async function openOrder() {
 describe('dashboard delete order action', () => {
   it('requires confirmation, deletes the selected order, closes details and refreshes the list', async () => {
     fireEvent.click(await openOrder())
+    expect(screen.getByRole('region', { name: 'Confirm order deletion' }).textContent).toContain('#NKI-123456')
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => url === '/api/admin/orders/delete')).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm permanent deletion' }))
     await waitFor(() => expect(mock.success).toHaveBeenCalledWith('Order #NKI-123456 deleted'))
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('#NKI-123456'))
+    expect(window.confirm).not.toHaveBeenCalled()
     expect(fetch).toHaveBeenCalledWith('/api/admin/orders/delete', expect.objectContaining({ method: 'POST', body: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber }) }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Delete order permanently' })).toBeNull())
     expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).startsWith('/api/admin/orders?'))).toHaveLength(2)
   })
   it('does not delete when confirmation is dismissed', async () => {
-    vi.mocked(window.confirm).mockReturnValue(false)
     fireEvent.click(await openOrder())
+    fireEvent.click(screen.getByRole('button', { name: 'Keep order' }))
+    expect(screen.queryByRole('region', { name: 'Confirm order deletion' })).toBeNull()
     expect(vi.mocked(fetch).mock.calls.some(([url]) => url === '/api/admin/orders/delete')).toBe(false)
   })
   it('disables deletion until cancellation', async () => {
@@ -50,8 +55,30 @@ describe('dashboard delete order action', () => {
     const button = await openOrder()
     vi.mocked(fetch).mockResolvedValueOnce(response({ error: 'Orders with recorded money cannot be deleted.' }, 409))
     fireEvent.click(button)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm permanent deletion' }))
     await waitFor(() => expect(mock.error).toHaveBeenCalledWith('Orders with recorded money cannot be deleted.'))
+    expect(screen.getByRole('alert').textContent).toBe('Orders with recorded money cannot be deleted.')
     expect(screen.getByRole('button', { name: 'Delete order permanently' })).toBeTruthy()
     expect(mock.success).not.toHaveBeenCalled()
+  })
+  it('keeps network failures visible within the order detail rather than only in a toast', async () => {
+    fireEvent.click(await openOrder())
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Connection failed. Retry deletion.'))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm permanent deletion' }))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Connection failed.'))
+    expect(screen.getByRole('button', { name: 'Confirm permanent deletion' })).toBeTruthy()
+    expect(mock.success).not.toHaveBeenCalled()
+  })
+  it('sends only one request while deletion is running', async () => {
+    fireEvent.click(await openOrder())
+    let finish!: (value: Response) => void
+    vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve }))
+    const confirm = screen.getByRole('button', { name: 'Confirm permanent deletion' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+    expect(vi.mocked(fetch).mock.calls.filter(([url]) => url === '/api/admin/orders/delete')).toHaveLength(1)
+    expect((screen.getByRole('button', { name: 'Deleting order…' }) as HTMLButtonElement).disabled).toBe(true)
+    finish(response({ success: true, deletedId: order.id }))
+    await waitFor(() => expect(mock.success).toHaveBeenCalledOnce())
   })
 })
